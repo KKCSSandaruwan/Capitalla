@@ -1,0 +1,130 @@
+﻿@page "/"
+@layout LoginLayout
+@inject UserAccountService userAccountService
+@inject ICurrency _currency
+@inject ICompany _company
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+@inject ISnackbar Snackbar
+
+<PageTitle>Login</PageTitle>
+<!-- Main Wrapper -->
+<div class="account-page container-fluid">
+    <div class="main-wrapper">
+
+        <div class="row min-vh-100">
+            <div class="col-md-6 login-left-img">
+                <div class="circle1"></div>
+                <div class="circle2"></div>
+                <div class="circle3"></div>
+                <div class="circle4"></div>
+                <div class="circle5"></div>
+                <div class="circle6"></div>
+                <div class="circle7"></div>
+                <div class="circle8"></div>
+                <div class="circle9"></div>
+                <div class="circle10"></div>
+                <div class="circle11"></div>
+                <div class="circle12"></div>
+            </div>
+             <div class="col-md-6">
+                 <center>
+                  <div class="login-content">                
+
+                    <div class="login-userset">
+                        
+                        <div class="login-logo">
+                            <img src="img/logo.png" alt="img" min-height="3em">
+                        </div>
+                        
+
+                        <div class="login-userheading mt-5 mb-3">
+                            <h4>ABC Company (Private) Limited</h4>
+                            <h6>Please login to your account</h6>
+                        </div>
+                        <div class="form-login">
+                            
+                            <input type="text" placeholder="" @bind="model.Email">
+                            
+                            <label>Email</label>
+                        </div>
+
+                        <div class="form-login">
+                            
+                             <input type="password" @bind="model.Password" placeholder="">
+
+                             <label>Password</label>
+                        </div>
+
+                        @*<div class="form-login">
+                            <div class="alreadyuser">
+                                <h4><a href="/" class="hover-a">Forgot Password?</a></h4>
+                            </div>
+                        </div>*@
+                        <div class="form-login">
+                            <a class="btn btn-login" @onclick="Authenticate">Sign In</a>
+                        </div>
+                        <footer class="footer col-md-12">        
+        <p>Copyright © 2024 <a href="http://pms.prima.com.lk " target="_blank">PMS</a>. All rights reserved. Version 2.24</p>
+    </footer>
+            </div>
+        </div>
+        </center>
+
+      @*  <div class="account-content row">
+            <div class="col-6 col-md-6 m-1 login-left-img"></div>
+            <div class="login-wrapper col-6 col-md-6">
+                <div class="login-img">
+                    <img src="img/login-v2.jpg" alt="img">
+                </div>
+       
+                    </div>
+
+                </div>*@
+            </div>
+            @*<div class="col-md-4"></div>*@
+        </div>
+    </div>
+
+    
+</div>
+@code {
+    UserMaster master = new UserMaster();
+    string strMessage;
+    private class Model
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    private Model model = new Model();
+    Company company = new Company();
+    protected override async Task OnInitializedAsync()
+    {
+        model.Email = "admin@gmail.com";
+        model.Password = "000000";
+    }
+    private async Task Authenticate()
+    {
+        //await JSRuntime.InvokeVoidAsync("success", null);
+        var userAccount = userAccountService.GetByUserName(model.Email, model.Password);
+        if (userAccount == null || userAccount.Password != model.Password)
+        {
+            Snackbar.Add("Invalid user namd & password.", Severity.Error);
+            return;
+        }
+        else
+        {
+            var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+            await customAuthStateProvider.UpdateAuthenticationState(new UserSession
+                {
+                    Email = userAccount.Email,
+                    RoleName = userAccount.RoleName
+                });
+                var varCurrency = await _currency.GetCurrencyView(1);
+            PublicVariables._Symbol = varCurrency.CurrencySymbol;
+            navManager.NavigateTo("/app/dashboard", true);
+        }
+    }
+}

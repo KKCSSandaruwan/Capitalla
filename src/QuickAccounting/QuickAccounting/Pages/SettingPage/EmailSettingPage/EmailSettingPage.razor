@@ -1,0 +1,108 @@
+﻿@page "/app/emailsetting"
+@inject IEmailSetting _emailsetting
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Email Setting</PageTitle>
+<div class="content">
+					<div class="page-header">
+						<div class="page-title">
+							<h3>Email Setting</h3>
+			<h5>Email Setting</h5>
+						</div>
+					</div>
+					<!-- /add -->
+					<div class="card">
+						<div class="card-body">
+							<EditForm Model="model" OnValidSubmit="Save">
+    <DataAnnotationsValidator />
+							<div class="row">
+					<div class="col-lg-4 col-sm-12 col-12">
+									<div class="form-group">
+							<label>Mail Host</label>
+							<input type="text" @bind="model.MailHost">
+							<ValidationMessage For="@(() => model.MailHost)" />
+									</div>
+								</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+					<div class="form-group">
+							<label>Mail Port</label>
+						<input type="text" @bind="model.MailPort">
+							<ValidationMessage For="@(() => model.MailPort)" />
+					</div>
+				</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Mail Address</label>
+							<input type="text" class="form-control" @bind="model.MailAddress">
+							<ValidationMessage For="@(() => model.MailAddress)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Password</label>
+							<input type="password" class="form-control" @bind="model.Password">
+							<ValidationMessage For="@(() => model.Password)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Mail Fromname</label>
+							<input type="text" class="form-control" @bind="model.MailFromname">
+							<ValidationMessage For="@(() => model.MailFromname)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Encryption Name</label>
+							<input type="text" class="form-control" @bind="model.EncryptionName">
+							<ValidationMessage For="@(() => model.EncryptionName)" />
+						</div>
+					</div>
+								
+								<div class="col-lg-12">
+									<button type="submit" class="btn btn-submit me-2">Update</button>
+								</div>
+							</div>
+						</EditForm>
+						</div>
+					</div>
+					<!-- /add -->
+				</div>
+
+@code {
+	[CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+	EmailSetting model = new EmailSetting();
+	string strMenu = "Configuration";
+	protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+    }
+    private async Task LoadData()
+    {
+		model = await _emailsetting.GetbyId(1);
+        StateHasChanged();
+    }
+	private async Task Save()
+	{
+			var result = await _emailsetting.Update(model);
+		Snackbar.Add("Update Successfully.", Severity.Success);
+	}
+}

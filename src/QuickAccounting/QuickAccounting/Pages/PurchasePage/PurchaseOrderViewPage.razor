@@ -1,0 +1,474 @@
+﻿@page "/app/purchaseOrderView/{id}"
+@inject IPurchaseOrder _purchase
+@inject IPaymentOut _paymentout
+@inject ICompany _company
+@inject IProduct _product
+@inject ITax _tax
+@inject IInvoiceSetting _setting
+@inject ISnackbar Snackbar
+@using QuickAccounting.Components
+@using QuickAccounting.Repository
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@inject IDialogService Dialog
+@attribute [Authorize]
+<PageTitle>Purchase View</PageTitle>
+<div class="content">
+
+	<link rel="preload" href="/img/logo.png" as="image">
+
+					<div class="page-header">
+						<div class="page-title">
+							<h3>Purchase Details</h3>
+			<h5>View Purchase details
+			</h5>
+						</div>
+					</div>
+					<div class="card padding1">
+						<div class="card-body">
+							<div class="card-sales-split">
+								<h2 style="font-size:15px; font-weight:600;">Purchase Detail : @model.VoucherNo</h2>
+								<ul>
+					@if (@model.PaymentStatus == "Draft")
+									{
+						<li>
+							<a style="cursor:pointer;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+						@*<li>
+							<a href="/app/purchaseinvoiceedit/@model.PurchaseOrderId"><img src="assets/img/icons/edit.svg" alt="img" class="viewtopbutton">Update</a>
+						</li>*@
+						<li class="ApprovedButton">
+							<a @onclick="() => OpenDeleteDialog()"><img src="assets/img/icons/tick-white.svg" alt="img" class="viewtopbutton">Approved</a>
+						</li>
+									}
+									else
+									{
+										@*<li>
+							<a href="/app/purchaseinvoiceedit/@model.PurchaseOrderId"><img src="assets/img/icons/edit.svg" alt="img" class="viewtopbutton">Update</a>
+						</li>*@
+									<li>
+							<a style="cursor:pointer;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+									@*<li>
+							<a href="/app/paymentsmade/@master.PurchaseOrderId"><img src="assets/img/icons/wallet1.svg" alt="img" class="viewtopbutton">Generate Payment</a>
+									</li>
+									<li>
+							<a href="/app/purchasereturn/@master.PurchaseOrderId"><img src="assets/img/icons/return1.svg" alt="img" class="viewtopbutton">Generate DebitNote</a>
+									</li>*@
+									}
+								</ul>
+							</div>
+			<div id="PrintDiv">
+							<div class="invoice-box table-height" style="max-width: 1600px;width:100%;overflow: auto;margin:15px auto;padding: 0;font-size: 14px;line-height: 24px;color: #555;">
+					<table cellpadding="0" cellspacing="0" style="width: 100%;line-height: inherit;text-align: left;">
+						<tbody>
+							<tr class="top">
+								<td colspan="7" style="padding: 5px;vertical-align: top;">
+
+									@* Invoice Header Section Start *@
+
+									<table style="width: 100%;line-height: inherit;text-align: left;">
+										<tr>
+											<td style="width:0%;padding: 0px;vertical-align: top;text-align: left;">
+												<svg version="1.1" viewBox="0 0 1532 988" width="150" height="60" xmlns="http://www.w3.org/2000/svg">
+													<path transform="translate(917,1)" d="m0 0h26l35 2 39 4 37 6 27 6 29 8 25 9 21 9 21 10 22 13 16 11 13 10 14 12 19 19 9 11 11 15 11 18 11 21 9 24 7 25 4 21 2 19v45l-3 23 12-1 22-2h19l37 3 39 4 43 3 16-2 2 2 1 106-3-1-11-20-10-14-11-12-9-8-14-9-12-6-18-6-13-2h-23l-16 3-15 6-7 5-6 10-3 11v17l3 12 6 12 9 11 11 10 36 26 19 13 18 13 19 13 26 20 11 10 13 17 9 17 6 16 4 16v40l-6 22-8 19-7 12-10 13-10 10-13 10-16 9-16 7-18 6-29 6-15 2-17 1h-21l-29-2-31-5-23-6-37-12-7-4-4-7-1-101 4 2 10 16 12 20 10 14 8 10 10 10 15 10 15 7 19 5 7 1h27l10-2 16-6 11-6 8-8 7-13 2-10v-16l-3-14-5-13-9-14-11-12-14-12-14-10-20-14-19-13-20-14-15-11-13-10-14-12-2-3-3-1-2 5-12 18-14 19-14 18-12 14-9 11-15 16-9 10-15 16-6 6v29l1 23 3 20 5 16 6 11 7 9-1 3h-153l-7 4-16 11-15 10-24 15-15 9-26 15-24 13-19 10-32 16-20 9-30 13-35 14-42 15-41 13-44 12-45 10-39 7-35 5-37 4-34 2h-46l-27-1-48-5-41-7-28-7-32-10-27-11-29-14-17-10-16-11-13-10-14-12-22-22-11-14-10-14-12-20-10-21-8-22-6-23-4-24-2-18v-35l4-34 6-30 8-28 10-29 13-30 13-26 13-23 11-18 12-18 12-17 9-12 13-17 10-12 9-11 12-13 9-11 48-48h2v-2l8-7 10-9 11-9 11-10 14-11 16-13 12-9 19-14 23-16 18-12 17-11 21-13 24-14 29-16 33-17 35-17 32-14 27-11 35-13 36-12 36-11 34-9 35-8 44-8 44-6 46-4zm-19 30-45 3-42 5-46 8-41 9-38 10-36 11-44 15-33 13-24 10-27 12-33 16-28 14-23 13-18 10-20 12-19 12-30 20-20 14-36 27-13 11-10 8-15 13-10 9-8 7-16 15-34 34-7 8-13 14-9 11-11 13-9 12-14 19-12 17-16 25-12 21-14 27-11 24-10 26-8 26-8 34-4 31-1 16v18l3 30 5 25 7 23 11 26 9 16 7 11 14 19 15 16 13 13h2v2l10 8 18 13 16 10 22 12 24 11 34 12 25 7 32 7 35 5 30 3 24 1h47l38-2 31-3 42-6 47-9 34-8 43-12 38-12 46-17 34-14 36-16 35-17 19-10 29-16 22-13 26-16 36-24 9-7 6-8 4-9 4-18 1-8v-34l-4-172-1-38-1-20-5 1-3 8-14 44-16 53-17 58-16 55-20 65-7 23-4 7-9 1h-24l-9-2-5-5-7-20-15-46-14-45-10-31-10-33-10-31-10-32-14-41-8-22-4-2-1 24-1 51-1 84v112l4 16 7 13 6 8 1 2h-90l6-11 9-17 4-12 1-6 5-115 4-95 2-51 2-47v-25l-3-15-6-18-7-12-3-6h144l10 1 4 6 7 22 17 58 23 81 13 47 4 5 4-2 6-16 15-47 16-53 21-73 7-24 3-4 23-1h133l-3 5-9 14-5 12-2 8-1 12 1 64 2 54 4 135 1 3 4-1 9-10 7-8 11-12 7-8 11-13 11-14 16-21 13-19 16-24-8-16-6-16-5-25v-34l4-17 7-16 9-14 9-10 10-9 19-11 14-6 13-5 1-1 2-19v-35l-3-26-5-23-5-17-8-20-8-16-9-16-12-17-9-11-12-13-10-10-11-9-17-13-17-11-18-10-22-11-26-10-24-8-36-9-27-5-30-4-40-3z" fill="#2A2D7A" />
+													<path transform="translate(724,349)" d="m0 0h115l10 1 4 5 5 14 20 68 23 81 13 47 3 4 3-1 6-16 15-47 16-53 21-73 7-24 4-5 23-1h133l1 2-10 14-6 13-3 11-1 12 1 64 2 54 4 135 1 10 2 57 3 20 5 16 6 11 7 9-1 3h-160l-2-1 2-6 6-7 5-11 4-18 1-8v-34l-4-172-1-38v-20l-5 2-15 48-17 56-17 58-16 55-20 65-7 23-5 8-9 1h-24l-9-2-5-4-6-15-11-35-10-31-10-32-10-31-10-33-10-31-10-32-14-41-8-22-3-2v24l-1 51-1 84v112l4 16 7 13 6 8v2h-90l1-4 9-16 7-16 2-10 5-115 4-95 2-51 2-47v-25l-3-15-6-18-7-12-2-3v-3z" fill="#2A2D7A" />
+													<path transform="translate(473,344)" d="m0 0h20l21 1 19 3 17 4 15 6 15 8 14 11 7 7 10 14 9 17 5 15 3 16 1 14-2 22-5 21-6 16-9 16-8 10-9 10-10 9-18 12-16 8-14 5-20 5-18 2h-22l-18-2-18-5-16-8-8-5v-4l29-9 18-6 12-6 9-8 7-11 7-16 5-16 3-21v-27l-2-17-3-10-5-10-8-10-7-6-16-8-11-3-7-1h-28l-8 2-1 2v133l1 212 1 16 4 11 7 9 4 6v2h-165l1-4 8-10 5-11 4-14 2-13 1-34v-282l-3-24-5-16-5-12-6-8v-2l97-1 34-1 46-3z" fill="#2A2D7A" />
+													<path transform="translate(917,1)" d="m0 0h26l35 2 39 4 37 6 27 6 29 8 25 9 21 9 21 10 22 13 16 11 13 10 14 12 19 19 9 11 11 15 11 18 11 21 9 24 7 25 4 21 2 19v45l-3 23-4 3-12 3-1-1 1-19v-35l-3-26-5-23-5-17-8-20-8-16-9-16-12-17-9-11-12-13-9-9-11-9-17-13-17-11-18-10-22-11-26-10-24-8-36-9-27-5-30-4-40-3h-60l-45 3-42 5-46 8-41 9-38 10-36 11-44 15-33 13-24 10-27 12-33 16-28 14-23 13-18 10-20 12-19 12-30 20-20 14-36 27-13 11-10 8-15 13-10 9-8 7-16 15-33 33-7 8-13 14-9 11-11 13-9 12-14 19-12 17-16 25-12 21-14 27-11 24-10 26-8 26-8 34-4 31-1 16v18l3 30 5 25 7 23 11 26 9 16 7 11 14 19 15 16 12 12 2 1v2l4 2 14 11 24 16 24 13 24 11 34 12 25 7 32 7 35 5 30 3 24 1h47l38-2 31-3 42-6 47-9 34-8 43-12 38-12 46-17 34-14 36-16 35-17 19-10 29-16 22-13 26-16 36-24 4-3h2l-1 4 6 1-5 5-24 16-22 14-23 14-26 15-24 13-19 10-32 16-20 9-30 13-35 14-42 15-41 13-44 12-45 10-39 7-35 5-37 4-34 2h-46l-27-1-48-5-41-7-28-7-32-10-27-11-29-14-17-10-16-11-13-10-14-12-22-22-11-14-10-14-12-20-10-21-8-22-6-23-4-24-2-18v-35l4-34 6-30 8-28 10-29 13-30 13-26 13-23 11-18 12-18 12-17 9-12 13-17 10-12 9-11 12-13 9-11 48-48h2v-2l8-7 10-9 11-9 11-10 14-11 16-13 12-9 19-14 23-16 18-12 17-11 21-13 24-14 29-16 33-17 35-17 32-14 27-11 35-13 36-12 36-11 34-9 35-8 44-8 44-6 46-4z" fill="#2A99D5" />
+													<path transform="translate(1237,527)" d="m0 0 5 5 1 6-14 21-14 19-14 18-12 14-9 11-15 16-9 10-15 16-7 6-1-11 12-12 7-8 11-12 7-8 11-13 11-14 16-21 13-19 10-15z" fill="#2B9AD5" />
+												</svg>
+
+
+											</td>
+											<td style="width: 36%;padding: 5px;vertical-align: top;text-align: left;padding-bottom: 20px;">
+												<font style="vertical-align: inherit;font-size: 20px;color:#000;font-weight: 400;"> @company.CompanyName </font> <br />
+												<font style="vertical-align: inherit;font-size: 20px;color:#000;font-weight: 800;">Purchase Order</font>
+											</td>
+
+											<td style="width:10% !important;">
+												<table>
+													<tr>
+														<td>
+															<font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 700;">Company Reg : &nbsp;</font>
+														</td>
+														<td>
+															<font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">43543643</font>
+														</td>
+													</tr>
+
+													<tr>
+														<td>
+															<font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 700;">VAT Reg :</font>
+														</td>
+														<td>
+															<font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">231423</font>
+														</td>
+													</tr>
+												</table>
+											</td>
+
+
+
+										</tr>
+									</table>
+
+									@* Invoice Header Section End *@
+
+									<table style="width: 100%;line-height: inherit;text-align: left;">
+										<tbody>
+											<tr>
+												<td style="width:33.333%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px;border-radius: 10px;background: #f3f2f7;">
+													@*<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text" style="font-weight:700;">Customer Info</font></font><br>*@
+
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.LedgerName</font></font><br>
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Address</font></font><br>
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Email</font></font><br>
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Phone</font></font><br>
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">VAT NO : @model.TaxNo</font></font><br>
+												</td>
+												<td style="width:33.333%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+													@*<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text" style="font-weight:700;">Company Info</font></font><br>*@
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @company.CompanyName </font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @company.Address</font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">@company.Email</font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">@company.PhoneNo</font></font><br>
+
+												</td>
+												<td style="width:33.333%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+													@*<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text" style="font-weight:700;">Purchase Order Info</font></font><br>*@
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">P.O. NO: @model.VoucherNo </font></font><br>
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">P.O. DATE: @model.Date.ToString("yyyy/MM/dd")</font></font><br>
+													<font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">REFERENCE: @model.Reference </font></font><br>
+													@*<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Status:  @model.PaymentStatus</font></font><br>*@
+												</td>
+
+
+											</tr>
+										</tbody>
+									</table>
+								</td>
+							</tr>
+							<tr class="heading " style="background: #F3F2F7;">
+								<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+									Product Name
+								</td>
+								<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+									Qty
+								</td>
+								<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+									Unit
+								</td>
+								<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+									Price
+								</td>
+								<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+									Discount
+								</td>
+								<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+									TAX
+								</td>
+								<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+									Subtotal
+								</td>
+							</tr>
+							@foreach (var item in TodoList)
+							{
+								<tr class="details" style="border-bottom:1px solid #E9ECEF ;">
+									<td style="padding: 10px;vertical-align: top; display: flex;align-items: center;">
+										@item.ProductName
+									</td>
+									<td style="padding: 10px;vertical-align: top; ">
+										@item.Qty
+									</td>
+									<td style="padding: 10px;vertical-align: top; ">
+										@item.UnitName
+									</td>
+									<td style="padding: 10px;vertical-align: top; ">
+										@item.PurchaseRate
+									</td>
+									<td style="padding: 10px;vertical-align: top; ">
+										@item.DiscountAmount
+									</td>
+									<td style="padding: 10px;vertical-align: top; ">
+										@item.TaxAmount
+									</td>
+									<td style="padding: 10px;vertical-align: top; ">
+										@PublicVariables._Symbol@item.TotalAmount
+									</td>
+								</tr>
+							}
+						</tbody>
+						<tfoot>
+							<tr class="total-order w-100 max-widthauto m-auto mb-4">
+								<td colspan="5"></td>
+								<td style="font-weight:700;">Subtotal</td>
+								<td style="font-weight:700;">@PublicVariables._Symbol@model.NetAmounts</td>
+							</tr>
+							<tr class="total-order w-100 max-widthauto m-auto mb-4">
+								<td colspan="5"></td>
+								<td>Discount</td>
+								<td>@PublicVariables._Symbol@model.BillDiscount</td>
+							</tr>
+							<tr class="total-order w-100 max-widthauto m-auto mb-4">
+								<td colspan="5"></td>
+								<td style="font-weight:700;">Taxable Total</td>
+								<td style="font-weight:700;">@PublicVariables._Symbol@model.TotalAmount</td>
+							</tr>
+							<tr class="total-order w-100 max-widthauto m-auto mb-4">
+								<td colspan="5"></td>
+								<td>Vat</td>
+								<td>@PublicVariables._Symbol@model.TotalTax</td>
+							</tr>
+							<tr class="total-order w-100 max-widthauto m-auto mb-4">
+								<td colspan="5"></td>
+								<td style="font-weight:700;">Grand Total</td>
+								<td style="font-weight:700;">@PublicVariables._Symbol@model.GrandTotal</td>
+							</tr>
+						</tfoot>
+					</table>
+
+		
+							</div>
+				<table>
+					<tr>
+						<td>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Amount In Words </font></font><br>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @strNumberToWords </font></font><br>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Narration </font></font><br>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @model.Narration </font></font><br>
+						</td>
+					</tr>
+				</table>
+
+				@* Invoice Bottom Section Start *@
+
+				<table style="margin-top:20px;">
+					<tr>
+						<td style="width:160px;">
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;">Delivery Terms :</font></font><br>
+
+						</td>
+						<td>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">Sender Owns the goods in transit </font></font><br>
+
+						</td>
+					</tr>
+					<tr>
+						<td style="width:160px;">
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;">Payment Terms :</font></font><br>
+
+						</td>
+						<td>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">30 Days Credit</font></font><br>
+
+						</td>
+					</tr>
+				</table>
+
+				<table style="margin-top:20px; margin-bottom:40px;">
+					<tr>
+						<td style="width:100%;">
+							<font style="vertical-align: inherit;vertical-align: inherit; font-style:italic; font-size: 15px;color:#000;font-weight: 700;">Late Delivery / Penalty</font><br>
+
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<font style="vertical-align: inherit;vertical-align: inherit; font-size: 15px;color:#000;font-weight: 400;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas non magna dolor. Nulla tempor efficitur lacus. Vivamus interdum nisi mollis felis finibus blandit. Vestibulum feugiat, quam quis egestas suscipit, tellus elit laoreet ante, faucibus accumsan dolor mauris quis lacus. Vivamus ac convallis dolor. Cras ac augue eu felis tincidunt ornare.</font><br>
+
+						</td>
+					</tr>
+				</table>
+
+				<table width="100%;" style="margin-bottom:40px; margin-left:50px;">
+					<tr>
+						<td style="width:33.33%">
+							<font style="vertical-align: inherit;vertical-align: inherit; font-size: 15px;color:#000;font-weight: 400;">----------------------</font><br>
+							<font style="vertical-align: inherit;vertical-align: inherit; font-size: 15px;color:#000;font-weight: 700;">Accountant</font>
+						</td>
+						<td style="width:33.33%">
+							<font style="vertical-align: inherit;vertical-align: inherit; font-size: 15px;color:#000;font-weight: 400;">----------------------</font><br>
+							<font style="vertical-align: inherit;vertical-align: inherit; font-size: 15px;color:#000;font-weight: 700;">General Manager</font>
+						</td>
+						<td style="width:33.33%">
+							<font style="vertical-align: inherit;vertical-align: inherit; font-size: 15px;color:#000;font-weight: 400;">----------------------</font><br>
+							<font style="vertical-align: inherit;vertical-align: inherit; font-size: 15px;color:#000;font-weight: 700;">Group Treasurer</font>
+						</td>
+					</tr>
+				</table>
+
+				@* Invoice Bottom Section End *@
+
+								@*<div class="row">
+									<div class="col-lg-10">
+						<h7>Created by:</h7> <br/>
+							<h7>@model.AddedDate</h7>
+									</div>
+									<div class="col-lg-2" style="float:right;">
+							<h7>Approved by:</h7> <br />
+						<h5>
+							@if (model.PaymentStatus == "Draft")
+							{
+							 <span style="font-size:12px;">Not Approved</span>
+							}
+							else
+							{
+								<span style="font-size:12px;">@model.UserId</span>
+							}
+						</h5>
+					</div>
+								</div>*@
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+@if (DeleteDialogOpen)
+{
+	<ModalDialog Title="Approve Purchase Order"
+			 Text="Are you sure you want to approve this Purchase Order? This will add purchase voucher entry."
+                 OnClose="@OnDeleteDialogClose"
+                 DialogType="ModalDialog.ModalDialogType.Ok">
+    </ModalDialog>
+}
+@code {
+	[Parameter]
+	public string id { get; set; }
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	Company company = new Company();
+	PurchaseOrderView model = new PurchaseOrderView();
+	PurchaseOrder master = new PurchaseOrder();
+	PaymentMaster payment = new PaymentMaster();
+	List<ProductView> TodoList = new List<ProductView>();
+	InvoiceSetting setting = new InvoiceSetting();
+	string strNumberToWords;
+
+	int decPurchaseVoucherType = 6;
+	public bool DeleteDialogOpen { get; set; }
+	string strMenu = "Purchase";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+	}
+	private async Task LoadData()
+	{
+		company = await _company.GetbyId(1);
+		model = await _purchase.PurchaseInvoiceMasterView(Convert.ToInt32(id));
+		master = await _purchase.GetbyId(Convert.ToInt32(id));
+		TodoList = await _purchase.PurchaseInvoiceDetailsView(Convert.ToInt32(id));
+		strNumberToWords = NumberToWords.ConvertAmount( Convert.ToDouble(model.GrandTotal.ToString())); 
+
+		//GetSerialNo
+		string	serial = await _purchase.GetSerialNo();
+		setting = await _setting.GetbyId(decPurchaseVoucherType);
+		master.VoucherNo = setting.Prefix + serial + setting.Suffix;
+		master.SerialNo = serial;
+		StateHasChanged();
+	}
+	private async void ApprovedOk()
+	{
+		if (TodoList == null)
+		{
+			Snackbar.Add("Invalid Entry.", Severity.Info);
+		}
+		else if (master.LedgerId == 0)
+		{
+			Snackbar.Add("Choose Supplier.", Severity.Info);
+		}
+		else if (master.VoucherNo == string.Empty)
+		{
+			Snackbar.Add("Type Voucher No.", Severity.Info);
+		}
+		else if (master.GrandTotal == 0)
+		{
+			Snackbar.Add("Invalid Entry.", Severity.Info);
+		}
+		else
+		{
+			var authState = await authenticationState;
+			var user = authState.User;
+			string userName = user.FindFirst(ClaimTypes.Name).Value;
+			master.UserId = userName;
+			master.PaymentStatus = "Approved";
+			master.ModifyDate = DateTime.Now;
+			foreach (var item in TodoList)
+			{
+				PurchaseOrderDetail details = new PurchaseOrderDetail();
+				if (item != null)
+				{
+					details.PurchaseOrderDetailsId = item.PurchaseOrderDetailsId;
+					details.ProductId = item.ProductId;
+					details.Qty = item.Qty;
+					details.UnitId = item.UnitId;
+					details.Rate = item.PurchaseRate;
+					details.Amount = item.Amount;
+					details.Discount = item.Discount;
+					details.DiscountAmount = item.DiscountAmount;
+					if (item.TaxId == 0)
+					{
+						details.TaxId = 1;
+					}
+					else
+					{
+						details.TaxId = item.TaxId;
+					}
+					details.TaxRate = item.TaxRate;
+					details.TaxAmount = item.TaxAmount;
+					details.BatchId = item.BatchId;
+					details.NetAmount = item.NetAmount;
+					details.GrossAmount = 0;
+					details.OrderDetailsId = 0;
+					master.listOrder.Add(details);
+				}
+			}
+			var result = await _purchase.Approved(master);
+
+			if (result == true)
+			{
+				Snackbar.Add("Purchase Order Approved Successfully.", Severity.Success);
+				await LoadData();
+			}
+			else
+			{
+				Snackbar.Add("Transaction Failed.", Severity.Error);
+			}
+		}
+	}
+	private async Task OnDeleteDialogClose(bool accepted)
+	{
+		if (accepted)
+		{
+			ApprovedOk();
+		}
+
+		DeleteDialogOpen = false;
+		StateHasChanged();
+	}
+
+	private void OpenDeleteDialog()
+	{
+		DeleteDialogOpen = true;
+		StateHasChanged();
+	}
+}
+

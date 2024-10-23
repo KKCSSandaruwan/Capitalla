@@ -1,0 +1,233 @@
+﻿@page "/app/invoicesetting"
+@inject IInvoiceSetting _invoice
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Invoice Setting</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Invoice Setting</h3>
+            <h5>Manage Invoice Setting</h5>
+        </div>
+        <div class="page-btn">
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover">
+                    <HeaderContent>
+                        <MudTh>Voucher TypeName</MudTh>
+                        <MudTh>Start Index</MudTh>
+                        <MudTh>Prefix</MudTh>
+                        <MudTh>Suffix</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="CurrencyName">@context.VoucherTypeName</MudTd>
+                        <MudTd DataLabel="CurrencySymbol">@context.StartIndex</MudTd>
+                        <MudTd DataLabel="NoOfDecimalPlaces">@context.Prefix</MudTd>
+                        <MudTd DataLabel="NoOfDecimalPlaces">@context.Suffix</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(context.VoucherTypeId)">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>VoucherType Name</label>
+                        <input type="text" @bind="model.VoucherTypeName">
+                        <ValidationMessage For="@(() => model.VoucherTypeName)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Start Index</label>
+                        <input type="number" class="form-control" @bind="model.StartIndex">
+                        <ValidationMessage For="@(() => model.StartIndex)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Prefix</label>
+                        <input type="text" class="form-control" @bind="model.Prefix">
+                        <ValidationMessage For="@(() => model.Prefix)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Suffix</label>
+                        <input type="text" class="form-control" @bind="model.Suffix">
+                        <ValidationMessage For="@(() => model.Suffix)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>PONumber</label>
+                        <input type="text" class="form-control" @bind="model.PONumber">
+                        <ValidationMessage For="@(() => model.PONumber)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Eway Bill No</label>
+                        <input type="text" class="form-control" @bind="model.EwayBillNo">
+                        <ValidationMessage For="@(() => model.EwayBillNo)" />
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Vechile No</label>
+                        <input type="text" class="form-control" @bind="model.VechileNo">
+                        <ValidationMessage For="@(() => model.VechileNo)" />
+                    </div>
+                </div>
+                <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group" style="display: ruby;">
+                        <label>Show Tax &emsp;</label>
+                        <input type="checkbox" @bind="model.ShowTax">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group" style="display: ruby;">
+                        <label>Show Discount &emsp;</label>
+                        <input type="checkbox" @bind="model.ShowDiscount">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group" style="display: ruby;">
+                        <label>Show Barcode &emsp;</label>
+                        <input type="checkbox" @bind="model.ShowBarcode">
+                    </div>
+                </div>
+                </div>
+
+                <div class="col-md-12 mt-3">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    InvoiceSetting model = new InvoiceSetting();
+    IList<InvoiceSetting> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    private string searchString1 = "";
+    string strMenu = "Configuration";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+    }
+    private async Task LoadData()
+    {
+        listModel = await _invoice.GetAll();
+        StateHasChanged();
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "InvoiceSetting / Edit";
+        model.VoucherTypeId = 0;
+        model.VoucherTypeName = string.Empty;
+        model.Suffix = string.Empty;
+        model.Prefix = string.Empty;
+        model.StartIndex = 0;
+        model.PONumber = string.Empty;
+        model.EwayBillNo = string.Empty;
+        model.VechileNo = string.Empty;
+        model.ShowDiscount = true;
+        model.ShowTax = true;
+        model.ShowBarcode = true;
+        StateHasChanged();
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Invoice / Edit";
+        model = await _invoice.GetbyId(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+            var isCheck = await _invoice.CheckNameId(model.VoucherTypeName);
+            if (isCheck == model.VoucherTypeId || isCheck == 0)
+            {
+                bool result = false;
+                result = await _invoice.Update(model);
+
+                if (result == true)
+                {
+                    Snackbar.Add("Update Successfully.", Severity.Success);
+                    await LoadData();
+                    StateHasChanged();
+                    visible = false;
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                Snackbar.Add("VoucherType name already exists.", Severity.Info);
+                StateHasChanged();
+            }
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,237 @@
+﻿@page "/app/tax"
+@inject ITax _tax
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Tax</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Tax Rates</h3>
+            <h5>Manage Tax Rates</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added AddNewSupplier" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New Tax Rates</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover">
+                    <HeaderContent>
+                        <MudTh>Tax Name</MudTh>
+                       @*  <MudTh>Percentage(%)</MudTh> *@
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="TaxName">@context.TaxName</MudTd>
+                         <MudTd DataLabel="Rate">@context.Rate</MudTd> 
+                        <MudTd DataLabel="">
+                            <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(context.TaxId)">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.TaxId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Tax Name</label>
+                        <input type="text" @bind="model.TaxName">
+                        <ValidationMessage For="@(() => model.TaxName)" />
+                    </div>
+                </div>
+              @*   <div class="col-lg-12 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label>Rate (%)</label>
+                        <input  class="form-control" @bind="model.Rate">
+                        <ValidationMessage For="@(() => model.Rate)" />
+                    </div>
+                </div> *@
+                <div class="col-md-6">
+                    <div class="form-group" style="display: ruby;">
+                        <label>Status &emsp;</label>
+                        <input type="checkbox" @bind="model.IsActive">
+                    </div>
+                </div>
+
+                <div class="col-lg-12 mt-3">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    Tax model = new Tax();
+    IList<TaxView> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    string strMenu = "Configuration";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _tax.GetAll();
+        StateHasChanged();
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Tax / Add";
+        model.TaxId = 0;
+        model.TaxName = string.Empty;
+        model.Rate = 0;
+        model.IsActive = true;
+        StateHasChanged();
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Tax / Edit";
+        model = await _tax.GetbyId(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        if (model.TaxId == 0)
+        {
+            var isCheck = await _tax.CheckName(model.TaxName);
+            if (isCheck == true)
+            {
+                Snackbar.Add("Tax name already exists.", Severity.Info);
+            }
+            else
+            {
+                var result = await _tax.Save(model);
+
+                if (result > 0)
+                {
+                    Snackbar.Add("Save Successfully.", Severity.Success);
+                    await LoadData();
+                    visible = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            if (model.TaxId == 1)
+            {
+                Snackbar.Add("Delete value cannot be delete.", Severity.Error);
+            }
+            else
+            {
+                var isCheck = await _tax.CheckNameId(model.TaxName);
+                if (isCheck == model.TaxId || isCheck == 0)
+                {
+                    bool result = false;
+         
+                    result = await _tax.Update(model);
+
+                    if (result == true)
+                    {
+                        Snackbar.Add("Update Successfully.", Severity.Success);
+                        await LoadData();
+                        StateHasChanged();
+                        visible = false;
+                    }
+                    else
+                    {
+                        Snackbar.Add("Invalid.", Severity.Error);
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                    Snackbar.Add("Tax name already exists.", Severity.Info);
+                }
+            }
+        }
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            if (id == 1)
+            {
+                Snackbar.Add("Delete value cannot be delete.", Severity.Error);
+            }
+            else
+            {
+                var result = await _tax.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+}

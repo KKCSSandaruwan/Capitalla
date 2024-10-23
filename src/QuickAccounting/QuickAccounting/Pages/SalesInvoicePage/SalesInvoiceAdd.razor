@@ -1,0 +1,1004 @@
+﻿@page "/app/salesinvoiceadd"
+@inject ISalesInvoice _sales
+@inject ICustomerSupplier _ledger
+@inject IProduct _product
+@inject ITax _tax
+@inject IGeneralSetting _setting
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject IAccountLedger _AccountLedger
+@inject ITaxDetails _TaxDetails
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>SalesInvoice Add</PageTitle>
+<div class="content">
+	<div class="page-header">
+		<div class="page-title">
+			<h3>New Sales Invoice</h3>
+		</div>
+	</div>
+	<div class="card">
+		<div class="card-body">
+			<div class="row AddNewInvoiceDetails">
+                <div class="col-lg-4 col-sm-6 col-12">
+					<div class="form-group">
+						<label>#Invoice Number</label>
+						<div class="row">
+							<div class="col-lg-12 col-sm-12 col-12">
+								<input type="text" @bind="master.VoucherNo" readonly />
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-lg-4 col-sm-6 col-12">
+					<div class="form-group">
+						<label>Customer Name</label>
+						<div class="row">
+							<div class="col-lg-10 col-sm-10 col-10">
+								<RadzenDropDown Style="width:100%;" @bind-Value="@master.LedgerId" Placeholder="Choose Customer" AllowFiltering="true" Data="@(listLedger)" TextProperty="LedgerName" ValueProperty="LedgerId" />
+							</div>
+							<div class="col-lg-2 col-sm-2 col-2 ps-0">
+								<div class="add-icon">
+									<a style="cursor:pointer;" @onclick="@(() => OpenDrawer(Anchor.End))"><img src="assets/img/icons/plus1.svg" alt="img"></a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Account Type</label>
+                        <div class="row">
+                            <div class="col-lg-12 col-sm-12 col-12">
+                                <RadzenDropDown Style="width:100%;" @bind-Value="@master.AccountTypeId" Placeholder="Choose Account Type" AllowFiltering="true" Data="@(listAccountLedger)" TextProperty="LedgerName" ValueProperty="LedgerId" />
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+				<div class="col-lg-4 col-sm-6 col-12">
+					<div class="form-group">
+						<label>Invoice Date </label>
+						<div class="input-groupicon">
+                            <RadzenDatePicker @bind-Value=@master.Date DateFormat="d" Class="w-100" />
+						</div>
+					</div>
+				</div>
+				<div class="col-lg-4 col-sm-6 col-12">
+					<div class="form-group">
+						<label>Due Date </label>
+						<div class="input-groupicon">
+                            <RadzenDatePicker @bind-Value=@master.DueDate DateFormat="d" Class="w-100" />
+						</div>
+					</div>
+				</div>
+				<div class="col-lg-4 col-sm-6 col-12">
+					<div class="form-group">
+						<label>Reference No.</label>
+						<input type="text" @bind="master.Reference" placeholder="Purchase order reference">
+					</div>
+				</div>
+               
+				<div class="col-lg-12 col-sm-6 col-12">
+					<div class="form-group">
+						<label>Product Name</label>
+						<div class="input-groupicon">
+							<RadzenDropDownDataGrid @bind-Value="@searchValue" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith" AllowVirtualization="true"
+                                            AllowFiltering="true" AllowClear="true" Data=@listProduct TextProperty="ProductName" ValueProperty="ProductName"
+                                            Change=@(args => OnChange(args, "DropDownDataGrid with virtualization using IQueryable")) Class="w-100">
+                        <Columns>
+                            <RadzenDropDownDataGridColumn Property="ProductCode" Width="160px" Title="Code"/>
+                            <RadzenDropDownDataGridColumn Property="ProductName" Title="Product Name"/>
+									<RadzenDropDownDataGridColumn Property="CurrentStock" Width="100px" Title="Stock" />
+                        </Columns>
+                    </RadzenDropDownDataGrid>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="table-responsive">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Product / service</th>
+								<th>Qty</th>
+                                <th>Unit</th>
+								<th>Rate</th>
+								<th>Discount	</th>
+								<th>Tax Amount</th>
+								<th class="text-end">Amount</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							@foreach (var td in TodoList)
+							{
+							<tr>
+								
+								<td style="width:300px;">@td.ProductName</td>
+								<td><input type="number" class="form-control" @bind-value="td.Qty" style="width: 100px" @onkeyup="@(e => editItem(td.ProductId))" @onclick="@(e => editItem(td.ProductId))" @bind-value:event="oninput" /></td>
+                                    <td>@td.UnitName</td>
+								<td><input type="number" @bind-value="td.SalesRate" style="width: 120px" class="form-control" @onkeyup="@(e => editItem(td.ProductId))" @onclick="@(e => editItem(td.ProductId))" @bind-value:event="oninput"></td>
+								<td><input type="number" @bind-value="@td.DiscountAmount" style="width: 100px" class="form-control" @onkeyup="@(e => editItem(td.ProductId))" @onclick="@(e => editItem(td.ProductId))" @bind-value:event="oninput"></td>
+                                    <td class="text-end">@td.TaxAmount</td>
+                                    <td class="text-end">@PublicVariables._Symbol @td.TotalAmount</td>
+								<td>
+                                        <a @onclick="@(e => Edit(td.ProductId))"><img src="assets/img/icons/edit.svg" alt="svg"></a>
+                                        <a @onclick="@(e => deleteItem(td.Id))"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+								</td>
+							</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="row">
+                <div class="col-lg-6">
+                    <div class="col-lg-12" style="margin-top:28px;">
+					<div class="form-group">
+						<label>Description</label>
+						<textarea class="form-control" @bind="master.Narration"></textarea>
+					</div>
+				</div>
+                </div>
+				<div class="col-lg-6">
+					<div class="total-order">
+						<ul>
+							<li>
+								<h4>Sub Total</h4>
+                                <h5><input type="number" class="form-control" readonly @bind="master.NetAmounts" @onkeyup="CalculateTotal" @bind:event="oninput" /></h5>
+							</li>
+							@* <li>
+								<h4>Discount	</h4>
+                                <h5><input type="number" class="form-control" @bind="master.BillDiscount" @onkeyup="CalculateTotal" @bind:event="oninput" /></h5>
+							</li> *@
+							@* <li>
+                                <h4>Taxable Total</h4>
+                                <h5><input type="number" class="form-control" readonly @bind="master.TotalAmount" @onkeyup="CalculateTotal" @bind:event="oninput" /></h5>
+                            </li> *@
+                            <li>
+                                <h4>Vat</h4>
+                                <h5><input type="number" class="form-control" readonly @bind="master.TotalTax" @onkeyup="CalculateTotal" @bind:event="oninput" /></h5>
+                            </li>
+                            <li>
+                                <h4>Grand Total</h4>
+                                <h5><input type="number" class="form-control" readonly @bind="master.GrandTotal" @onkeyup="CalculateTotal" /></h5>
+                            </li>
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="row">
+				<div class="col-lg-12">
+					<button @onclick="@Save" class="btn btn-submit me-2 savebutton">Save</button>
+					<a href="/app/sales" class="btn btn-cancel cancelbutton">Cancel</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h4">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+            <div class="row">
+                <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Rate</label>
+                        <input type="text" @bind="viewProduct.SalesRate">
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Discount Amount</label>
+                        <input type="text" @bind="viewProduct.DiscountAmount">
+                    </div>
+                </div>
+             @*    <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Tax</label>
+                        <select class="form-control" @bind="viewProduct.TaxId">
+                            @foreach(var item in listTax)
+                            {
+                                <option value="@item.TaxId">@item.TaxName</option>
+                            }
+                        </select>
+                    </div>
+                </div> *@
+
+            <div class="col-lg-4 col-sm-12 col-12">
+                <div class="form-group">
+                    <label>Tax Code</label>
+                    <div class="row">
+                        <div class="col-lg-12 col-sm-12 col-12">
+                            <RadzenDropDown Style="width:100%;" @bind-Value="@viewProduct.TaxCode" Placeholder="Choose Tax Code" AllowFiltering="true" Data="@(listTaxDetails)" TextProperty="TaxCode" ValueProperty="TaxCode" />
+                        </div>
+@*                        <div class="col-lg-12">
+                            <button type="button" @onclick="@HandleOk">Save</button>
+                            <a @onclick="@HandleCancel">Cancel</a>
+                        </div>*@
+                   </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-sm-12 col-12" style="display: inherit; float: left; margin-top: 0.5em;">
+                
+           
+                            <button type="button" @onclick="@HandleOk" class="btn btn-submit me-2" style="height:fit-content;">Save</button>
+                            <a @onclick="@HandleCancel" class="btn btn-cancel"  style="height:fit-content;">Cancel</a>
+                       
+            </div>
+             
+                
+            </div>
+    </DialogContent>
+</MudDialog>
+
+
+
+
+
+@*DisplayCustomer*@
+@if (open == true)
+{
+    <MudDrawer @bind-Open="@open" Width="@width" Height="@height" Anchor="@anchor" Elevation="1" Variant="@DrawerVariant.Temporary">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Customer</MudText>
+        </MudDrawerHeader>
+        <MudNavMenu>
+            <EditForm Model="customer" OnValidSubmit="SaveCustomer">
+                <DataAnnotationsValidator />
+                <div class="row" style="padding:10px;">
+                    <div class="col-lg-8 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Customer Name</label>
+                            <input type="text" @bind="customer.LedgerName">
+                            <ValidationMessage For="@(() => customer.LedgerName)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Code</label>
+                            <input type="text" @bind="customer.LedgerCode" readonly>
+                            <ValidationMessage For="@(() => customer.LedgerCode)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-8 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" @bind="customer.Address">
+                            <ValidationMessage For="@(() => customer.Address)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Tax No</label>
+                            <input type="text" @bind="customer.TaxNo">
+                            <ValidationMessage For="@(() => customer.TaxNo)" />
+                        </div>
+                    </div>
+                    <hr />
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" @bind="customer.Phone">
+                            <ValidationMessage For="@(() => customer.Phone)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Country</label>
+                            <input type="text" @bind="customer.Country">
+                            <ValidationMessage For="@(() => customer.Country)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" @bind="customer.City">
+                            <ValidationMessage For="@(() => customer.City)" />
+                        </div>
+                    </div>
+                    <h6>Additional Field</h6>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="text" @bind="customer.Email">
+                            <ValidationMessage For="@(() => customer.Email)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Credit Period</label>
+                            <input type="text" @bind="customer.CreditPeriod">
+                            <ValidationMessage For="@(() => customer.CreditPeriod)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Credit Limit</label>
+                            <input type="text" @bind="customer.CreditLimit">
+                            <ValidationMessage For="@(() => customer.CreditLimit)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label style="width:140px;">Opening Balance</label>
+                            <input type="text" @bind="customer.OpeningBalance">
+
+                            <ValidationMessage For="@(() => customer.OpeningBalance)" />
+                        </div>
+                    </div>
+                    <div class="col-lg-1 col-sm-6 col-12">
+                        <select @bind="customer.CrOrDr" class="form-control" style="width:100px;margin-top:30px;">
+                            <option value="Dr">Dr</option>
+                            <option value="Cr">Cr</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-12">
+                        <button type="submit" class="btn btn-submit me-2 savebutton">Submit</button>
+                        <button type="button" @onclick="Cancel" class="btn btn-submit me-2 cancelbutton">Cancel</button>
+                    </div>
+
+                </div>
+            </EditForm>
+        </MudNavMenu>
+    </MudDrawer>
+}
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    SalesMaster master = new SalesMaster();
+    IList<AccountLedgerView> listLedger;
+    IList<TaxDetails> listTaxDetails;
+    string searchValue = string.Empty;
+    IList<ProductView> listProduct;
+    IList<AccountLedger> listAccountLedger;
+    // IList<TaxView> listTax;
+    ProductView product = new ProductView();
+    ProductView viewProduct = new ProductView();
+    int editedID = 0;
+    List<ProductView> TodoList = new List<ProductView>();
+    int decSalesVoucherType = 8;
+    GeneralSetting setting;
+    bool open;
+    Anchor anchor;
+    string width, height;
+    AccountLedger customer = new AccountLedger();
+    string strMenu = "Sales";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+
+        setting = await _setting.GetbyId(1);
+        listLedger = await _ledger.GetAll(26);
+        listTaxDetails = await _TaxDetails.GetTaxCodes();
+        listProduct = await _product.ProductWithStock();
+        listAccountLedger = await _AccountLedger.GetSalesLedgers();
+        master.LedgerId = 0;
+        master.AccountTypeId = 0;
+        master.VoucherNo = "DRAFT";
+        master.Date = DateTime.Now;
+        master.DueDate = DateTime.Now;
+        // listTax = await _tax.GetAll();
+        viewProduct.TaxId = 1;
+        master.TaxId = 1;
+        master.Narration = string.Empty;
+        master.Reference = string.Empty;
+        StateHasChanged();
+    }
+    private async void Save()
+    {
+        if (TodoList == null)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else if (master.LedgerId == 0)
+        {
+            Snackbar.Add("Choose Customer.", Severity.Info);
+        }
+        else if (master.AccountTypeId == 0)
+        {
+            Snackbar.Add("Choose Account Type.", Severity.Info);
+        }
+        else if (master.VoucherNo == string.Empty)
+        {
+            Snackbar.Add("Type Voucher No.", Severity.Info);
+        }
+        else if (master.GrandTotal == 0)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else
+        {
+            var authState = await authenticationState;
+            var user = authState.User;
+            string userName = user.FindFirst(ClaimTypes.Name).Value;
+            master.UserId = userName;
+            master.TotalAmount = master.TotalAmount;
+            master.NetAmounts = master.NetAmounts;
+            master.TaxRate = 0;
+            master.PayAmount = 0;
+            master.PaymentStatus = "Draft";
+            master.DisPer = 0;
+            master.PreviousDue = master.GrandTotal;
+            master.BalanceDue = master.GrandTotal;
+            master.CompanyId = 1;
+            master.FinancialYearId = 1;
+            master.VoucherTypeId = decSalesVoucherType;
+            master.SerialNo = "0";
+            master.Status = "Unpaid";
+            master.QuotationMasterId = 0;
+            master.OrderMasterId = 0;
+            master.WarehouseId = 1;
+            master.AddedDate = DateTime.Now;
+            foreach (var item in TodoList)
+            {
+                SalesDetails details = new SalesDetails();
+                if (item != null)
+                {
+                    details.ProductId = item.ProductId;
+                    details.Qty = item.Qty;
+                    details.UnitId = item.UnitId;
+                    details.Rate = item.SalesRate;
+                    details.Amount = item.Amount;
+                    details.Discount = item.Discount;
+                    details.DiscountAmount = item.DiscountAmount;
+                    if (item.TaxId == 0)
+                    {
+                        details.TaxId = 1;
+                    }
+                    else
+                    {
+                        details.TaxId = item.TaxId;
+                    }
+                    details.TaxRate = item.TaxRate;
+                    details.TaxAmount = item.TaxAmount;
+                    details.SCCSLAmount = item.SCCSLAmount;
+                    details.BatchId = item.BatchId;
+                    details.NetAmount = item.NetAmount;
+                    details.GrossAmount = 0;
+                    details.OrderDetailsId = 0;
+                    details.QuotationDetailsId = 0;
+                    master.listOrder.Add(details);
+                }
+            }
+            var result = await _sales.Save(master);
+
+            if (result > 0)
+            {
+                Snackbar.Add("Sales Invoice Created Successfully.", Severity.Success);
+                navigation.NavigateTo($"/app/salesinvoiceview/{result}");
+            }
+            else
+            {
+                Snackbar.Add("Transaction Failed.", Severity.Error);
+            }
+        }
+    }
+    private async void OnChange(object value, string name)
+    {
+        string strStatus = setting.NegativeStock;
+        var myTodo = listProduct.FirstOrDefault(x => x.ProductName == value);
+        int intCurrentStock = myTodo.CurrentStock;
+        if (intCurrentStock > 0)
+        {
+
+        }
+        else
+        {
+            if (strStatus == "Reject")
+            {
+                Snackbar.Add("Cannot continue ,due to negative stock qty.", Severity.Info);
+                return;
+            }
+            else if (strStatus == "Warn")
+            {
+                bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Negative Stock qty exists,Do you want to Continue?");
+                if (confirmed)
+                {
+
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else
+            {
+
+            }
+        }
+        if (myTodo != null)
+        {
+            foreach(var item in TodoList)
+            {
+                if(myTodo.ProductId == item.ProductId)
+                {
+                    Snackbar.Add("This product is already added.", Severity.Info);
+                    return;
+                }
+            }
+            product.ProductId = myTodo.ProductId;
+            product.Barcode = myTodo.Barcode;
+            product.ProductName = myTodo.ProductName;
+            product.UnitId = myTodo.UnitId;
+            product.UnitName = myTodo.UnitName;
+            product.BatchId = 1;
+            product.BatchNo = "NA";
+            product.TaxId = myTodo.TaxId;
+            product.TaxName = myTodo.TaxName;
+            product.Qty = 1;
+            product.SalesRate = myTodo.SalesRate;
+            product.Discount = 0;
+            product.DiscountAmount = 0;
+            product.NetAmount = Math.Round(1 * myTodo.SalesRate, 2);
+            product.TaxRate = 0;
+            product.TaxAmount = 0;
+            product.Amount = Math.Round(1 * myTodo.SalesRate, 2);
+            product.TotalAmount = Math.Round(1 * myTodo.SalesRate, 2);
+
+            //Addtolist
+            AddToList();
+            //listProduct = await _product.ProductWithStock();
+            StateHasChanged();
+        }
+        else
+        {
+
+        }
+    }
+    private async void AddToList()
+    {
+        if (product.ProductId == 0)
+        {
+            Snackbar.Add("Invalid Product.", Severity.Info);
+            return;
+        }
+        else if (product.UnitId == 0)
+        {
+            Snackbar.Add("Invalid Unit.", Severity.Info);
+            return;
+        }
+        else if (product.Qty == 0)
+        {
+            Snackbar.Add("Invalid Qty.", Severity.Info);
+            return;
+        }
+        else
+        {
+            if (editedID == 0)
+            {
+                var myTodoItem = new ProductView()
+                    {
+                        Id = TodoList.Count() + 1,
+                        SalesDetailsId = 0,
+                        ProductId = product.ProductId,
+                        Barcode = product.Barcode,
+                        UnitId = product.UnitId,
+                        Qty = product.Qty,
+                        SalesRate = product.SalesRate,
+                        BatchId = product.BatchId,
+                        Discount = product.Discount,
+                        DiscountAmount = product.DiscountAmount,
+                        TaxId = product.TaxId,
+                        TaxRate = product.TaxRate,
+                        TaxAmount = product.TaxAmount,
+                        Amount = product.Amount,
+                        NetAmount = product.NetAmount,
+                        TotalAmount = product.TotalAmount,
+                        ProductName = product.ProductName,
+                        UnitName = product.UnitName,
+                        TaxName = product.TaxName,
+                        BatchNo = "NA",
+                        ReceiptDetailsId = 0,
+                        OrderDetailsId = 0
+
+                    };
+                TodoList.Add(myTodoItem);
+                product.ProductId = 0;
+                product.Barcode = string.Empty;
+                product.UnitId = 0;
+                product.BatchId = 0;
+                product.TaxId = 1;
+                product.Qty = 0;
+                product.SalesRate = 0;
+                product.Discount = 0;
+                product.DiscountAmount = 0;
+                product.TaxRate = 0;
+                product.TaxAmount = 0;
+                product.Amount = 0;
+                product.NetAmount = 0;
+                product.TotalAmount = 0;
+                searchValue = string.Empty;
+            }
+            else
+            {
+                var myTodos = TodoList.FirstOrDefault(x => x.ProductId == editedID);
+                myTodos.ProductId = product.ProductId;
+                myTodos.UnitId = product.UnitId;
+                myTodos.BatchId = product.BatchId;
+                myTodos.Qty = product.Qty;
+                //Calculate
+                decimal decGrossValue = 0;
+                decimal decPercentgeDiscount = 0;
+                decimal decTtlDiscount = 0;
+                decimal decNetValue = 0;
+                // decimal decTaxAmount = 0;
+                decimal decTotalTax = 0;
+                decimal decGrndTotl = 0;
+
+                //sscl
+                decimal _decTaxAmountSscl = 0;
+                decimal _decTaxAmountVat = 0;
+
+                if (Convert.ToDecimal(product.Qty) > 0 && Convert.ToDecimal(product.SalesRate) > 0)
+                {
+                    decGrossValue = Convert.ToDecimal(product.SalesRate) * Convert.ToDecimal(product.Qty);
+
+                    decPercentgeDiscount = Convert.ToDecimal(product.DiscountAmount) * 100 / decGrossValue;
+                    decTtlDiscount = decPercentgeDiscount;
+                    myTodos.Discount = decPercentgeDiscount;
+
+                    decNetValue = decGrossValue - Convert.ToDecimal(product.DiscountAmount);
+                    myTodos.DiscountAmount = product.DiscountAmount;
+                    //ClculteT
+                    myTodos.SalesRate = product.SalesRate;
+                    myTodos.TaxId = product.TaxId;
+                    myTodos.TaxRate = product.TaxRate;
+                    //  decTaxAmount = decNetValue * product.TaxRate / 100;
+                    var tax = await _TaxDetails.GetTaxDetailsByTaxCode(viewProduct.TaxCode, master.Date);
+                    if(tax.Count > 0)
+                    {
+                        foreach(var item in tax.Where(x=>x.IsActive == true))
+                        {
+                            if(item.TaxNameId == 1)
+                            {
+                                //sscl
+                                _decTaxAmountSscl = decNetValue * item.Rate / 100;
+                                myTodos.SCCSLAmount = Math.Round(_decTaxAmountSscl, 2);
+                            }
+                            else if(item.TaxNameId == 2)
+                            {
+                                //vat
+                                _decTaxAmountVat = (decNetValue + _decTaxAmountSscl) * item.Rate / 100;
+                                myTodos.VatAmount = Math.Round(_decTaxAmountVat, 2);
+                            }
+                        }
+                    }
+
+                    // myTodos.TaxAmount = Math.Round(decTaxAmount, 2);
+                    myTodos.TaxAmount = Math.Round(_decTaxAmountVat, 2);
+                    decGrndTotl = decNetValue;
+
+                    // myTodos.Amount = Math.Round(decGrossValue, 2);
+                    myTodos.Amount = Math.Round(decGrossValue + _decTaxAmountSscl, 2);
+                    // myTodos.NetAmount = Math.Round(decGrossValue, 2);
+                    myTodos.NetAmount = Math.Round(decGrossValue + _decTaxAmountSscl, 2);
+                    // myTodos.VatAmount = Math.Round(decTaxAmount, 2);
+               
+                    // myTodos.TotalAmount = Math.Round(decGrndTotl + decTaxAmount, 2);
+                    myTodos.TotalAmount = Math.Round(decGrndTotl + _decTaxAmountSscl + _decTaxAmountVat, 2);
+                }
+                else
+                {
+                    myTodos.Discount = 0;
+                }
+
+                product.ProductId = 0;
+                product.Barcode = string.Empty;
+                product.UnitId = 0;
+                product.BatchId = 0;
+                product.TaxId = 1;
+                product.Qty = 0;
+                product.SalesRate = 0;
+                product.Discount = 0;
+                product.DiscountAmount = 0;
+                product.TaxRate = 0;
+                product.TaxAmount = 0;
+                product.Amount = 0;
+                product.NetAmount = 0;
+                product.TotalAmount = 0;
+                searchValue = string.Empty;
+                editedID = 0;
+            }
+        }
+        CalculateTotal();
+        StateHasChanged();
+    }
+    void editItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.ProductId == id);
+        product.ProductId = myTodo.ProductId;
+        product.Barcode = myTodo.Barcode;
+        product.ProductName = myTodo.ProductName;
+        product.UnitId = myTodo.UnitId;
+        product.UnitName = myTodo.UnitName;
+        product.BatchId = myTodo.BatchId;
+        product.BatchNo = myTodo.BatchNo;
+        product.TaxId = product.TaxId;
+        product.TaxName = myTodo.TaxName;
+        product.Qty = myTodo.Qty;
+        product.SalesRate = myTodo.SalesRate;
+        product.Discount = myTodo.Discount;
+        product.DiscountAmount = myTodo.DiscountAmount;
+        product.NetAmount = myTodo.NetAmount;
+        product.Amount = myTodo.Amount;
+        product.TaxRate = myTodo.TaxRate;
+        product.TaxAmount = myTodo.TaxAmount;
+        product.TotalAmount = myTodo.TotalAmount;
+        editedID = id;
+
+        AddToList();
+    }
+    private async Task deleteItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+        TodoList.Remove(myTodo);
+
+        product.ProductId = 0;
+        product.Barcode = string.Empty;
+        product.UnitId = 0;
+        product.BatchId = 0;
+        product.TaxId = 1;
+        product.Qty = 0;
+        product.SalesRate = 0;
+        product.Discount = 0;
+        product.DiscountAmount = 0;
+        product.TaxRate = 0;
+        product.TaxAmount = 0;
+        product.NetAmount = 0;
+        product.TotalAmount = 0;
+        editedID = 0;
+        CalculateTotal();
+        StateHasChanged();
+    }
+    void CalculateTotal()
+    {
+        decimal decTotalAmount = 0;
+        decimal decAdditionalCost = 0;
+        decimal decTaxAmount = 0;
+        decimal decTotalDisTax = 0;
+        decimal decGrandTotalCshbnk = 0;
+        decimal decNetAmount = 0;
+        decimal decCheckTax = 0;
+        decimal decGrandTotal = 0;
+        decimal decVat = 0;
+        decimal decVatSCCL = 0;
+        foreach (var todo in TodoList)
+        {
+            decTotalAmount = decTotalAmount + todo.TotalAmount;
+            decNetAmount = decNetAmount + todo.NetAmount;
+            decCheckTax = decCheckTax + todo.TaxAmount;
+            decVat = decVat + todo.VatAmount;
+            decVatSCCL = decVatSCCL + todo.SCCSLAmount;
+        }
+        //if (_selectedItem != null)
+        //{
+        //    master.TaxRate = _selectedItem.Rate;
+        //}
+        //else
+        //{
+        //    master.TaxRate = 0;
+        //}
+        master.NetAmounts = Math.Round(decNetAmount, 2);
+
+        decimal decTotalAmountTax = 0;
+        decTotalAmountTax = decTotalAmount;
+        decTotalDisTax = decTotalAmount;
+        if (master.BillDiscount > 0)
+        {
+            master.DisPer = (master.BillDiscount * 100) / (decTotalAmountTax);
+        }
+        else
+        {
+            master.DisPer = 0;
+        }
+        //if (decCheckTax > 0)
+        //{
+        //    decTaxAmount = Math.Round(decCheckTax, 2);
+        //    master.TotalTax = Math.Round(decCheckTax, 2);
+        //}
+        //else
+        //{
+        //if (master.TaxRate > 0)
+        //{
+        //decTaxAmount = decTotalDisTax * master.TaxRate / 100;
+        master.TotalAmount = Math.Round(master.NetAmounts - master.BillDiscount, 2);
+        master.TotalTax = Math.Round(decVat, 2);
+        master.TotalSCCSL = Math.Round(decVatSCCL, 2);
+        //}
+        //else
+        //{
+        //    master.TaxRate = 0;
+        //    master.TotalTax = 0;
+        //}
+        //}
+        decimal decDiscountAmount = 0;
+        decDiscountAmount = master.BillDiscount;
+        decGrandTotal = Math.Round((decTotalDisTax + decAdditionalCost + decTaxAmount) - (decDiscountAmount), 2);
+
+        if (decGrandTotal >= 0)
+        {
+            master.GrandTotal = decGrandTotal + master.ShippingAmount;
+        }
+        else
+        {
+            master.BillDiscount = 0;
+            master.GrandTotal = decGrandTotal + master.ShippingAmount;
+        }
+        decGrandTotalCshbnk = master.PayAmount;
+        if (master.GrandTotal >= decGrandTotalCshbnk)
+        {
+            var decTotl = master.GrandTotal - decGrandTotalCshbnk;
+            master.PreviousDue = Math.Round(decTotl, 2);
+        }
+        else
+        {
+            master.PayAmount = 0;
+            master.PreviousDue = 0;
+        }
+    }
+    private async void Edit(int productId)
+    {
+        visible = true;
+        var myTodo = listProduct.FirstOrDefault(x => x.ProductId == productId);
+        if (myTodo != null)
+        {
+            ShowDialogue = myTodo.ProductName;
+            viewProduct.ProductName = myTodo.ProductName;
+            viewProduct.ProductId = myTodo.ProductId;
+            viewProduct.SalesRate = myTodo.SalesRate;
+            viewProduct.DiscountAmount = myTodo.DiscountAmount;
+            viewProduct.TaxCode = myTodo.TaxCode;
+        }
+        StateHasChanged();
+
+    }
+    private async void HandleOk()
+    {
+        visible = false;
+        var myTodo = TodoList.FirstOrDefault(x => x.ProductId == viewProduct.ProductId);
+        product.ProductId = myTodo.ProductId;
+        product.Barcode = myTodo.Barcode;
+        product.ProductName = myTodo.ProductName;
+        product.UnitId = myTodo.UnitId;
+        product.UnitName = myTodo.UnitName;
+        product.BatchId = myTodo.BatchId;
+        product.BatchNo = myTodo.BatchNo;
+        product.TaxId = viewProduct.TaxId;
+        product.TaxName = myTodo.TaxName;
+        product.Qty = myTodo.Qty;
+        product.SalesRate = viewProduct.SalesRate;
+        product.Discount = myTodo.Discount;
+        product.DiscountAmount = viewProduct.DiscountAmount;
+        product.NetAmount = myTodo.NetAmount;
+        product.Amount = myTodo.Amount;
+     //   var mytax = listTax.FirstOrDefault(x => x.TaxId == viewProduct.TaxId);
+      
+        // if (mytax != null)
+        // {
+        //     product.TaxRate = mytax.Rate;
+        // }
+        // else
+        // {
+        //     product.TaxRate = myTodo.TaxRate;
+        // }
+
+       
+        product.TaxAmount = myTodo.TaxAmount;
+        product.TotalAmount = myTodo.TotalAmount;
+        editedID = myTodo.ProductId;
+        AddToList();
+    }
+    private void HandleCancel(MouseEventArgs e)
+    {
+        visible = false;
+    }
+    private async Task SaveCustomer()
+    {
+        var isCheck = await _ledger.CheckName(customer.LedgerName);
+        if (isCheck == true)
+        {
+            Snackbar.Add("Customer name already exists.", Severity.Info);
+        }
+        else
+        {
+            customer.AccountGroupId = 26; // 26 is Customer
+            customer.Type = "Customer";
+            customer.CompanyId = 1;
+            customer.AddedDate = DateTime.Now;
+            var result = await _ledger.Save(customer);
+
+            if (result > 0)
+            {
+                Snackbar.Add("Save Successfully.", Severity.Success);
+                open = false;
+                listLedger = await _ledger.GetAll(26);
+                master.LedgerId = result;
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Invalid.", Severity.Error);
+                StateHasChanged();
+            }
+        }
+    }
+    async void OpenDrawer(Anchor anchor)
+    {
+        open = true;
+        string strSerialNo = await _ledger.GetSerialNo();
+        customer.LedgerCode = strSerialNo;
+        customer.LedgerId = 0;
+        customer.LedgerName = string.Empty;
+        customer.Phone = string.Empty;
+        customer.Email = string.Empty;
+        customer.Address = string.Empty;
+        customer.Country = string.Empty;
+        customer.City = string.Empty;
+        customer.TaxNo = string.Empty;
+        customer.ShippingAddress = string.Empty;
+        customer.CreditLimit = 0;
+        customer.CreditPeriod = 0;
+        customer.OpeningBalance = 0;
+        customer.ShippingAddress = string.Empty;
+        customer.CrOrDr = "Dr";
+        customer.IsDefault = false;
+        customer.AccountName = string.Empty;
+        customer.AccountNo = string.Empty;
+        this.anchor = anchor;
+
+        switch (anchor)
+        {
+            case Anchor.Start:
+                width = "300px";
+                height = "100%";
+                break;
+            case Anchor.End:
+                width = "400px";
+                height = "100%";
+                break;
+            case Anchor.Bottom:
+                width = "100%";
+                height = "200px";
+                break;
+            case Anchor.Top:
+                width = "100%";
+                height = "350px";
+                break;
+        }
+        StateHasChanged();
+    }
+    private void Cancel()
+    {
+        open = false;
+    }
+}

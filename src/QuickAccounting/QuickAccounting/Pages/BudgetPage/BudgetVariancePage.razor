@@ -1,0 +1,155 @@
+﻿@page "/app/budgetvariance"
+@inject IBudget report
+@inject ICustomerSupplier _ledger
+@inject ICompany _company;
+@using System.Data;
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Budget Variance</PageTitle>
+<div class="content">
+						<div class="page-header">
+							<div class="page-title">
+								<h3>Budget Variance</h3>
+							</div>
+						</div>
+
+						<!-- /product list -->
+						<div class="card">
+							<div class="card-body">
+			<!-- /Filter -->
+				<div class="padding1">
+					<div class="card-body pb-0">
+					<div class="row">
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								Account
+								<RadzenDropDown Style="width:100%;" @bind-Value="intLedgerId" AllowFiltering="true" Data="@(listLedger)" TextProperty="BudgetName" ValueProperty="BudgetMasterId" />
+							</div>
+						</div>
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group" style="margin-top:20px;">
+                                <a style="float:left; margin-right:4px;" class="btn btn-filters ms-auto" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+                                <a style="float:left;" class="btn btn-filters ms-auto" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer-white.svg" alt="img" style="width: 1.25em;"></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Filter -->
+			<div id="PrintDiv">
+								<div class="table-responsive">
+									@*<br/>
+									<hr/>*@
+				<table style="width: 100%;line-height: inherit;text-align: left;">
+					<tbody>
+						<tr>
+							<td style="padding:5px;vertical-align:top;text-align:center;padding-bottom:20px">
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 21px;color:#000;font-weight: 600;"> @company.CompanyName </font></font><br>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.Address</font></font> |
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.PhoneNo</font></font><br><br>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 17px;color:#000;font-weight: 600;text-transform:uppercase;"> Budget Variance</font></font><br>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+<br/>
+				@if(listModel == null)
+				{
+
+				}
+				else
+				{
+						<table class="table">
+
+							<thead>
+							<tr style="background: #F3F2F7;">
+								<th>S.No.</th>
+								<th>Particulars</th>
+								<th style="">Budget Dr</th>
+								<th style="">Actual Dr</th>
+								<th style="">Variance Dr</th>
+								<th>Budget Cr</th>
+								<th>Actual Cr</th>
+								<th>Variance Cr</th>
+							</tr>
+							</thead>
+							@{
+								int sno = 0;
+							}
+							@foreach (var item in listModel)
+							{
+								<tr>
+									<td>
+										@{
+											sno++;
+										}
+										@sno
+									</td>
+									<td>
+										@foreach(var item1 in listLed)
+										{
+											@if(@item1.LedgerId == item.particular)
+											{
+												@item1.LedgerName
+											}
+										}
+										</td>
+									<td>@PublicVariables._Symbol@item.BudgetDr</td>
+									<td>@PublicVariables._Symbol@item.ActualDr</td>
+									<td>@PublicVariables._Symbol@item.VarianceDr</td>
+									<td>@PublicVariables._Symbol @item.BudgetCr</td>
+									<td>@PublicVariables._Symbol@item.ActualCr</td>
+									<td>@PublicVariables._Symbol@item.VarianceCr</td>
+								</tr>
+							}
+						</table>
+				}
+								</div>
+								</div>
+							</div>
+						</div>
+						<!-- /product list -->
+					</div>
+
+@code {
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	IList<BudgetVariance> listModel;
+	Company company = new Company();
+	IList<BudgetMaster> listLedger;
+	IList<AccountLedgerView> listLed;
+	int intLedgerId = 0;
+	string strMenu = "Budget";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			company = await _company.GetbyId(1);
+			listLedger = await report.GetAllBudget();
+			listLed = await _ledger.GetAll();
+			intLedgerId = 0;
+			//await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+		listLedger = await report.GetAllBudget();
+		listModel = await report.GetBudgetVariance(intLedgerId);
+		StateHasChanged();
+	}
+}

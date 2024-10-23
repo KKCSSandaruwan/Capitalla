@@ -1,0 +1,217 @@
+﻿@page "/app/unit"
+@inject IUnit _unit
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Unit</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Unit</h3>
+            <h6>Manage Unit</h6>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added AddNewSupplier" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New Unit</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <RadzenDataGrid AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                Data="@listModel" TItem="UnitView" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="UnitView" Property="UnitName" Title="Unit Name" Frozen="true" />
+                        <RadzenDataGridColumn TItem="UnitView" Property="NoOfDecimalplaces" Title="No .Of .Decimalplaces" Frozen="true" />
+                        <RadzenDataGridColumn TItem="UnitView" Title="Action" Frozen="true" Sortable="false" Filterable="false" Width="100px">
+                            <Template Context="data">
+                                <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(data.UnitId)">
+                                    <img src="assets/img/icons/edit.svg" alt="img">
+                                </a>
+                                <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(data.UnitId)">
+                                    <img src="assets/img/icons/delete.svg" alt="img">
+                                </a>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-lg-12 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label>Unit Name</label>
+                        <input type="text" @bind="model.UnitName">
+                        <ValidationMessage For="@(() => model.UnitName)" />
+                    </div>
+                </div>
+                <div class="col-lg-12 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label>No.Of.Decimal Places</label>
+                        <input type="number" class="form-control" @bind="model.NoOfDecimalplaces">
+                        <ValidationMessage For="@(() => model.NoOfDecimalplaces)" />
+                    </div>
+                </div>
+                <div class="col-lg-12 mt-3">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    Unit model = new Unit();
+    IList<UnitView> listModel;
+    string strMenu = "Inventory";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _unit.GetAll();
+        StateHasChanged();
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Unit / Add";
+        model.UnitId = 0;
+        model.UnitName = string.Empty;
+        model.NoOfDecimalplaces = 0;
+        StateHasChanged();
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Unit / Edit";
+        model = await _unit.GetbyId(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        model.CompanyId = 1;
+        if (model.UnitId == 0)
+        {
+            var isCheck = await _unit.CheckName(model.UnitName);
+            if (isCheck == true)
+            {
+                Snackbar.Add("Unit name already exists.", Severity.Info);
+            }
+            else
+            {
+                model.AddedDate = DateTime.UtcNow;
+                var result = await _unit.Save(model);
+
+                if (result > 0)
+                {
+                    Snackbar.Add("Save Successfully.", Severity.Success);
+                    await LoadData();
+                    visible = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            var isCheck = await _unit.CheckNameId(model.UnitName);
+            if (isCheck == model.UnitId || isCheck == 0)
+            {
+                model.ModifyDate = DateTime.UtcNow;
+                bool result = false;
+                result = await _unit.Update(model);
+
+                if (result == true)
+                {
+                    Snackbar.Add("Update Successfully.", Severity.Success);
+                    await LoadData();
+                    StateHasChanged();
+                    visible = false;
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Unit name already exists.", Severity.Info);
+            }
+        }
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            if (id == 1)
+            {
+                Snackbar.Add("Delete value cannot be delete.", Severity.Error);
+            }
+            else
+            {
+                var result = await _unit.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+}

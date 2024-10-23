@@ -1,0 +1,125 @@
+﻿@page "/app/bonusdeduction"
+@inject IBonusDeduction _bonudDeduction
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Bonus / Deduction</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Bonus / Deduction</h3>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added" style="float:left;" href="/app/bonusdeductionadd"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card p-3">
+        <div class="card-body style="box-shadow:0px 0px 5px #d7d7d7;border-radius: 5px;"">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<BonusDeductionView,bool>(FilterFunc1)">
+                    <ToolBarContent>
+                        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Employee Code</MudTh>
+                        <MudTh>Employee Name</MudTh>
+                        <MudTh>Date</MudTh>
+                        <MudTh>Bonus Amount</MudTh>
+                        <MudTh>Deduction Amount</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="LedgerName">@context.EmployeeCode</MudTd>
+                        <MudTd DataLabel="Email">@context.EmployeeName</MudTd>
+                        <MudTd DataLabel="Phone">@context.Date</MudTd>
+                        <MudTd DataLabel="Phone">@context.BonusAmount</MudTd>
+                        <MudTd DataLabel="Phone">@context.DeductionAmount</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3" href="/app/bonusdeductionedit/@context.BonusDeductionId">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.BonusDeductionId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    IList<BonusDeductionView> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    private string searchString1 = "";
+    string strMenu = "Human Resources";
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _bonudDeduction.GetAll();
+        StateHasChanged();
+    }
+    private bool FilterFunc1(BonusDeductionView element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(BonusDeductionView element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.EmployeeName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            var result = await _bonudDeduction.Delete(id);
+            if (result == true)
+            {
+                await LoadData();
+                StateHasChanged();
+                Snackbar.Add("Delete Successfully.", Severity.Success);
+			}
+			else
+			{
+                Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                StateHasChanged();
+			}
+        }
+    }
+}

@@ -1,0 +1,232 @@
+﻿@page "/app/designation"
+@inject IDesignation _designation
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Designation</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Designation</h3>
+            <h5>Manage Designation</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover">
+                    <HeaderContent>
+                        <MudTh>Designation</MudTh>
+                        <MudTh>Leave Days</MudTh>
+                        <MudTh>Advance Amount</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="DesignationName">@context.DesignationName</MudTd>
+                        <MudTd DataLabel="LeaveDays">@context.LeaveDays</MudTd>
+                        <MudTd DataLabel="AdvanceAmount">@context.AdvanceAmount</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(context.DesignationId)">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.DesignationId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="padding1">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-lg-12 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label>Designation Name</label>
+                        <input type="text" class="form-control" @bind="model.DesignationName">
+                        <ValidationMessage For="@(() => model.DesignationName)" />
+                    </div>
+                </div>
+                <div class="col-lg-12 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label>Leave Days</label>
+                        <input type="number" class="form-control" @bind="model.LeaveDays">
+                        <ValidationMessage For="@(() => model.LeaveDays)" />
+                    </div>
+                </div>
+                <div class="col-lg-12 col-sm-4 col-12">
+                    <div class="form-group">
+                        <label>Advance Amount</label>
+                        <input type="number" class="form-control" @bind="model.AdvanceAmount">
+                        <ValidationMessage For="@(() => model.AdvanceAmount)" />
+                    </div>
+                </div>
+                <div class="col-lg-12 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Narration</label>
+                        <input type="text" class="form-control" @bind="model.Narration">
+                    </div>
+                </div>
+
+                <div class="col-lg-12 EndButtons">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    Designation model = new Designation();
+    IList<DesignationView> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    string strMenu = "Human Resources";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _designation.GetAll();
+        StateHasChanged();
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Designation / Add";
+        model.DesignationId = 0;
+        model.DesignationName = string.Empty;
+        model.LeaveDays = 0;
+        model.AdvanceAmount = 0;
+        model.Narration = string.Empty;
+        StateHasChanged();
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Designation / Edit";
+        model = await _designation.GetbyId(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        if (model.DesignationId == 0)
+        {
+            var isCheck = await _designation.CheckName(model.DesignationName);
+            if (isCheck == true)
+            {
+                Snackbar.Add("Designation name already exists.", Severity.Info);
+            }
+            else
+            {
+                var result = await _designation.Save(model);
+
+                if (result > 0)
+                {
+                    Snackbar.Add("Save Successfully.", Severity.Success);
+                    await LoadData();
+                    visible = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+                var isCheck = await _designation.CheckNameId(model.DesignationName);
+                if (isCheck == model.DesignationId || isCheck == 0)
+                {
+                    bool result = false;
+                    result = await _designation.Update(model);
+
+                    if (result == true)
+                    {
+                        Snackbar.Add("Update Successfully.", Severity.Success);
+                        await LoadData();
+                        StateHasChanged();
+                        visible = false;
+                    }
+                    else
+                    {
+                        Snackbar.Add("Invalid.", Severity.Error);
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                Snackbar.Add("Designation name already exists.", Severity.Info);
+                }
+        }
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+                var result = await _designation.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+        }
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+}

@@ -1,0 +1,383 @@
+﻿@page "/app/reports"
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@attribute [Authorize]
+<PageTitle>Reports</PageTitle>
+<style>
+	.shadow-xl {
+		--tw-shadow: 0 20px 25px -5px rgb(0 0 0 / .1), 0 8px 10px -6px rgb(0 0 0 / .1);
+		--tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+		box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000),var(--tw-ring-shadow, 0 0 #0000),var(--tw-shadow);
+	}
+
+	.px-6 {
+		padding-left: 1.5rem;
+		padding-right: 1.5rem;
+	}
+
+	.py-5 {
+		padding-top: 2rem !important;
+		padding-bottom: 3rem !important;
+	}
+
+	.bg-white {
+		--tw-bg-opacity: 1;
+		background-color: rgb(255 255 255 / var(--tw-bg-opacity));
+	}
+
+	.border-gray-300 {
+		--tw-border-opacity: 1;
+		border-color: rgb(209 213 219 / var(--tw-border-opacity));
+	}
+
+	.border {
+		border-width: 1px;
+	}
+
+	.rounded-lg {
+		border-radius: 0.5rem;
+	}
+
+	.items-center {
+		align-items: center;
+	}
+
+	.items-center {
+		align-items: center;
+	}
+
+	.mt-2 {
+		margin-top: 0.5rem;
+	}
+
+	.text-gray-700 {
+		--tw-text-opacity: 1;
+		color: rgb(55 65 81 / var(--tw-text-opacity));
+	}
+
+	.text-sm {
+		font-size: .875rem;
+		line-height: 1.75rem;
+	}
+
+	.pl-10 {
+		padding-left: 43px !important;
+	}
+
+	.list-disc {
+		list-style-type: disc;
+	}
+
+	.text-gray-900 {
+		--tw-text-opacity: 1;
+		color: rgb(17 24 39 / var(--tw-text-opacity));
+	}
+
+	.font-medium {
+		font-weight: 500;
+	}
+	.text-gray-500 {
+		--tw-text-opacity: 1;
+		color: rgb(107 114 128 / var(--tw-text-opacity));
+	}
+
+	.truncate {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+</style>
+
+<div class="content">
+	<div class="page-header">
+		<div class="page-title">
+			<h3>Reports</h3>
+		</div>
+	</div>
+
+						<!-- /product list -->
+	<div class="card p-4">
+		<div class="card-body">
+			<div class="row">
+				<div class="col-md-4 mb-3">
+					<div class="form-group">
+						<div class="row">
+							<div class="col-lg-12 col-sm-12 col-12">
+								<div style="float:left;" class="w-100 mt-3">
+									<div class="flex items-center">
+										<svg style="float:left;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="Icon__Image-sc-cstg0k-0 gGURka" size="32">
+											<path opacity="0.2" d="M14 28C21.732 28 28 21.732 28 14C28 6.26801 21.732 0 14 0C6.26801 0 0 6.26801 0 14C0 21.732 6.26801 28 14 28Z" fill="#1990FD"></path>
+											<circle cx="7.18696" cy="16.7019" r="1.0901" fill="#1990FD"></circle>
+											<circle cx="9.36714" cy="13.9768" r="1.0901" fill="#1990FD"></circle>
+											<circle cx="12.0924" cy="11.7966" r="1.0901" fill="#1990FD"></circle>
+											<circle cx="14.2726" cy="13.9768" r="1.0901" fill="#1990FD"></circle>
+											<circle cx="16.4527" cy="16.7019" r="1.0901" fill="#1990FD"></circle>
+											<circle cx="18.6331" cy="13.9768" r="1.0901" fill="#1990FD"></circle>
+											<circle cx="20.8132" cy="11.2515" r="1.0901" fill="#1990FD"></circle>
+										</svg>
+											<div style="float:left;">
+												<p style="float:left; margin-bottom:10px;" class="text-sm font-medium text-gray-900"> &nbsp;&nbsp;&nbsp;&nbsp Accounting &amp; Finance</p>
+											</div>
+									</div>
+									<div class="">
+										<ul class="pl-10 list-disc text-gray-700 text-sm d-inline-block" >
+										<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/daybook">Daybook</a></li>
+										@*</ul>
+										<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/trailbalance">Trial Balance</a></li>
+											@*</ul>
+											<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+												<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/ledger">Ledger</a></li>
+												@*</ul>
+												<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+													<li>
+														<a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/balancesheet">Balance Sheet</a></li>
+														@*</ul>
+														<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+															<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/profitnloss">Profit & Loss</a>
+																</li>
+										</ul>
+									</div>
+								</div>
+							</div>
+
+
+
+						</div>
+					</div>
+				</div>
+
+
+
+				<div class="col-md-4 mb-3">
+					<div class="form-group">
+						<div class="row">
+							<div class="col-lg-12 col-sm-12 col-12">
+								<div class="w-100- mt-3">
+									<div style="display:inline-flex;">
+										<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="Icon__Image-sc-cstg0k-0 gGURka" size="32"><path opacity="0.2" d="M14 28C21.732 28 28 21.732 28 14C28 6.26801 21.732 0 14 0C6.26801 0 0 6.26801 0 14C0 21.732 6.26801 28 14 28Z" fill="#DE5A1A"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M10.0711 8.24291C10.0662 8.18663 10.112 8.12479 10.1717 8.12993C11.3131 8.12886 12.4544 8.12971 13.5958 8.12928C13.8879 8.13035 14.1798 8.12672 14.4716 8.13271C15.3768 8.17208 16.2928 8.38606 17.0659 8.87287C16.3286 9.3051 15.5856 9.72772 14.8465 10.1572C14.7179 10.2282 14.5932 10.3063 14.4635 10.3752C14.0103 10.3778 13.5567 10.3752 13.1034 10.3765C13.0403 10.3699 12.9828 10.4259 12.987 10.4886C12.9868 10.7366 12.9868 10.9844 12.9873 11.2324C12.0147 11.793 11.0433 12.3556 10.0694 12.9141C10.0729 11.357 10.0696 9.79983 10.0711 8.24291Z" fill="#EC6853"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M14.9828 10.4634C16.3249 9.68987 17.6665 8.91548 19.0078 8.14087C19.5981 8.7276 20.1855 9.31754 20.7742 9.90599C19.2074 10.8124 17.64 11.7173 16.0717 12.6212C16.11 12.4406 16.0968 12.2546 16.0972 12.0715C16.0782 11.6765 15.9592 11.2759 15.708 10.965C15.5248 10.7285 15.2663 10.5556 14.9828 10.4634Z" fill="#FDB52B"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9276 13.0971C16.8885 12.5376 17.8547 11.9855 18.8154 11.4255C18.9466 12.2491 18.8987 13.125 18.5381 13.8878C18.2141 14.5783 17.6445 15.1364 16.9786 15.4995C16.2269 15.9131 15.3648 16.0775 14.5151 16.1188C14.0377 16.1277 13.5603 16.12 13.0829 16.1237C13.0247 16.129 12.98 16.187 12.9868 16.2448C12.987 16.9646 12.9868 17.6842 12.987 18.4039C12.0141 18.9643 11.0418 19.5253 10.0694 20.0866C10.072 18.8842 10.0709 17.6819 10.0701 16.4795C11.5748 15.6103 13.0797 14.7416 14.5846 13.8728C14.6646 13.8471 14.7522 13.8531 14.8339 13.8322C15.1752 13.7774 15.5118 13.6265 15.7388 13.3593C15.8161 13.2827 15.8604 13.1802 15.9276 13.0971Z" fill="#EC6853"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M7.22577 14.9471C9.14603 13.8372 11.0671 12.7283 12.9872 11.6184C12.9865 12.3335 12.9868 13.0484 12.9872 13.7636C12.9844 13.8138 13.03 13.868 13.0815 13.8673C13.3586 13.8699 13.6358 13.8646 13.9129 13.8699C12.2721 14.8174 10.6306 15.7641 8.98939 16.7109C8.4018 16.1227 7.81379 15.5349 7.22577 14.9471Z" fill="#FDB52B"></path></svg>
+										<div>
+											<p margin-bottom:10px;" class="text-sm font-medium text-gray-900"> 
+												&emsp; Purchase Reports &emsp; </p>
+										</div>
+									</div>
+									<br/>
+									<div>
+										<ul class="pl-10 list-disc text-gray-700 text-sm d-inline-block">
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/supplier-wise-purchase">Purchase (Supplier Wise)</a></li>
+										@*</ul>
+										<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/item-wise-purchase">Purchase (Item Wise)</a></li>
+										</ul>
+									</div>
+								</div>
+							</div>
+
+
+
+						</div>
+					</div>
+				</div>
+				@*<br/>
+				<br/>
+				<br />
+				<br />*@
+				<div class="col-md-4 mb-3">
+					<div class="form-group">
+						<div class="row">
+							<div class="col-lg-12 col-sm-12 col-12">
+								<div style="float:left;" class="w-100 mt-3">
+									<div class="flex items-center">
+										<svg style="float:left;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="Icon__Image-sc-cstg0k-0 gGURka" size="32"><path d="M15.546 6.28236L12.4952 7.43551C11.6598 7.7513 11.6259 8.92057 12.4416 9.28425L19.1984 12.2967C19.8546 12.5892 20.5964 12.1151 20.6152 11.397C20.6266 10.959 20.6408 10.5338 20.6572 10.2421C20.6913 9.63645 20.3199 9.33998 20.0717 9.24139C20.0199 9.22081 19.9667 9.20379 19.9158 9.18111L16.2479 7.54675C16.0064 7.43914 15.9177 7.14153 16.0609 6.91929C16.2862 6.56977 15.935 6.13533 15.546 6.28236Z" fill="#00CC6B"></path><path d="M12.4539 21.8143L15.5047 20.6612C16.3401 20.3454 16.3741 19.1761 15.5583 18.8124L8.8015 15.8C8.14539 15.5074 7.40353 15.9816 7.38476 16.6997C7.37331 17.1377 7.35914 17.5629 7.34272 17.8546C7.30862 18.4602 7.68008 18.7567 7.92825 18.8553C7.98004 18.8759 8.03319 18.8929 8.0841 18.9156L11.7521 20.5499C11.9936 20.6575 12.0823 20.9551 11.939 21.1774C11.7138 21.5269 12.065 21.9613 12.4539 21.8143Z" fill="#00CC6B"></path><path d="M19.9424 14.9593L8.96754 9.72968C8.31445 9.41848 7.55724 9.88229 7.53773 10.6055L7.49685 12.1214C7.47939 12.7687 7.86371 13.0814 8.12885 13.1882C8.19496 13.2149 8.26318 13.2366 8.32752 13.2672L18.9918 18.349C19.6545 18.6647 20.4212 18.1827 20.4385 17.4488C20.4506 16.9337 20.469 16.4363 20.4961 16.1332C20.5544 15.4816 20.1513 15.0791 19.9424 14.9593Z" fill="#148574"></path><circle opacity="0.2" cx="14" cy="14" r="14" fill="#35B14F"></circle></svg>
+										<div style="float:left;">
+											<p style="float:left; margin-bottom:10px;" class="text-sm font-medium text-gray-900">
+												&emsp;  Reports &emsp; </p>
+										</div>
+									</div>
+									<br/>
+									<div class="">
+										<ul class="pl-10 list-disc text-gray-700 text-sm d-inline-block">
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/customer-wise-sales">Sales (Customer Wise)</a></li>
+										@*</ul>
+										<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/item-wise-sales">Sales (Item Wise)</a></li>
+										</ul>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+				<div class="col-md-4 mb-3">
+					<div class="form-group">
+						<div class="row">
+							<div class="col-lg-10 col-sm-10 col-10">
+								<div style="float:left;" class="w-100 mt-3">
+									<div class="flex items-center">
+										<svg style="float:left;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="Icon__Image-sc-cstg0k-0 gGURka" size="32"><path opacity="0.2" d="M14 28C21.732 28 28 21.732 28 14C28 6.26801 21.732 0 14 0C6.26801 0 0 6.26801 0 14C0 21.732 6.26801 28 14 28Z" fill="#48DDFF"></path><circle cx="10.4897" cy="17.5103" r="3.26392" fill="#48B6FF"></circle><circle cx="10.4897" cy="10.4897" r="3.26392" fill="#F9267C"></circle><circle cx="17.3877" cy="17.5103" r="3.26392" fill="#48DDFF"></circle></svg>
+										<div style="float:left;">
+											<p style="float:left; margin-bottom:10px;" class="text-sm font-medium text-gray-900">
+												&emsp; Inventory Management &emsp;</p>
+										</div>
+									</div>
+									<br/>
+									<div class="">
+										<ul class="pl-10 list-disc text-gray-700 text-sm d-inline-block">
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/inventoryitem">Inventory Item</a></li>
+										@*</ul>
+										<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/stock">Inventory Ledger (Item Wise)</a></li>
+										</ul>
+									</div>
+								</div>
+							</div>
+
+
+
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4 mb-3">
+					<div class="form-group">
+						<div class="row">
+							<div class="col-lg-12 col-sm-12 col-12">
+								<div style="float:left;" class="w-100 mt-3">
+									<div class="flex items-center">
+										<svg style="float:left;" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="Icon__Image-sc-cstg0k-0 gGURka" size="32"><path d="M15.546 6.28236L12.4952 7.43551C11.6598 7.7513 11.6259 8.92057 12.4416 9.28425L19.1984 12.2967C19.8546 12.5892 20.5964 12.1151 20.6152 11.397C20.6266 10.959 20.6408 10.5338 20.6572 10.2421C20.6913 9.63645 20.3199 9.33998 20.0717 9.24139C20.0199 9.22081 19.9667 9.20379 19.9158 9.18111L16.2479 7.54675C16.0064 7.43914 15.9177 7.14153 16.0609 6.91929C16.2862 6.56977 15.935 6.13533 15.546 6.28236Z" fill="#00CC6B"></path><path d="M12.4539 21.8143L15.5047 20.6612C16.3401 20.3454 16.3741 19.1761 15.5583 18.8124L8.8015 15.8C8.14539 15.5074 7.40353 15.9816 7.38476 16.6997C7.37331 17.1377 7.35914 17.5629 7.34272 17.8546C7.30862 18.4602 7.68008 18.7567 7.92825 18.8553C7.98004 18.8759 8.03319 18.8929 8.0841 18.9156L11.7521 20.5499C11.9936 20.6575 12.0823 20.9551 11.939 21.1774C11.7138 21.5269 12.065 21.9613 12.4539 21.8143Z" fill="#00CC6B"></path><path d="M19.9424 14.9593L8.96754 9.72968C8.31445 9.41848 7.55724 9.88229 7.53773 10.6055L7.49685 12.1214C7.47939 12.7687 7.86371 13.0814 8.12885 13.1882C8.19496 13.2149 8.26318 13.2366 8.32752 13.2672L18.9918 18.349C19.6545 18.6647 20.4212 18.1827 20.4385 17.4488C20.4506 16.9337 20.469 16.4363 20.4961 16.1332C20.5544 15.4816 20.1513 15.0791 19.9424 14.9593Z" fill="#148574"></path><circle opacity="0.2" cx="14" cy="14" r="14" fill="#35B14F"></circle></svg>
+										<div style="float:left;">
+											<p style="margin-bottom:10px;float:left;" class="text-sm font-medium text-gray-900">
+												&emsp;	Receivable &emsp;
+											</p>
+										</div>
+									</div>
+									<br/>
+									<div class="">
+										<ul class="pl-10 list-disc text-gray-700 text-sm d-inline-block">
+											<li>
+												<a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/customer-receive-summary">
+													Customer Receivable Summary
+											</a>
+											</li>
+										@*</ul>
+										<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/customer-statement">Customer Statement</a></li>
+										</ul>
+									</div>
+								</div>
+							</div>
+
+
+
+						</div>
+					</div>
+				</div>
+
+				<div class="col-md-4 mb-3">
+					<div class="form-group">
+						<div class="row">
+							<div class="col-lg-12 col-sm-12 col-12">
+								<div class="w-100 mt-3">
+									<div style="display:inline-flex;">
+										<svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="Icon__Image-sc-cstg0k-0 gGURka" size="32"><path opacity="0.2" d="M14 28C21.732 28 28 21.732 28 14C28 6.26801 21.732 0 14 0C6.26801 0 0 6.26801 0 14C0 21.732 6.26801 28 14 28Z" fill="#DE5A1A"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M10.0711 8.24291C10.0662 8.18663 10.112 8.12479 10.1717 8.12993C11.3131 8.12886 12.4544 8.12971 13.5958 8.12928C13.8879 8.13035 14.1798 8.12672 14.4716 8.13271C15.3768 8.17208 16.2928 8.38606 17.0659 8.87287C16.3286 9.3051 15.5856 9.72772 14.8465 10.1572C14.7179 10.2282 14.5932 10.3063 14.4635 10.3752C14.0103 10.3778 13.5567 10.3752 13.1034 10.3765C13.0403 10.3699 12.9828 10.4259 12.987 10.4886C12.9868 10.7366 12.9868 10.9844 12.9873 11.2324C12.0147 11.793 11.0433 12.3556 10.0694 12.9141C10.0729 11.357 10.0696 9.79983 10.0711 8.24291Z" fill="#EC6853"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M14.9828 10.4634C16.3249 9.68987 17.6665 8.91548 19.0078 8.14087C19.5981 8.7276 20.1855 9.31754 20.7742 9.90599C19.2074 10.8124 17.64 11.7173 16.0717 12.6212C16.11 12.4406 16.0968 12.2546 16.0972 12.0715C16.0782 11.6765 15.9592 11.2759 15.708 10.965C15.5248 10.7285 15.2663 10.5556 14.9828 10.4634Z" fill="#FDB52B"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9276 13.0971C16.8885 12.5376 17.8547 11.9855 18.8154 11.4255C18.9466 12.2491 18.8987 13.125 18.5381 13.8878C18.2141 14.5783 17.6445 15.1364 16.9786 15.4995C16.2269 15.9131 15.3648 16.0775 14.5151 16.1188C14.0377 16.1277 13.5603 16.12 13.0829 16.1237C13.0247 16.129 12.98 16.187 12.9868 16.2448C12.987 16.9646 12.9868 17.6842 12.987 18.4039C12.0141 18.9643 11.0418 19.5253 10.0694 20.0866C10.072 18.8842 10.0709 17.6819 10.0701 16.4795C11.5748 15.6103 13.0797 14.7416 14.5846 13.8728C14.6646 13.8471 14.7522 13.8531 14.8339 13.8322C15.1752 13.7774 15.5118 13.6265 15.7388 13.3593C15.8161 13.2827 15.8604 13.1802 15.9276 13.0971Z" fill="#EC6853"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M7.22577 14.9471C9.14603 13.8372 11.0671 12.7283 12.9872 11.6184C12.9865 12.3335 12.9868 13.0484 12.9872 13.7636C12.9844 13.8138 13.03 13.868 13.0815 13.8673C13.3586 13.8699 13.6358 13.8646 13.9129 13.8699C12.2721 14.8174 10.6306 15.7641 8.98939 16.7109C8.4018 16.1227 7.81379 15.5349 7.22577 14.9471Z" fill="#FDB52B"></path></svg>
+										<div>
+											<p style="float:left; margin-bottom:10px;" class="text-sm font-medium text-gray-900">
+												&emsp; Payable &emsp;
+											</p>
+										</div>
+									</div>
+									<br/>
+									<div>
+										<ul class="pl-10 list-disc text-gray-700 text-sm d-inline-block">
+											<li>
+												<a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/supplier-payable-summary">
+													Supplier Payable Summary
+											</a>
+											</li>
+										@*</ul>
+										<ul class="pl-10 list-disc text-gray-700 text-sm">*@
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/supplier-statement">Supplier Statement</a></li>
+										</ul>
+									</div>
+								</div>
+							</div>
+
+
+
+						</div>
+					</div>
+				</div>
+
+
+
+
+
+
+				<div class="col-md-4 mb-3">
+
+					<div class="form-group">
+
+
+						<div class="row">
+
+							<div class="col-lg-12 col-sm-12 col-12">
+
+							<div class="w-100 mt-3">
+									<div style="display:inline-flex;">
+											<svg  width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" class="Icon__Image-sc-cstg0k-0 gGURka" size="32"><path opacity="0.2" d="M14 28C21.732 28 28 21.732 28 14C28 6.26801 21.732 0 14 0C6.26801 0 0 6.26801 0 14C0 21.732 6.26801 28 14 28Z" fill="#DE5A1A"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M10.0711 8.24291C10.0662 8.18663 10.112 8.12479 10.1717 8.12993C11.3131 8.12886 12.4544 8.12971 13.5958 8.12928C13.8879 8.13035 14.1798 8.12672 14.4716 8.13271C15.3768 8.17208 16.2928 8.38606 17.0659 8.87287C16.3286 9.3051 15.5856 9.72772 14.8465 10.1572C14.7179 10.2282 14.5932 10.3063 14.4635 10.3752C14.0103 10.3778 13.5567 10.3752 13.1034 10.3765C13.0403 10.3699 12.9828 10.4259 12.987 10.4886C12.9868 10.7366 12.9868 10.9844 12.9873 11.2324C12.0147 11.793 11.0433 12.3556 10.0694 12.9141C10.0729 11.357 10.0696 9.79983 10.0711 8.24291Z" fill="#EC6853"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M14.9828 10.4634C16.3249 9.68987 17.6665 8.91548 19.0078 8.14087C19.5981 8.7276 20.1855 9.31754 20.7742 9.90599C19.2074 10.8124 17.64 11.7173 16.0717 12.6212C16.11 12.4406 16.0968 12.2546 16.0972 12.0715C16.0782 11.6765 15.9592 11.2759 15.708 10.965C15.5248 10.7285 15.2663 10.5556 14.9828 10.4634Z" fill="#FDB52B"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9276 13.0971C16.8885 12.5376 17.8547 11.9855 18.8154 11.4255C18.9466 12.2491 18.8987 13.125 18.5381 13.8878C18.2141 14.5783 17.6445 15.1364 16.9786 15.4995C16.2269 15.9131 15.3648 16.0775 14.5151 16.1188C14.0377 16.1277 13.5603 16.12 13.0829 16.1237C13.0247 16.129 12.98 16.187 12.9868 16.2448C12.987 16.9646 12.9868 17.6842 12.987 18.4039C12.0141 18.9643 11.0418 19.5253 10.0694 20.0866C10.072 18.8842 10.0709 17.6819 10.0701 16.4795C11.5748 15.6103 13.0797 14.7416 14.5846 13.8728C14.6646 13.8471 14.7522 13.8531 14.8339 13.8322C15.1752 13.7774 15.5118 13.6265 15.7388 13.3593C15.8161 13.2827 15.8604 13.1802 15.9276 13.0971Z" fill="#EC6853"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M7.22577 14.9471C9.14603 13.8372 11.0671 12.7283 12.9872 11.6184C12.9865 12.3335 12.9868 13.0484 12.9872 13.7636C12.9844 13.8138 13.03 13.868 13.0815 13.8673C13.3586 13.8699 13.6358 13.8646 13.9129 13.8699C12.2721 14.8174 10.6306 15.7641 8.98939 16.7109C8.4018 16.1227 7.81379 15.5349 7.22577 14.9471Z" fill="#FDB52B"></path></svg>
+										<div >
+											<p style="margin-bottom:10px;" class="text-sm font-medium text-gray-900">
+												&emsp; Payroll &emsp;
+											</p>
+										</div>
+									</div>
+
+
+										</div>
+											<div class="">
+										<ul class="pl-10 list-disc text-gray-700 text-sm d-inline-block">
+											<li>
+												<a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/monthlysalaryreport">
+													Monthly Salary
+											</a>
+											</li>
+										
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/advancepaymentreport">Advance Payment</a></li>
+											<li><a class="flex items-center px-2 leading-6 rounded-md text-blue-500 hover:underline" href="/app/bonusdeductionreport">Bonus Deduction</a></li>
+
+										</ul>
+									</div>
+
+							
+								
+								
+							
+							</div>
+
+
+
+						</div>
+					</div>
+				</div>
+
+
+
+
+
+
+
+				</div>
+							</div>
+						</div>
+						<!-- /product list -->
+					</div>
+
+@code {
+	protected override async Task OnInitializedAsync()
+	{
+		StateHasChanged();
+	}
+}

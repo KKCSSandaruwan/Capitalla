@@ -1,0 +1,251 @@
+﻿@page "/app/brand"
+@inject IBrand _brand
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Brand</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Brand</h3>
+            <h5>Manage Brand</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added AddNewSupplier" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New Brand</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <RadzenDataGrid AllowSorting="true" PageSize="10" AllowPaging="true" PagerHorizontalAlign="HorizontalAlign.Left" ShowPagingSummary="true"
+                                Data="@listModel" TItem="BrandView" ColumnWidth="300px" LogicalFilterOperator="LogicalFilterOperator.Or">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="BrandView" Title="Image" Sortable="false" Width="120px">
+                            <Template Context="data">
+                                @if (data.Image == string.Empty)
+                                {
+                                    <img src="/img/noimage.png" height="60" width="60">
+                                }
+                                else
+                                {
+                                    <img src="@data.Image" width="60" height="60">
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="BrandView" Property="Name" Title="Brand Name" Frozen="true" />
+                        <RadzenDataGridColumn TItem="BrandView" Title="Action" Frozen="true" Sortable="false" Filterable="false" Width="100px" >
+                            <Template Context="data">
+                                <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(data.BrandId)">
+                                    <img src="assets/img/icons/edit.svg" alt="img">
+                                </a>
+                                <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(data.BrandId)">
+                                    <img src="assets/img/icons/delete.svg" alt="img">
+                                </a>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label>Brand Name</label>
+                        <input type="text" @bind="model.Name">
+                        <ValidationMessage For="@(() => model.Name)" />
+                    </div>
+                </div>
+                <div class="col-md-12">
+                    <div class="form-group image-uploads mb-0">
+                        <label>Image</label>
+                        @if (model.Image == string.Empty)
+                        {
+                            <img src="/img/noimage.png">
+                        }
+                        else
+                        {
+                            <img src="@model.Image">
+                        }
+                        <InputFile OnChange="OnFileChange" />
+                    </div>
+                </div>
+                <div class="col-md-12 mt-3">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    Brand model = new Brand();
+    IList<BrandView> listModel;
+    string strMenu = "Inventory";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _brand.GetAll();
+        StateHasChanged();
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Brand / Add";
+        model.BrandId = 0;
+        model.Name = string.Empty;
+        model.Image = string.Empty;
+        StateHasChanged();
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Brand / Edit";
+        model = await _brand.GetbyId(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        model.CompanyId = 1;
+        if (model.BrandId == 0)
+        {
+            var isCheck = await _brand.CheckName(model.Name);
+            if (isCheck == true)
+            {
+                Snackbar.Add("Brand name already exists.", Severity.Info);
+            }
+            else
+            {
+                model.AddedDate = DateTime.UtcNow;
+                var result = await _brand.Save(model);
+
+                if (result > 0)
+                {
+                    Snackbar.Add("Save Successfully.", Severity.Success);
+                    await LoadData();
+                    visible = false;
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            var isCheck = await _brand.CheckNameId(model.Name);
+            if (isCheck == model.BrandId || isCheck == 0)
+            {
+                model.ModifyDate = DateTime.UtcNow;
+                bool result = false;
+                result = await _brand.Update(model);
+
+                if (result == true)
+                {
+                    Snackbar.Add("Update Successfully.", Severity.Success);
+                    await LoadData();
+                    StateHasChanged();
+                    visible = false;
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Brand name already exists.", Severity.Info);
+            }
+        }
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            if (id == 1)
+            {
+                Snackbar.Add("Delete value cannot be delete.", Severity.Error);
+            }
+            else
+            {
+                var result = await _brand.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+    async Task OnFileChange(InputFileChangeEventArgs e)
+    {
+        var format = "image/png";
+        var resizedImage = await e.File.RequestImageFileAsync(format, 300, 300);
+        var buffer = new byte[resizedImage.Size];
+        await resizedImage.OpenReadStream().ReadAsync(buffer);
+        var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+        if (imageData == null)
+        {
+            model.Image = string.Empty;
+        }
+        else
+        {
+            model.Image = imageData;
+        }
+    }
+}

@@ -1,0 +1,159 @@
+﻿@page "/app/budget"
+@inject IBudget _budget
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Budget</PageTitle>
+<div class="content">
+						<div class="page-header">
+							<div class="page-title">
+			<h3>Budget List</h3>
+							</div>
+							<div class="page-btn">
+			<a href="/app/budgetadd" class="btn btn-added">
+									<img src="assets/img/icons/plus.svg" alt="img">Add New
+								</a>
+							</div>
+						</div>
+
+						<!-- /product list -->
+						<div class="card">
+							<div class="card-body">
+			<!-- /Filter -->
+				<div class="padding1">
+					<div class="card-body pb-0">
+					<div class="row">
+						<div class="col-lg col-sm-6 col-12">
+							<div class="form-group">
+								From Date
+								@*<input type="date" @bind="@dtFromDate" class="form-control">*@
+								<RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg col-sm-6 col-12">
+							<div class="form-group">
+								To Date
+								@*<input type="date" @bind="@dtToDate" class="form-control">*@
+								<RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+							<div class="col-lg col-sm-6 col-12">
+								<div class="form-group">
+									Budget Name
+									<input type="text" @bind="@strVoucherNo" placeholder="Budget Name">
+								</div>
+							</div>
+						<div class="col-lg-1 col-sm-6 col-12">
+							<div class="form-group" style="margin-top:20px;">
+								<a class="btn ms-auto search-button" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Filter -->
+								<div class="table-responsive">
+				<MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<BudgetMaster,bool>(FilterFunc1)">
+					<ToolBarContent>
+						<MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+					</ToolBarContent>
+					<HeaderContent>
+						<MudTh>Budget Name</MudTh>
+						<MudTh>From Date</MudTh>
+						<MudTh>To Date</MudTh>
+						<MudTh>Debit</MudTh>
+						<MudTh>Credit</MudTh>
+						<MudTh></MudTh>
+					</HeaderContent>
+					<RowTemplate>
+						<MudTd DataLabel="LedgerName">@context.BudgetName</MudTd>
+						<MudTd DataLabel="VoucherNo">@context.FromDate</MudTd>
+						<MudTd DataLabel="Narration">@PublicVariables._Symbol@context.ToDate</MudTd>
+						<MudTd DataLabel="Date">@PublicVariables._Symbol @context.TotalDr</MudTd>
+						<MudTd DataLabel="Date">@PublicVariables._Symbol @context.TotalCr</MudTd>
+						<MudTd DataLabel="">
+							<a class="me-3" href="/app/budgetedit/@context.BudgetMasterId">
+								<img src="assets/img/icons/edit.svg" alt="img">
+							</a>
+							<a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.BudgetMasterId)">
+								<img src="assets/img/icons/delete.svg" alt="img">
+							</a>
+						</MudTd>
+					</RowTemplate>
+					<PagerContent>
+						<MudTablePager />
+					</PagerContent>
+				</MudTable>
+			</div>
+							</div>
+						</div>
+						<!-- /product list -->
+					</div>
+
+@code {
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	private bool dense = true;
+	private bool hover = true;
+	IList<BudgetMaster> listModel;
+	private string searchString1 = "";
+	DateTime dtFromDate = DateTime.UtcNow.AddDays(-7);
+	DateTime dtToDate = DateTime.UtcNow;
+	string strVoucherNo = string.Empty;
+	string strMenu = "Budget";
+	protected override async Task OnInitializedAsync()
+	{
+		
+		//CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+		listModel = await _budget.GetAll(dtFromDate, dtToDate, strVoucherNo);
+		StateHasChanged();
+	}
+	private bool FilterFunc1(BudgetMaster element) => FilterFunc(element, searchString1);
+
+	private bool FilterFunc(BudgetMaster element, string searchString)
+	{
+		if (string.IsNullOrWhiteSpace(searchString))
+			return true;
+		if (element.BudgetName.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		return false;
+	}
+	private async void Delete(int id)
+	{
+		bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+		if (confirmed)
+		{
+			var result = await _budget.Delete(id);
+			if (result == true)
+			{
+				await LoadData();
+				Snackbar.Add("Delete Successfully.", Severity.Success);
+				StateHasChanged();
+			}
+			else
+			{
+				Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+			}
+		}
+	}
+}

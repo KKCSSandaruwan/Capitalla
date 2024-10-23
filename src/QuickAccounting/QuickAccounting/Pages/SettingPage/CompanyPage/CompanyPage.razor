@@ -1,0 +1,306 @@
+﻿@page "/app/company"
+@inject ICompany _company
+@inject ICurrency _currency
+@inject IEmailSetting _emailsetting
+@inject IGeneralSetting _setting
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Company</PageTitle>
+<div class="content">
+					<!-- /add -->
+					<div class="card">
+						<div class="card-body">
+
+<MudTabs Outlined="true" Position="@Position" Rounded="true" Border="true"
+    ApplyEffectsToContainer="true" Class="" PanelClass="pa-6">
+    <MudTabPanel Text="Orginazation" Style="text-align:left;">
+							<EditForm Model="model" OnValidSubmit="Save">
+    <DataAnnotationsValidator />
+							<div class="row" style="padding:10px;">
+								<div class="col-lg-12 col-sm-12 col-12">
+									<div class="form-group">
+							<h3>Orginazation</h3>
+							</div>
+							</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+									<div class="form-group">
+							<label>Company Name</label>
+							<input type="text" @bind="model.CompanyName">
+							<ValidationMessage For="@(() => model.CompanyName)" />
+									</div>
+								</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+					<div class="form-group">
+							<label>Address</label>
+							<input type="text" @bind="model.Address">
+							<ValidationMessage For="@(() => model.Address)" />
+					</div>
+				</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Phone</label>
+							<input type="text" class="form-control" @bind="model.PhoneNo">
+							<ValidationMessage For="@(() => model.PhoneNo)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Email</label>
+							<input type="text" class="form-control" @bind="model.Email">
+							<ValidationMessage For="@(() => model.Email)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Currency</label>
+							<RadzenDropDown Style="width:100%" @bind-Value="model.CurrencyId" Placeholder="Select currency" AllowFiltering="true" Data="@(listCurrency)" TextProperty="CurrencyName" ValueProperty="CurrencyId" />
+							<ValidationMessage For="@(() => model.CurrencyId)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>No.of.Decimal</label>
+							<input type="number" class="form-control" @bind="model.NoofDecimal">
+							<ValidationMessage For="@(() => model.NoofDecimal)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Website</label>
+							<input type="text" class="form-control" @bind="model.Website">
+							<ValidationMessage For="@(() => model.Website)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-12 col-12">
+						<div class="form-group">
+							<label>Logo</label>
+							<div class="fea-img">
+								@if (model.Logo == string.Empty)
+								{
+									<img src="/images/no-preview.jpg" height="40" width="40">
+								}
+								else
+								{
+									<img src="@model.Logo" width="40" height="40">
+								}
+								<InputFile OnChange="OnFileChange" />
+							</div>
+						</div>
+					</div>
+								
+								<div class="col-lg-12 mt-3">
+									<button type="submit" class="btn btn-submit me-2">Update</button>
+								</div>
+							</div>
+						</EditForm>
+
+    </MudTabPanel>
+				<MudTabPanel Text="General" Style="text-align:left;">
+        <EditForm Model="setting" OnValidSubmit="SaveGeneral">
+						<DataAnnotationsValidator />
+						<div class="row" style="padding:10px;">
+							<div class="col-lg-12 col-sm-12 col-12">
+									<div class="form-group">
+							<h3>General Setting</h3>
+							</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Show Currency</label>
+									<select class="form-control" @bind="setting.ShowCurrency">
+										<option value="Yes">Yes</option>
+										<option value="No">No</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Discount Method</label>
+									<select class="form-control" @bind="setting.Discount">
+										<option value="No Discount">No Discount</option>
+										<option value="Discount at item level">Discount at item level</option>
+										<option value="Discount at transaction level">Discount at transaction level</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Negative Cash Balance</label>
+									<select class="form-control" @bind="setting.NegativeCash">
+										<option value="Reject">Reject</option>
+										<option value="Warn">Warn</option>
+										<option value="Do Nothing">Do Nothing</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Negative Stock</label>
+									<select class="form-control" @bind="setting.NegativeStock">
+										<option value="Reject">Reject</option>
+										<option value="Warn">Warn</option>
+										<option value="Do Nothing">Do Nothing</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Credit Limit Exceeds</label>
+									<select class="form-control" @bind="setting.CreditLimit">
+										<option value="Reject">Reject</option>
+										<option value="Warn">Warn</option>
+										<option value="Do Nothing">Do Nothing</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+								<label>Stock Calculation Mode</label>
+								<select class="form-control" @bind="setting.StockCalculationMode">
+									<option value="FIFO">FIFO</option>
+									</select>
+								</div>
+							</div>
+							<div class="col-lg-12">
+								<button type="submit" class="btn btn-submit me-2 mt-3">Update</button>
+							</div>
+						</div>
+					</EditForm>
+    </MudTabPanel>
+	<MudTabPanel Text="Email Setting" Style="text-align:left;">
+					<EditForm Model="model1" OnValidSubmit="SaveEmail">
+						<DataAnnotationsValidator />
+						<div class="row" style="padding:10px;">
+							<div class="col-lg-12 col-sm-12 col-12">
+									<div class="form-group">
+							<h3>Email Setting</h3>
+							</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Mail Host</label>
+									<input type="text" @bind="model1.MailHost">
+									<ValidationMessage For="@(() => model1.MailHost)" />
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Mail Port</label>
+									<input type="text" @bind="model1.MailPort">
+									<ValidationMessage For="@(() => model1.MailPort)" />
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Mail Address</label>
+									<input type="text" class="form-control" @bind="model1.MailAddress">
+									<ValidationMessage For="@(() => model1.MailAddress)" />
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Password</label>
+									<input type="password" class="form-control" @bind="model1.Password">
+									<ValidationMessage For="@(() => model1.Password)" />
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Mail Fromname</label>
+									<input type="text" class="form-control" @bind="model1.MailFromname">
+									<ValidationMessage For="@(() => model1.MailFromname)" />
+								</div>
+							</div>
+							<div class="col-lg-4 col-sm-12 col-12">
+								<div class="form-group">
+									<label>Encryption Name</label>
+									<input type="text" class="form-control" @bind="model1.EncryptionName">
+									<ValidationMessage For="@(() => model1.EncryptionName)" />
+								</div>
+							</div>
+
+							<div class="col-lg-12">
+								<button type="submit" class="btn btn-submit me-2 mt-3">Update</button>
+							</div>
+						</div>
+					</EditForm>
+    </MudTabPanel>
+</MudTabs>
+						</div>
+					</div>
+					<!-- /add -->
+				</div>
+
+@code {
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	Company model = new Company();
+	EmailSetting model1 = new EmailSetting();
+	GeneralSetting setting = new GeneralSetting();
+	IList<CurrencyView> listCurrency;
+	public Position Position { get; set; } = Position.Left;
+	string strMenu = "Configuration";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+	}
+	private async Task LoadData()
+	{
+		listCurrency = await _currency.GetAll();
+		model = await _company.GetbyId(1);
+		model1 = await _emailsetting.GetbyId(1);
+		setting = await _setting.GetbyId(1);
+		StateHasChanged();
+	}
+	private async Task Save()
+	{
+		model.FinancialYearId = 1;
+		model.WarehouseId = 1;
+		model.AddedDate = DateTime.UtcNow;
+		var result = await _company.Update(model);
+		Snackbar.Add("Update Successfully.", Severity.Success);
+	}
+	private async Task SaveEmail()
+	{
+		var result = await _emailsetting.Update(model1);
+		Snackbar.Add("Update Successfully.", Severity.Success);
+	}
+	private async Task SaveGeneral()
+	{
+		var result = await _setting.Update(setting);
+		Snackbar.Add("Update Successfully.", Severity.Success);
+	}
+	async Task OnFileChange(InputFileChangeEventArgs e)
+	{
+		var format = "image/png";
+		var resizedImage = await e.File.RequestImageFileAsync(format, 300, 300);
+		var buffer = new byte[resizedImage.Size];
+		await resizedImage.OpenReadStream().ReadAsync(buffer);
+		var imageData = $"data:{format};base64,{Convert.ToBase64String(buffer)}";
+		if (imageData == null)
+		{
+			model.Logo = string.Empty;
+		}
+		else
+		{
+			model.Logo = imageData;
+		}
+	}
+}

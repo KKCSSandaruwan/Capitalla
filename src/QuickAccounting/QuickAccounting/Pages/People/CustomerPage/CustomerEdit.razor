@@ -1,0 +1,156 @@
+﻿@page "/app/customeredit/{id}"
+@inject ICustomerSupplier _customersupplier
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Customer</PageTitle>
+<div class="content">
+					<div class="page-header">
+						<div class="page-title">
+							<h3>Customer Edit</h3>
+			<h5>Edit Customer</h5>
+						</div>
+					</div>
+					<!-- /add -->
+					<div class="card CustomerEdit">
+						<div class="card-body">
+							<EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+							<div class="row">
+								<div class="col-lg-8 col-sm-6 col-12">
+									<div class="form-group">
+										<label>Customer Name</label>
+										<input type="text" @bind="model.LedgerName" >
+							<ValidationMessage For="@(() => model.LedgerName)" />
+									</div>
+								</div>
+								<div class="col-lg-4 col-sm-6 col-12">
+									<div class="form-group">
+										<label>Code</label>
+										<input type="text" @bind="model.LedgerCode" >
+							<ValidationMessage For="@(() => model.LedgerCode)" />
+									</div>
+								</div>
+					<div class="col-lg-8 col-sm-6 col-12">
+						<div class="form-group">
+							<label>Address</label>
+							<input type="text" @bind="model.Address">
+							<ValidationMessage For="@(() => model.Address)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-6 col-12">
+									<div class="form-group">
+							<label>Tax No</label>
+										<input type="text" @bind="model.TaxNo" >
+							<ValidationMessage For="@(() => model.TaxNo)" />
+									</div>
+								</div>
+								@*<hr/>*@
+								<div class="col-lg-4 col-sm-6 col-12">
+									<div class="form-group">
+										<label>Phone</label>
+										<input type="text" @bind="model.Phone" >
+							<ValidationMessage For="@(() => model.Phone)" />
+									</div>
+								</div>
+								<div class="col-lg-4 col-sm-6 col-12">
+									<div class="form-group">
+										<label>Country</label>
+										<input type="text" @bind="model.Country" >
+							<ValidationMessage For="@(() => model.Country)" />
+									</div>
+								</div>
+								<div class="col-lg-4 col-sm-6 col-12">
+									<div class="form-group">
+							<label>City</label>
+										<input type="text" @bind="model.City" >
+							<ValidationMessage For="@(() => model.City)" />
+									</div>
+								</div>
+								
+								<hr  class="mt-3 mb-3"/>
+								<h6>Additional Field</h6>
+					<div class="col-lg-4 col-sm-6 col-12">
+						<div class="form-group">
+							<label>Email</label>
+							<input type="text" @bind="model.Email">
+							<ValidationMessage For="@(() => model.Email)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-6 col-12">
+						<div class="form-group">
+							<label>Credit Period</label>
+							<input type="text" @bind="model.CreditPeriod">
+							<ValidationMessage For="@(() => model.CreditPeriod)" />
+						</div>
+					</div>
+					<div class="col-lg-4 col-sm-6 col-12">
+						<div class="form-group">
+							<label>Credit Limit</label>
+							<input type="text" @bind="model.CreditLimit">
+							<ValidationMessage For="@(() => model.CreditLimit)" />
+						</div>
+					</div>
+								<div class="col-lg-12" style="margin-top:2em;">
+									<button type="submit" class="btn btn-submit me-2">Submit</button>
+									<a href="/app/customer" class="btn btn-cancel">Cancel</a>
+								</div>
+								
+							</div>
+							</EditForm>
+						</div>
+					</div>
+					<!-- /add -->
+				</div>
+@code {
+	[Parameter]
+	public string id { get; set; }
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	AccountLedger model = new AccountLedger();
+	string strMenu = "Sales";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+	}
+	private async Task LoadData()
+	{
+		model = await _customersupplier.GetbyId(Convert.ToInt32(id));
+		StateHasChanged();
+	}
+	private async Task Save()
+	{
+		var isCheck = await _customersupplier.CheckNameId(model.LedgerName);
+		if (isCheck == model.LedgerId || isCheck == 0)
+		{
+			model.AccountGroupId = 26; // 26 is Customer
+			model.Type = "Customer";
+			model.CompanyId = 1;
+			model.ModifyDate = DateTime.Now;
+			var result = await _customersupplier.Update(model);
+				Snackbar.Add("Save Successfully.", Severity.Success);
+				StateHasChanged();
+				navigation.NavigateTo("/app/customer");
+		}
+		else
+		{
+			Snackbar.Add("Customer name already exists.", Severity.Info);
+		}
+	}
+}

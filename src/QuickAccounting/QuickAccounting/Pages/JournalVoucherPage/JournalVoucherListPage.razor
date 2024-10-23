@@ -1,0 +1,173 @@
+﻿@page "/app/journalvoucher"
+@inject IJournalVoucher _voucher
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>JournalVoucher</PageTitle>
+<div class="content">
+						<div class="page-header">
+							<div class="page-title">
+			<h3>Journal Voucher</h3>
+							</div>
+							<div class="page-btn">
+			<a href="/app/journalvoucheradd" class="btn btn-added">
+									<img src="assets/img/icons/plus.svg" alt="img">Add New
+								</a>
+							</div>
+						</div>
+
+						<!-- /product list -->
+						<div class="card">
+							<div class="card-body">
+			<!-- /Filter -->
+				<div class="padding1">
+					<div class="card-body pb-0">
+					<div class="row">
+						<div class="col-lg col-sm-6 col-12">
+							<div class="form-group">
+								From Date
+								@*<input type="date" @bind="@dtFromDate" class="form-control">*@
+								<RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg col-sm-6 col-12">
+							<div class="form-group">
+								To Date
+								@*<input type="date" @bind="@dtToDate" class="form-control">*@
+								<RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+							<div class="col-lg col-sm-6 col-12">
+								<div class="form-group">
+									Voucher No
+									<input type="text" @bind="@strVoucherNo" placeholder="Voucher No">
+								</div>
+							</div>
+						<div class="col-lg-1 col-sm-6 col-12">
+							<div class="form-group" style="margin-top:20px;">
+								<a class="btn ms-auto search-button" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Filter -->
+								<div class="table-responsive">
+				<MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<JournalMasterView,bool>(FilterFunc1)">
+					<ToolBarContent>
+						<MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+					</ToolBarContent>
+					<HeaderContent>
+						<MudTh>Date</MudTh>
+						<MudTh>Voucher No</MudTh>
+						<MudTh>Amount</MudTh>
+						<MudTh>Narration</MudTh>
+						<MudTh>Status</MudTh>
+						<MudTh></MudTh>
+					</HeaderContent>
+					<RowTemplate>
+						<MudTd DataLabel="LedgerName">@context.Date</MudTd>
+						<MudTd DataLabel="VoucherNo">@context.VoucherNo</MudTd>
+						<MudTd DataLabel="Narration">@PublicVariables._Symbol@context.Amount</MudTd>
+						<MudTd DataLabel="Date">@context.Narration</MudTd>
+						@if (context.Status == "Draft")
+						{
+							<MudTd DataLabel="Status" Class="badges bg-lightred statusbutton">@context.Status</MudTd> @*<br />*@
+							<MudTd DataLabel="Status" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+						}
+						else
+						{
+							<MudTd DataLabel="Status" Class="badges bg-lightgreen statusbutton">@context.Status</MudTd>
+						}
+						<MudTd DataLabel="">
+							<a class="me-3" href="/app/journalvoucherview/@context.JournalMasterId">
+								<img src="assets/img/icons/edit.svg" alt="img">
+							</a>
+							<a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context)">
+								<img src="assets/img/icons/delete.svg" alt="img">
+							</a>
+						</MudTd>
+					</RowTemplate>
+					<PagerContent>
+						<MudTablePager />
+					</PagerContent>
+				</MudTable>
+			</div>
+							</div>
+						</div>
+						<!-- /product list -->
+					</div>
+
+@code {
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	private bool dense = true;
+	private bool hover = true;
+	IList<JournalMasterView> listModel;
+	JournalMaster vardelete = new JournalMaster();
+	private string searchString1 = "";
+	DateTime dtFromDate = DateTime.UtcNow.AddDays(-7);
+	DateTime dtToDate = DateTime.UtcNow;
+	string strVoucherNo = string.Empty;
+	string strMenu = "Accounting";
+	protected override async Task OnInitializedAsync()
+	{
+		
+		//CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+		listModel = await _voucher.GetAll(dtFromDate, dtToDate, strVoucherNo);
+		StateHasChanged();
+	}
+	private bool FilterFunc1(JournalMasterView element) => FilterFunc(element, searchString1);
+
+	private bool FilterFunc(JournalMasterView element, string searchString)
+	{
+		if (string.IsNullOrWhiteSpace(searchString))
+			return true;
+		if (element.Date.ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		if (element.VoucherNo.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		if (element.Status.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		return false;
+	}
+	private async void Delete(JournalMasterView brand)
+	{
+		bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+		if (confirmed)
+		{
+			vardelete = await _voucher.GetbyId(brand.JournalMasterId);
+			var result = await _voucher.Delete(vardelete);
+			if (result == true)
+			{
+				await LoadData();
+				Snackbar.Add("Delete Successfully.", Severity.Success);
+				StateHasChanged();
+			}
+			else
+			{
+				Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+			}
+		}
+	}
+}

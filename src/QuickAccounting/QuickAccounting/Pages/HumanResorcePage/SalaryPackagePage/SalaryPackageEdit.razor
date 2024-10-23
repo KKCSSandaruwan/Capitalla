@@ -1,0 +1,334 @@
+﻿@page "/app/salarypackageedit/{id}"
+@inject IPayHead _payhead
+@inject ISalaryPackage _salaryPackage
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>SalaryPackage Edit</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Edit SalaryPackage</h3>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="row padding1">
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Package Name</label>
+                        <div class="row">
+                            <div class="col-lg-10 col-sm-10 col-10">
+                                <input type="text" @bind="master.SalaryPackageName" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Status </label>
+                        <div class="input-groupicon">
+                            <input type="checkbox" @bind="master.IsActive" />
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="row">
+                <div class="table-responsive">
+                    <table class="table col-lg-12 col-sm-12 col-12">
+                        <thead>
+                            <tr>
+                                <th class="col-lg-5 col-sm-3 col-3">PayHead</th>
+                                <th class="col-lg-3 col-sm-3 col-3">Type</th>
+                                <th>Amount</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="col-lg-5 col-sm-3 col-3">
+                                    <select class="form-control" @bind="intPayHeadId" @onclick="()=>ChangePayHead()">
+                                        <option value="0">Choose</option>
+                                        @if (listPayHead != null)
+                                        {
+                                            @foreach (var item in listPayHead)
+                                            {
+                                                <option value="@item.PayHeadId">@item.PayHeadName</option>
+                                            }
+                                        }
+                                    </select>
+                                </td>
+                                <td class="col-lg-3 col-sm-3 col-3">
+                                    <label>@strType</label>
+                                </td>
+                                <td  class="col-lg-3 col-sm-3 col-3">
+                                    <input style="width:160px;" type="text" class="form-control" @bind="decAmount" />
+                                </td>
+                                <td  class="col-lg-1 col-sm-3 col-3">
+                                    <a type="button" @onclick="@AddToList" class="PlusButton"><img src="assets/img/icons/add-circle.svg" alt="svg"></a>
+                                </td>
+                            </tr>
+                                @foreach (var td in TodoList)
+                                {
+                                <tr>
+
+                                    <td class="col-lg-5 col-sm-3 col-3">@td.PayHeadName</td>
+                                    <td class="col-lg-3 col-sm-3 col-3">@td.Type</td>
+                                    <td class="col-lg-3 col-sm-3 col-3">@td.Amount</td>
+                                    <td class="col-lg-1 col-sm-3 col-3">
+                                        <a @onclick="@(e => deleteItem(td.Id , td.SalaryPackageDetailsId))"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+                                    </td>
+                                </tr>
+                                }
+                            
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#eaf1f9">
+                                <td colspan="2">Total</td>
+                                @*<td></td>*@
+                                <td style="font-weight:600;">@PublicVariables._Symbol@decTotalAmount</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            @*<br/>
+            <br/>*@
+            <div class="row padding1">
+                <div class="col-lg-8 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Note </label>
+                        <div class="input-groupicon">
+                            <textarea type="text" style="width:100%;" @bind="master.Narration" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @*<br />*@ <br />
+            <div class="row">
+                <div class="col-lg-12">
+                    <button @onclick="@Save" class="btn btn-submit me-2 savebutton">Save</button>
+                    <a href="/app/salarypackage" class="btn btn-cancel cancelbutton">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    SalaryPackage master = new SalaryPackage();
+    IList<PayHeadView> listPayHead;
+    SalaryPackageDetailsView view = new SalaryPackageDetailsView();
+    int intPayHeadId = 0;
+    string strType = string.Empty;
+    decimal decAmount = 0;
+    decimal decTotalAmount = 0;
+    int editedID = 0;
+    List<SalaryPackageDetailsView> TodoList = new List<SalaryPackageDetailsView>();
+    int counts;
+    //HoldDeleteItem
+    List<DeleteItem> deleteNo = new List<DeleteItem>();
+    string strMenu = "Human Resources";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        master = await _salaryPackage.GetbyId(Convert.ToInt32(id));
+        TodoList = await _salaryPackage.GetAllView(Convert.ToInt32(id));
+        listPayHead = await _payhead.GetAll();
+        CalculateTotal();
+        StateHasChanged();
+    }
+    private async void Save()
+    {
+        if (TodoList == null)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else if (master.SalaryPackageName == string.Empty)
+        {
+            Snackbar.Add("Type Salary Package.", Severity.Info);
+        }
+        else
+        {
+            var isCheck = await _salaryPackage.CheckNameId(master.SalaryPackageName);
+            if (isCheck == master.SalaryPackageId || isCheck == 0)
+            {
+                var authState = await authenticationState;
+                var user = authState.User;
+                string userName = user.FindFirst(ClaimTypes.Name).Value;
+                master.TotalAmount = decTotalAmount;
+                master.AddedDate = DateTime.UtcNow;
+                foreach (var item in TodoList)
+                {
+                    SalaryPackageDetails details = new SalaryPackageDetails();
+                    if (item != null)
+                    {
+                        details.SalaryPackageId = item.SalaryPackageId;
+                        details.SalaryPackageDetailsId = item.SalaryPackageDetailsId;
+                        details.PayHeadId = item.PayHeadId;
+                        details.Amount = item.Amount;
+                        details.Narration = string.Empty;
+                        master.listPackage.Add(details);
+                    }
+                }
+                foreach (var items in deleteNo)
+                {
+                    DeleteItem details = new DeleteItem();
+                    if (items != null)
+                    {
+                        details.SalaryPackageDetailsId = items.SalaryPackageDetailsId;
+                        master.listDelete.Add(details);
+                    }
+
+                }
+                bool result = await _salaryPackage.Update(master);
+
+                if (result == true)
+                {
+                    Snackbar.Add("SalaryPackage Updated Successfully.", Severity.Success);
+                    navigation.NavigateTo($"/app/salarypackage");
+                }
+                else
+                {
+                    Snackbar.Add("Transaction Failed.", Severity.Error);
+                }
+            }
+            else
+            {
+                Snackbar.Add("Package name already exists.", Severity.Info);
+            }
+        }
+    }
+    private async void AddToList()
+    {
+
+        if (intPayHeadId == 0)
+        {
+            Snackbar.Add("Choose PayHead.", Severity.Info);
+            return;
+        }
+        else if (decAmount == 0)
+        {
+            Snackbar.Add("Type amount.", Severity.Info);
+            return;
+        }
+        if (editedID == 0)
+        {
+            var myTodo = listPayHead.FirstOrDefault(x => x.PayHeadId == intPayHeadId);
+            view.PayHeadId = myTodo.PayHeadId;
+            view.PayHeadName = myTodo.PayHeadName;
+            view.Type = myTodo.Type;
+            var myTodoItem = new SalaryPackageDetailsView()
+                {
+                    Id = TodoList.Count() + 1,
+                    SalaryPackageDetailsId = 0,
+                    PayHeadId = view.PayHeadId,
+                    PayHeadName = view.PayHeadName,
+                    Amount = decAmount,
+                    Type = view.Type
+
+                };
+            TodoList.Add(myTodoItem);
+            view.PayHeadId = 0;
+            view.PayHeadName = string.Empty;
+            view.Type = string.Empty;
+            view.Amount = 0;
+            intPayHeadId = 0;
+            decAmount = 0;
+            strType = string.Empty;
+        }
+        else
+        {
+            var myTodos = TodoList.FirstOrDefault(x => x.PayHeadId == editedID);
+            myTodos.PayHeadId = view.PayHeadId;
+            myTodos.PayHeadName = view.PayHeadName;
+            myTodos.Amount = view.Amount;
+            myTodos.Type = view.Type;
+            view.PayHeadId = 0;
+            view.PayHeadName = string.Empty;
+            view.Type = string.Empty;
+            view.Amount = 0;
+            intPayHeadId = 0;
+            decAmount = 0;
+            strType = string.Empty;
+            editedID = 0;
+        }
+        CalculateTotal();
+        StateHasChanged();
+    }
+    private async void ChangePayHead()
+    {
+        var myTodos = listPayHead.FirstOrDefault(x => x.PayHeadId == intPayHeadId);
+        if(myTodos !=null)
+        {
+            strType = myTodos.Type;
+        }
+        else
+        {
+            strType = string.Empty;
+        }
+    }
+    void CalculateTotal()
+    {
+        decimal decTotal = 0;
+        foreach (var todo in TodoList)
+        {
+            decTotal = decTotal + todo.Amount;
+        }
+        decTotalAmount = decTotal;
+    }
+    private async Task deleteItem(int id, int salarypackagedetailsId)
+    {
+        if (id == 0)
+        {
+            var myTodo = TodoList.FirstOrDefault(x => x.SalaryPackageDetailsId == salarypackagedetailsId);
+            TodoList.Remove(myTodo);
+
+            //HoldId
+            var myHoldId = new DeleteItem()
+                {
+                    SalaryPackageDetailsId = myTodo.SalaryPackageDetailsId,
+                };
+            deleteNo.Add(myHoldId);
+        }
+        else
+        {
+            var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+            TodoList.Remove(myTodo);
+        }
+
+        view.PayHeadId = 0;
+        view.PayHeadName = string.Empty;
+        view.Type = string.Empty;
+        view.Amount = 0;
+        editedID = 0;
+        CalculateTotal();
+        StateHasChanged();
+    }
+}

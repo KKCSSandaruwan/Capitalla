@@ -1,0 +1,305 @@
+﻿@page "/app/bank"
+@inject ICustomerSupplier _customersupplier
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Bank Accounts</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Bank Accounts</h3>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                                        <MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<AccountLedgerView,bool>(FilterFunc1)">
+                    <ToolBarContent>
+                        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Bank Code</MudTh>
+                        <MudTh>Bank Name</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="LedgerName">@context.LedgerCode</MudTd>
+                        <MudTd DataLabel="Email">@context.LedgerName</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(context.LedgerId)">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.LedgerId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+</div>
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-lg-12 col-sm-12 col-12">
+                    <div class="form-group">
+										<label>Bank Name</label>
+										<input type="text" @bind="model.LedgerName" >
+							<ValidationMessage For="@(() => model.LedgerName)" />
+									</div>
+                </div>
+                <div class="col-lg-12 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Account Name</label>
+                        <input type="text" @bind="model.AccountName">
+                        <ValidationMessage For="@(() => model.AccountName)" />
+                    </div>
+                </div>
+                <div class="col-lg-12 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Account No</label>
+                        <input type="text" class="form-control" @bind="model.AccountNo">
+                        <ValidationMessage For="@(() => model.AccountNo)" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Account Code</label>
+                        <input type="text" @bind="model.LedgerCode" readonly>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6 col-12">
+						<div class="form-group">
+							<label>Opening Balance</label>
+							<input type="text" @bind="model.OpeningBalance">
+							
+							<ValidationMessage For="@(() => model.OpeningBalance)" />
+						</div>
+					</div>
+					<div class="col-lg-1 col-sm-6 col-12 CustomerAddDrop">
+						<select @bind="model.CrOrDr" class="form-control" style="width:auto;">
+							<option value="Dr">Dr</option>
+							<option value="Cr">Cr</option>
+						</select>
+					</div>
+                <div class="col-lg-12 EndButtons">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    AccountLedger model = new AccountLedger();
+    IList<AccountLedgerView> listModel;
+    IList<AccountGroupView> listGroup;
+    private bool dense = true;
+    private bool hover = true;
+    private string searchString1 = "";
+    private string searchString2 = "";
+    string strMenu = "Accounting";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _customersupplier.GetAll(28);
+        StateHasChanged();
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Bank / Add";
+        string strSerialNo = await _customersupplier.GetSerialNo();
+        model.LedgerCode = strSerialNo;
+        model.AccountGroupId = 0;
+        model.LedgerId = 0;
+        model.LedgerName = string.Empty;
+        model.Phone = string.Empty;
+        model.Email = string.Empty;
+        model.Address = string.Empty;
+        model.Country = string.Empty;
+        model.City = string.Empty;
+        model.TaxNo = string.Empty;
+        model.ShippingAddress = string.Empty;
+        model.CreditLimit = 0;
+        model.CreditPeriod = 0;
+        model.OpeningBalance = 0;
+        model.ShippingAddress = string.Empty;
+        model.CrOrDr = "Dr";
+        model.IsDefault = false;
+        model.AccountName = string.Empty;
+        model.AccountNo = string.Empty;
+        StateHasChanged();
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Bank / Edit";
+        model = await _customersupplier.GetbyId(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        model.AccountGroupId = 28;
+        model.Type = "Accounts";
+        model.CompanyId = 1;
+        if (model.LedgerId == 0)
+        {
+            var isCheck = await _customersupplier.CheckName(model.LedgerName);
+            if (isCheck == true)
+            {
+                Snackbar.Add("Acoount name already exists.", Severity.Info);
+            }
+            else
+            {
+                model.AddedDate = DateTime.UtcNow;
+                var result = await _customersupplier.Save(model);
+
+                if (result > 0)
+                {
+                    Snackbar.Add("Save Successfully.", Severity.Success);
+                    await LoadData();
+                    StateHasChanged();
+                    visible = false;
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            if (model.IsDefault == true)
+            {
+                Snackbar.Add("Default value cannot be update.", Severity.Error);
+            }
+            else
+            {
+                var isCheck = await _customersupplier.CheckNameId(model.LedgerName);
+                if (isCheck == model.LedgerId || isCheck == 0)
+                {
+                    model.ModifyDate = DateTime.UtcNow;
+                    bool result = false;
+                    result = await _customersupplier.Update(model);
+
+                    if (result == true)
+                    {
+                        Snackbar.Add("Update Successfully.", Severity.Success);
+                        await LoadData();
+                        StateHasChanged();
+                        visible = false;
+                    }
+                    else
+                    {
+                        Snackbar.Add("Invalid.", Severity.Error);
+                        StateHasChanged();
+                    }
+                }
+                else
+                {
+                    Snackbar.Add("Account name already exists.", Severity.Info);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+    private bool FilterFunc1(AccountLedgerView element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(AccountLedgerView element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.LedgerName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Address.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    private bool FilterFunc2(AccountGroupView element) => FilterFunc2(element, searchString2);
+
+    private bool FilterFunc2(AccountGroupView element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.AccountGroupName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Nature.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            AccountLedger ledger = new AccountLedger();
+            ledger = await _customersupplier.GetbyId(id);
+            if (ledger.IsDefault == true)
+            {
+                Snackbar.Add("Default value cannot be delete.", Severity.Error);
+            }
+            else
+            {
+                var result = await _customersupplier.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+}

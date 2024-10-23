@@ -1,0 +1,23 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userprefs
+*.sln.ide
+
+# Build results
+[Bb]in/
+[Oo]bj/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.db
+
+# User-specific files
+*.sln.docstates
+*.swp
+
+# Other
+.DS_Store
+Thumbs.db

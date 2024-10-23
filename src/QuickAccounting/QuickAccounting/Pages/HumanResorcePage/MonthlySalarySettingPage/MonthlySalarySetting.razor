@@ -1,0 +1,114 @@
+﻿@page "/app/monthlysetting"
+@inject ISalaryMonthSetting _salaryMonthSetting
+@inject ISalaryPackage _package
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Month Setting</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Month Setting List</h3>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added" style="float:left;" href="/app/monthlysalarysetting"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card p-3">
+        <div class="card-body" style="box-shadow: 0px 0px 5px #d7d7d7;border-radius: 5px;">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<MonthlySalary,bool>(FilterFunc1)">
+                    <ToolBarContent>
+                        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Month</MudTh>
+                        <MudTh>Narration</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="LedgerName">@context.YearMonth</MudTd>
+                        <MudTd DataLabel="Email">@context.Narration</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.MonthlySalaryId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    IList<MonthlySalary> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    private string searchString1 = "";
+    string strMenu = "Human Resources";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _salaryMonthSetting.GetAllMonth();
+        StateHasChanged();
+    }
+    private bool FilterFunc1(MonthlySalary element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(MonthlySalary element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.YearMonth.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+                var result = await _salaryMonthSetting.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+        }
+    }
+}

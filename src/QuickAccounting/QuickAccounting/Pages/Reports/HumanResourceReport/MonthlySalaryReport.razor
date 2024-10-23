@@ -1,0 +1,138 @@
+﻿@page "/app/monthlysalaryreport"
+@inject ISalaryVoucher _salaryVoucher
+@inject IEmployee _emploee
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>MonthlySalary Report</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Monthly Salary Report</h3>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="padding1">
+                <div class="card-body pb-0">
+                    <div class="row">
+                        <div class="col-lg-4 col-sm-6 col-12">
+                            <div class="form-group">
+                                From Date
+                                <RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-sm-6 col-12">
+                            <div class="form-group">
+                                To Date
+                                <RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-sm-6 col-12">
+                            <div class="form-group">
+                                Employee
+                                <RadzenDropDown Style="width:100%;" @bind-Value="@intEmployeeId" Placeholder="Choose Employee" AllowFiltering="true" Data="@(listEmployee)" TextProperty="EmployeeName" ValueProperty="EmployeeId" />
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-sm-6 col-12">
+                            <div class="form-group">
+                                Salary Month
+                                <RadzenDropDown Style="width:100%;" @bind-Value="@stringSalaryMonth" Placeholder="All" AllowFiltering="true" Data="@(listSalaryMonth)" TextProperty="YearMonth" ValueProperty="YearMonth" />
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-sm-6 col-12">
+                            <div class="form-group" style="margin-top:20px;">
+                                <a style="float:left; margin-right:4px;" class="btn btn-filters ms-auto" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+                                <a style="float:left;" class="btn btn-filters ms-auto" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer-white.svg" alt="img" style="width:1.25em;"></a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /Filter -->
+            <div id="PrintDiv">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                        <th>Employee Code</th>
+                        <th>Employee Name</th>
+                        <th>Salary Month</th>
+                        <th>Amount</th>
+                            </tr>
+                    </thead>
+                    @if (listModel != null)
+                        {
+                            <tbody>
+                                @{
+                                    int sno = 0;
+                                }
+                                @foreach (var item in listModel)
+                                {
+                                    <tr>
+                                        <td>
+                                            @{
+                                                sno++;
+                                            }
+                                            @sno
+                                        </td>
+                                        <td>@item.EmployeeCode</td>
+                                        <td>@item.EmployeeName</td>
+                                        <td>@item.YearMonth</td>
+                                        <td>@item.Salary</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+                    </table>
+            </div>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    IList<SalaryVoucherDetailsView> listModel;
+    IList<SalaryVoucherMasterView> listSalaryMonth;
+    IList<EmployeeView> listEmployee;
+    DateTime dtFromDate = DateTime.UtcNow.AddDays(-1);
+    DateTime dtToDate = DateTime.UtcNow;
+    int intEmployeeId = 0;
+    string stringSalaryMonth = "All";
+    string strMenu = "Human Resources";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listEmployee = await _emploee.GetAll();
+        listSalaryMonth = await _salaryVoucher.GetAllSalaryMonth();
+        listModel = await _salaryVoucher.MonthlySalaryReport(dtFromDate , dtToDate , intEmployeeId , stringSalaryMonth);
+        StateHasChanged();
+    }
+}

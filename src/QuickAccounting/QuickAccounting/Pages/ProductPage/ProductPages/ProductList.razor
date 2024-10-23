@@ -1,0 +1,351 @@
+﻿@page "/app/product"
+@using System.Data;
+@using System.IO;
+@using NPOI.XSSF.UserModel;
+@using NPOI.SS.UserModel
+@inject IProduct _product
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Product</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Product</h3>
+            <h5>Manage Product</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-primary ImportSupplier" style="" @onclick="() =>Show()"><img src="assets/img/icons/download.svg" alt="img" class="me-2">Import Product</a>
+            <a class="btn btn-added" style="" href="/app/productadd"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New Product</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<ProductView,bool>(FilterFunc1)">
+                    <ToolBarContent>
+                        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Code/Sku</MudTh>
+                        <MudTh>Product Name</MudTh>
+                        <MudTh>Unit Name</MudTh>
+                        <MudTh>Brand Name</MudTh>
+                        <MudTh>Category Name</MudTh>
+                        <MudTh>Purchase Rate</MudTh>
+                        <MudTh>Sales Rate</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="ProductName">@context.ProductCode</MudTd>
+                        <MudTd DataLabel="ProductName">@context.ProductName</MudTd>
+                        <MudTd DataLabel="UnitName">@context.UnitName</MudTd>
+                        <MudTd DataLabel="BrandName">@context.BrandName</MudTd>
+                        <MudTd DataLabel="GroupName">@context.GroupName</MudTd>
+                        <MudTd DataLabel="PurchaseRate">@PublicVariables._Symbol @context.PurchaseRate</MudTd>
+                        <MudTd DataLabel="SalesRate">@PublicVariables._Symbol @context.SalesRate</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3" href="/app/productedit/@context.ProductId">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.ProductId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6" Class="mb-3">
+            @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+            <div class="row">
+                <div class="col-lg-12 col-sm-4 col-12">
+                    <div class="form-group">
+                    <div class="mb-3 col-sm-12 col-md-12">
+                        <fieldset class="form-group" id="__BVID__236">
+                            <!----><div>
+                                <InputFile OnChange="@ImportExcelFile" />
+                            </div>
+                            </fieldset>
+                            </div>
+                    <div class="col-sm-12 col-md-12">
+                        <button type="button" class="btn btn-secondary btn-sm btn-submit" @onclick="()=>Save()">Submit</button>
+                        &nbsp; <button type="button" @onclick="@(async ()=> {await GenerateExcel();})" class="btn btn-secondary btn-sm btn-submit">Download</button> <!---->
+                        <button type="button" @onclick="@HandleCancel" class="btn btn-secondary btn-sm btn-cancel" style="float:right;">Cancel</button>
+                    </div>
+                    </div>
+                </div>
+                <div class="col-lg-12 col-sm-4 col-12">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            @foreach (DataColumn col in dt.Columns)
+                            {
+                                <th>@col.ColumnName</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (DataRow row in dt.Rows)
+                        {
+                            <tr>
+                                @foreach (DataColumn col in dt.Columns)
+                                {
+                                    <td>@row[col.ColumnName].ToString()</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    IList<ProductView> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    private string searchString1 = "";
+    string strMenu = "Inventory";
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    Product model = new Product();
+    DataTable dt = new DataTable();
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _product.GetAll();
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        for (int i = 0; i < dt.Rows.Count; i++)
+        {
+            var strSerialNo = _product.GetProductNo();
+            model.ProductName = dt.Rows[i]["ProductName"].ToString();
+            model.PurchaseRate = Convert.ToDecimal(dt.Rows[i]["PurchaseRate"]);
+            model.SalesRate = Convert.ToDecimal(dt.Rows[i]["SalesRate"]);
+            model.ProductCode = strSerialNo;
+            model.GroupId = 1;
+            model.BrandId = 1;
+            model.UnitId = 1;
+            model.TaxId = 1;
+            model.Mrp = 0;
+            model.Narration = string.Empty;
+            model.Barcode = string.Empty;
+            model.Image = string.Empty;
+            model.OpeningStock = 0;
+            model.ExiparyDate = DateTime.UtcNow;
+            model.Barcode = model.ProductCode;
+            model.IsActive = true;
+            model.AddedDate = DateTime.UtcNow;
+            var isCheck = await _product.CheckName(model.ProductName);
+            if (isCheck == true)
+            {
+                //Snackbar.Add("Product name already exists.", Severity.Info);
+            }
+            else
+            {
+                var result = await _product.Save(model);
+                if (result > 0)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+            Snackbar.Add("Save Successfully.", Severity.Success);
+        }
+}
+    private bool FilterFunc1(ProductView element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(ProductView element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.ProductName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.UnitName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+            if (element.GroupName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.BrandName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    async Task ImportExcelFile(InputFileChangeEventArgs e)
+    {
+        var fileStream = e.File.OpenReadStream();
+        var ms = new MemoryStream();
+        await fileStream.CopyToAsync(ms);
+        fileStream.Close();
+        ms.Position = 0;
+
+        ISheet sheet;
+        var xsswb = new XSSFWorkbook(ms);
+
+        sheet = xsswb.GetSheetAt(0);
+        IRow hr = sheet.GetRow(0);
+        var rl = new List<string>();
+
+        int cc = hr.LastCellNum;
+        for (var j = 0; j < cc; j++)
+        {
+            ICell cell = hr.GetCell(j);
+            dt.Columns.Add(cell.ToString());
+        }
+
+        for (var j = (sheet.FirstRowNum + 1); j <= sheet.LastRowNum; j++)
+        {
+            var r = sheet.GetRow(j);
+            for (var i = r.FirstCellNum; i < cc; i++)
+            {
+                rl.Add(r.GetCell(i).ToString());
+            }
+
+            if (rl.Count > 0)
+            {
+                dt.Rows.Add(rl.ToArray());
+            }
+            rl.Clear();
+        }
+    }
+    protected async Task GenerateExcel()
+    {
+        IWorkbook workbook = new XSSFWorkbook();
+        var dataFormat = workbook.CreateDataFormat();
+        var dataStyle = workbook.CreateCellStyle();
+        dataStyle.DataFormat = dataFormat.GetFormat("MM/yy/dddd HH:mm:ss");
+        ISheet worksheet = workbook.CreateSheet("Sheet1");
+
+
+
+        //int rowNumber1 = 0;
+        //IRow row1 = worksheet.CreateRow(rowNumber1++);
+        ////TbleHeder
+        //ICell cell1 = row1.CreateCell(3);
+        //cell1.SetCellValue("PurchaseInvoice");
+
+        int rowNumber = 0;
+        IRow row = worksheet.CreateRow(rowNumber++);
+        //TbleHeder
+        ICell cell = row.CreateCell(0);
+        cell.SetCellValue("ProductName");
+
+        cell = row.CreateCell(1);
+        cell.SetCellValue("PurchaseRate");
+
+        cell = row.CreateCell(2);
+        cell.SetCellValue("SalesRate");
+
+        cell = row.CreateCell(3);
+        cell.SetCellValue("UnitId");
+
+        cell = row.CreateCell(4);
+        cell.SetCellValue("CategoryId");
+
+
+
+        //Tble Body
+        //foreach (var objDue in listModel)
+        //{
+        row = worksheet.CreateRow(rowNumber++);
+
+        cell = row.CreateCell(0);
+        cell.SetCellValue("Product 01");
+
+        cell = row.CreateCell(1);
+        cell.SetCellValue("100");
+
+        cell = row.CreateCell(2);
+        cell.SetCellValue("120");
+
+        cell = row.CreateCell(3);
+        cell.SetCellValue("1");
+
+        cell = row.CreateCell(4);
+        cell.SetCellValue("1");
+
+
+        //}
+        MemoryStream ms = new MemoryStream();
+        workbook.Write(ms);
+        byte[] bytes = ms.ToArray();
+        ms.Close();
+
+        await JSRuntime.SaveAsFileAsync("ImportProduct", bytes, "application/vnd.ms-excel");
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Import Products";
+        StateHasChanged();
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            var result = await _product.Delete(id);
+            if (result == true)
+            {
+                await LoadData();
+                StateHasChanged();
+                Snackbar.Add("Delete Successfully.", Severity.Success);
+			}
+			else
+			{
+                Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                StateHasChanged();
+			}
+        }
+    }
+}

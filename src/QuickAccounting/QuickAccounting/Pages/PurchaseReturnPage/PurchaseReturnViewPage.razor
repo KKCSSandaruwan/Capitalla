@@ -1,0 +1,342 @@
+﻿@page "/app/purchasereturnview/{id}"
+@inject IPurchaseReturn _purchase
+@inject ICompany _company
+@inject IProduct _product
+@inject ITax _tax
+@inject IInvoiceSetting _setting
+@inject ISnackbar Snackbar
+@using QuickAccounting.Components
+@using QuickAccounting.Repository
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@inject IDialogService Dialog
+@attribute [Authorize]
+<PageTitle>DebitNote View</PageTitle>
+<div class="content">
+					<div class="page-header">
+						<div class="page-title">
+							<h3>Debit Note</h3>
+			<h5>View Debit Note</h5>
+						</div>
+					</div>
+					<div class="card padding1">
+						<div class="card-body">
+							<div class="card-sales-split">
+								<h2 style="font-size:15px; font-weight:600;">Debit Note Detail : @model.VoucherNo</h2>
+								<ul>
+									@if(@model.Status == "Draft")
+									{
+						<li>
+							<a style="cursor:pointer; color:#637381;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+						<li>
+							<a href="/app/purchasereturnedit/@model.PurchaseReturnMasterId"><img src="assets/img/icons/edit.svg" alt="img" class="viewtopbutton">Update</a>
+						</li>
+						<li class="ApprovedButton">
+							<a @onclick="() => OpenDeleteDialog()"><img src="assets/img/icons/tick-white.svg" alt="img" class="viewtopbutton">Approved</a>
+						</li>
+									}
+									else
+									{
+										<li>
+							<a href="/app/purchasereturnedit/@model.PurchaseReturnMasterId"><img src="assets/img/icons/edit.svg" alt="img" class="viewtopbutton">Update</a>
+						</li>
+									<li>
+							<a style="cursor:pointer;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+									}
+								</ul>
+							</div>
+			<div id="PrintDiv">
+							<div class="invoice-box table-height" style="max-width: 1600px;width:100%;overflow: auto;margin:15px auto;padding: 0;font-size: 14px;line-height: 24px;color: #555;">
+								<table cellpadding="0" cellspacing="0" style="width: 100%;line-height: inherit;text-align: left;">
+									<tbody><tr class="top">
+										<td colspan="6" style="padding: 5px;vertical-align: top;">
+											<table style="width: 100%;line-height: inherit;text-align: left;">
+												<tbody><tr>
+													<td style="width:36%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+														<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Customer Info</font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.LedgerName</font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Email</font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Phone</font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Address</font></font><br>
+													</td>
+											<td style="width:34%padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+														<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Company Info</font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @company.CompanyName </font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">@company.Email</font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">@company.PhoneNo</font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @company.Address</font></font><br>
+													</td>
+													<td style="padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+														<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Invoice Info</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Bill No: @model.VoucherNo </font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Date: @model.Date </font></font><br>
+														<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Status:  @model.Status</font></font><br>
+													</td>
+												</tr>
+											</tbody></table>
+										</td>
+									</tr>
+									<tr class="heading " style="background: #F3F2F7;">
+										<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+											Product Name
+										</td>
+										<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+											Qty
+										</td>
+							<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+								Unit
+							</td>
+										<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+											Price
+										</td>
+										<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+											Discount
+										</td>
+										<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+											Tax
+										</td>
+										<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+											Subtotal
+										</td>
+									</tr>
+									@foreach(var item in TodoList)
+									{
+									<tr class="details" style="border-bottom:1px solid #E9ECEF ;">
+										<td style="padding: 10px;vertical-align: top; display: flex;align-items: center;">
+											@item.ProductName	
+										</td>
+										<td style="padding: 10px;vertical-align: top; ">
+											@item.Qty
+										</td>
+								<td style="padding: 10px;vertical-align: top; ">
+									@item.UnitName
+								</td>
+										<td style="padding: 10px;vertical-align: top; ">
+											@item.Rate
+										</td>
+										<td style="padding: 10px;vertical-align: top; ">
+											@item.DiscountAmount
+										</td>
+										<td style="padding: 10px;vertical-align: top; ">
+											@item.TaxAmount
+										</td>
+										<td style="padding: 10px;vertical-align: top; ">
+										@PublicVariables._Symbol@item.TotalAmount
+										</td>
+									</tr>
+									}
+								</tbody>
+							<tfoot>
+						<tr class="total-order w-100 max-widthauto m-auto mb-4">
+									<td colspan="5"></td>
+									<td style="font-weight:700;">Subtotal</td>
+								<td style="font-weight:700;">@PublicVariables._Symbol@model.NetAmounts</td>
+								</tr>
+						<tr class="total-order w-100 max-widthauto m-auto mb-4">
+									<td colspan="5"></td>
+									<td>Discount</td>
+								<td>@PublicVariables._Symbol@model.BillDiscount</td>
+								</tr>
+						<tr class="total-order w-100 max-widthauto m-auto mb-4">
+									<td colspan="5"></td>
+									<td style="font-weight:700;">Taxable Total</td>
+								<td style="font-weight:700;">@PublicVariables._Symbol@model.TotalAmount</td>
+								</tr>
+						<tr class="total-order w-100 max-widthauto m-auto mb-4">
+							<td colspan="5"></td>
+							<td>Vat</td>
+								<td>@PublicVariables._Symbol@model.TotalTax</td>
+						</tr>
+						<tr class="total-order w-100 max-widthauto m-auto mb-4">
+							<td colspan="5"></td>
+							<td style="font-weight:700;">Grand Total</td>
+							<td style="font-weight:700;">@PublicVariables._Symbol@model.GrandTotal</td>
+						</tr>
+							</tfoot>	
+							</table>
+		
+							</div>
+			<table>
+				<tr>
+					<td>
+						<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Amount In Words </font></font><br>
+						<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @strNumberToWords </font></font><br>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Narration </font></font><br>
+						<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @model.Narration </font></font><br>
+					</td>
+				</tr>
+			</table>
+								<div class="row">
+									<div class="col-lg-10">
+						<h7>Created by:</h7> <br/>
+							<h7>@model.AddedDate</h7>
+									</div>
+									<div class="col-lg-2" style="float:right;">
+							<h7>Approved by:</h7> <br />
+						<h5>
+							@if (model.Status == "Draft")
+							{
+							 <span style="font-size:12px;">Not Approved</span>
+							}
+							else
+							{
+							<span style="font-size:12px;">@model.UserId</span>
+							}
+						</h5>
+					</div>
+								</div>
+								</div>
+						</div>
+					</div>
+				</div>
+
+
+@if (DeleteDialogOpen)
+{
+	<ModalDialog Title="Approve Debit Note"
+			 Text="Are you sure you want to approve this Debit Note? This will add DebitNote voucher entry."
+                 OnClose="@OnDeleteDialogClose"
+                 DialogType="ModalDialog.ModalDialogType.Ok">
+    </ModalDialog>
+}
+@code {
+	[Parameter]
+	public string id { get; set; }
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	Company company = new Company();
+	PurchaseReturnMasterView model = new PurchaseReturnMasterView();
+	PurchaseReturnMaster master = new PurchaseReturnMaster();
+	List<ProductView> TodoList = new List<ProductView>();
+	InvoiceSetting setting = new InvoiceSetting();
+	string strNumberToWords;
+	int decPurchaseVoucherType = 6;
+	public bool DeleteDialogOpen { get; set; }
+	string strMenu = "Purchase";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+		company = await _company.GetbyId(1);
+		model = await _purchase.PurchaseReturnInvoiceMasterView(Convert.ToInt32(id));
+		master = await _purchase.GetbyId(Convert.ToInt32(id));
+		TodoList = await _purchase.PurchaseReturnInvoiceDetailsView(Convert.ToInt32(id));
+		strNumberToWords = NumberToWords.ConvertAmount( Convert.ToDouble(model.GrandTotal.ToString())); 
+
+		//GetSerialNo
+		string	serial = await _purchase.GetSerialNo();
+		setting = await _setting.GetbyId(decPurchaseVoucherType);
+		master.VoucherNo = setting.Prefix + serial + setting.Suffix;
+		master.SerialNo = serial;
+		StateHasChanged();
+	}
+	private async void ApprovedOk()
+	{
+		if (TodoList == null)
+		{
+			Snackbar.Add("Invalid Entry.", Severity.Info);
+		}
+		else if (master.LedgerId == 0)
+		{
+			Snackbar.Add("Choose Supplier.", Severity.Info);
+		}
+		else if (master.VoucherNo == string.Empty)
+		{
+			Snackbar.Add("Type Voucher No.", Severity.Info);
+		}
+		else if (master.GrandTotal == 0)
+		{
+			Snackbar.Add("Invalid Entry.", Severity.Info);
+		}
+		else
+		{
+			var authState = await authenticationState;
+			var user = authState.User;
+			string userName = user.FindFirst(ClaimTypes.Name).Value;
+			master.UserId = userName;
+			master.Status = "Approved";
+			master.ModifyDate = DateTime.Now;
+			foreach (var item in TodoList)
+			{
+				PurchaseReturnDetails details = new PurchaseReturnDetails();
+				if (item != null)
+				{
+					details.PurchaseReturnDetailsId = item.PurchaseReturnDetailsId;
+					details.ProductId = item.ProductId;
+					details.Qty = item.Qty;
+					details.UnitId = item.UnitId;
+					details.Rate = item.PurchaseRate;
+					details.Amount = item.Amount;
+					details.Discount = item.Discount;
+					details.DiscountAmount = item.DiscountAmount;
+					if (item.TaxId == 0)
+					{
+						details.TaxId = 1;
+					}
+					else
+					{
+						details.TaxId = item.TaxId;
+					}
+					details.TaxRate = item.TaxRate;
+					details.TaxAmount = item.TaxAmount;
+					details.BatchId = item.BatchId;
+					details.NetAmount = item.NetAmount;
+					details.GrossAmount = 0;
+					details.PurchaseDetailsId = 0;
+					master.listOrder.Add(details);
+				}
+			}
+			var result = await _purchase.Approved(master);
+
+			if (result == true)
+			{
+				Snackbar.Add("Debit Note Approved Successfully.", Severity.Success);
+				await LoadData();
+			}
+			else
+			{
+				Snackbar.Add("Transaction Failed.", Severity.Error);
+			}
+		}
+	}
+	private async Task OnDeleteDialogClose(bool accepted)
+	{
+		if (accepted)
+		{
+			ApprovedOk();
+		}
+
+		DeleteDialogOpen = false;
+		StateHasChanged();
+	}
+
+	private void OpenDeleteDialog()
+	{
+		DeleteDialogOpen = true;
+		StateHasChanged();
+	}
+}
+

@@ -1,0 +1,251 @@
+﻿@page "/app/ledger"
+@inject IAccountReport report
+@inject ICompany _company;
+@inject IInvoiceSetting _invoice
+@inject ICustomerSupplier _ledger
+@using System.Data;
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Ledger</PageTitle>
+<div class="content">
+						<div class="page-header">
+							<div class="page-title">
+								<h3>Ledger</h3>
+							</div>
+						</div>
+
+						<!-- /product list -->
+						<div class="card">
+							<div class="card-body">
+			<!-- /Filter -->
+				<div class="padding1">
+					<div class="card-body pb-0">
+					<div class="row">
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								From Date
+								<RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								To Date
+								<RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								Account
+								<RadzenDropDown Style="width:100%;" @bind-Value="intLedgerId" Placeholder="All" AllowFiltering="true" Data="@(listLedger)" TextProperty="LedgerName" ValueProperty="LedgerId" />
+							</div>
+						</div>
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group" style="margin-top:20px;">
+                                <a style="float:left; margin-right:4px;" class="btn btn-filters ms-auto" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+                                <a style="float:left;" class="btn btn-filters ms-auto" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer-white.svg" alt="img" style="width: 1.25em;"></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Filter -->
+			<div id="PrintDiv">
+								<div class="table-responsive">
+									@*<br/>
+									<hr/>*@
+				<table style="width: 100%;line-height: inherit;text-align: left;">
+					<tbody>
+						<tr>
+							<td style="padding:5px;vertical-align:top;text-align:center;padding-bottom:20px">
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 21px;color:#000;font-weight: 600;"> @company.CompanyName </font></font><br>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.Address &ensp;|</font></font>@*<br>*@
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">&ensp; @company.PhoneNo</font></font><br>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 18px;color:#000;font-weight: 600;text-transform:uppercase;"> Ledger</font></font><br>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+<br/>
+				@((MarkupString)myMarkup)
+								</div>
+								</div>
+							</div>
+						</div>
+						<!-- /product list -->
+					</div>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    DateTime dtFromDate = DateTime.Now.AddDays(-1);
+    DateTime dtToDate = DateTime.Now;
+    Company company = new Company();
+    IList<InvoiceSetting> listVoucherType;
+    IList<AccountLedgerView> listLedger;
+    int intVoucherTypeId = 0;
+    int intLedgerId = 0;
+    string myMarkup;
+    string strMenu = "Reports";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			company = await _company.GetbyId(1);
+        listVoucherType = await _invoice.GetAll();
+        listLedger = await _ledger.GetAll();
+        intVoucherTypeId = 0;
+        intLedgerId = 0;
+        await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+        
+        StateHasChanged();
+    }
+    private async Task LoadData()
+    {
+        string values = @"<table class='table'>
+            <tr style='background: #F3F2F7;'>
+                <th style=''>S.No.</th>
+                <th>Date</th>
+                <th>Voucher No</th>
+                <th>Particular</th>
+                <th>Voucher Type</th>
+                <th>Debit</th>
+                <th>Credit</th>
+                <th>Balance</th>
+            </tr> ";
+
+        decimal totlDebit = 0;
+        decimal totlCredit = 0;
+
+        DataTable dtblsub = new DataTable();
+        DataSet dset = new DataSet();
+        dset = report.LedgercountReport(dtFromDate, dtToDate, intLedgerId, string.Empty, 1);
+        int counter = 0;
+        dtblsub = dset.Tables[0];
+        string strBalance = string.Empty;
+        string strName = string.Empty;
+
+        if (dtblsub.Rows.Count > 0)
+        {
+            for (int i = 0; i < dtblsub.Rows.Count; i++)
+            {
+                counter++;
+                strBalance = CalculateBalance(i, decimal.Parse(dtblsub.Rows[i]["debit"].ToString()), decimal.Parse(dtblsub.Rows[i]["credit"].ToString()), strBalance);
+                totlDebit = totlDebit + decimal.Parse(dtblsub.Rows[i]["debit"].ToString());
+                totlCredit = totlCredit + decimal.Parse(dtblsub.Rows[i]["credit"].ToString());
+                string strVoucherTypeName = dtblsub.Rows[i]["VoucherTypeName"].ToString();
+                if (strVoucherTypeName == "Purchase Invoice")
+                {
+                    strName = "To";
+                }
+                else if (strVoucherTypeName == "Purchase Return")
+                {
+                    strName = "To";
+                }
+                else if (strVoucherTypeName == "Payment Voucher")
+                {
+                    strName = "By";
+                }
+                else if (strVoucherTypeName == "Sales Invoice")
+                {
+                    strName = "To";
+                }
+                else if (strVoucherTypeName == "Sales Return")
+                {
+                    strName = "To";
+                }
+                else if (strVoucherTypeName == "Receipt Voucher")
+                {
+                    strName = "By";
+                }
+                else
+                {
+                }
+                values += @"<tr>
+                                <td style=''>" + counter.ToString() + @"</td>
+                                <td>" + dtblsub.Rows[i]["Date"].ToString() + @"</td>
+                                <td>" + dtblsub.Rows[i]["voucherNo"].ToString() + @" </td>
+                                <td> " + strName + "-" + dtblsub.Rows[i]["ledgerName"].ToString() + @"</td>
+                                <td> " + dtblsub.Rows[i]["voucherTypeName"].ToString() + @"</td>
+                                <td> " + PublicVariables._Symbol + dtblsub.Rows[i]["debit"].ToString() + @"</td>
+                                <td> " + PublicVariables._Symbol + dtblsub.Rows[i]["credit"].ToString() + @"</td>
+                                <td>" + PublicVariables._Symbol + strBalance.ToString() + @"</td>
+                           </tr>";
+
+            }
+        }
+        decimal decTotlDebitss = totlDebit;
+        decimal decTotlCreditss = totlCredit;
+        decimal decBlnce = decTotlDebitss - decTotlCreditss;
+        values += @"<tr>
+                        <td style='display:none;'></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td style='font-style:bold; color:black; font-size:16px;'>Total</td>
+                        <td>" + "" + @"</td>
+                        <td style='font-style:bold; color:black; font-size:16px;'>" + decTotlDebitss + @"</td>
+                        <td style='font-style:bold; color:black; font-size:16px;'>" + decTotlCreditss + @"</td>
+                        <td>" + decBlnce + @"</td>
+                    </tr>";
+        values += "</table>";
+        myMarkup = values;
+        StateHasChanged();
+    }
+    private string CalculateBalance(int index, decimal decDebit, decimal decCredit, string strPreviousBalance)
+    {
+        string strCurrentBalance = string.Empty;
+        string strCrOrDr = string.Empty;
+        decimal decRowBalance = 0;
+        try
+        {
+            if (index > 0)
+            {
+                string[] strLastBalance = strPreviousBalance.Split(' ');
+                if (strLastBalance.Length >= 2)
+                {
+                    if ((strLastBalance[1] == null ? "" : strLastBalance[1]) != string.Empty)
+                    {
+                        if (strLastBalance[1] == "Dr")
+                        {
+                            decDebit = decimal.Parse(strLastBalance[0]) + decDebit;
+                        }
+                        if (strLastBalance[1] == "Cr")
+                        {
+                            decCredit = decimal.Parse(strLastBalance[0]) + decCredit;
+                        }
+                    }
+                }
+            }
+            decRowBalance = decDebit - decCredit;
+            if (decRowBalance > 0)
+                strCrOrDr = " Dr";
+            else if (decRowBalance < 0)
+            {
+                decRowBalance = decRowBalance * (-1);
+                strCrOrDr = " Cr";
+            }
+            else
+                strCrOrDr = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+        return strCurrentBalance = Convert.ToString(decRowBalance) + strCrOrDr;
+    }
+}

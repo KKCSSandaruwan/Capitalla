@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime _jsCustom
+<PageTitle>QuickAccounting</PageTitle>
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+<AuthorizeView>
+            <Authorized>
+<div class="main-wrapper">
+        <NavMenu />
+    <div class="page-wrapper">
+            @Body
+        </div>
+</div>
+</Authorized>
+<NotAuthorized>
+    @*<QuickAccounting.Pages.Authentication.Login />*@
+</NotAuthorized>
+</AuthorizeView>
+@code {
+    protected async override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await _jsCustom.InvokeAsync<IJSObjectReference>("import", "/assets/js/script.js");
+            StateHasChanged();
+        }
+    }
+}

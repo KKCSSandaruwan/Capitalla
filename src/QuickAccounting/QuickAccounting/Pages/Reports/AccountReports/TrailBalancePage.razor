@@ -1,0 +1,138 @@
+﻿@page "/app/trailbalance"
+@inject IAccountReport report
+@inject ICompany _company;
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Trail Balance</PageTitle>
+<div class="content">
+						<div class="page-header">
+							<div class="page-title">
+								<h3>Trailbalance</h3>
+							</div>
+						</div>
+
+						<!-- /product list -->
+						<div class="card">
+							<div class="card-body">
+			<!-- /Filter -->
+				<div class="padding1">
+					<div class="card-body pb-0">
+					<div class="row">
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								From Date
+								<RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								To Date
+								<RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg-6 col-sm-6 col-12">
+							<div class="form-group" style="margin-top:20px;">
+                                <a style="float:left; margin-right:4px;" class="btn btn-filters ms-auto" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+                                <a style="float:left;" class="btn btn-filters ms-auto" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer-white.svg" alt="img" style="width: 1.25em;"></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Filter -->
+			<div id="PrintDiv">
+								<div class="table-responsive">
+									@*<br/>
+									<hr/>*@
+				<table style="width: 100%;line-height: inherit;text-align: left;">
+					<tbody>
+						<tr>
+							<td style="padding:5px;vertical-align:top;text-align:center;padding-bottom:20px">
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 21px;color:#000;font-weight: 600;"> @company.CompanyName </font></font><br>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.Address &ensp;|</font></font>@*<br>*@
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">&ensp;@company.PhoneNo</font></font><br>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 18px;color:#000;font-weight: 600;text-transform:uppercase;"> TrailBalance</font></font><br>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+<br/>
+				@((MarkupString)myMarkup)
+								</div>
+</div>
+							</div>
+						</div>
+						<!-- /product list -->
+					</div>
+
+@code {
+	[CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+	DateTime dtFromDate = DateTime.UtcNow.AddDays(-1);
+	DateTime dtToDate = DateTime.UtcNow;
+	Company company = new Company();
+	string myMarkup;
+	string strMenu = "Reports";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            company = await _company.GetbyId(1);
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+		
+		string values = @"<table class='table' id='tbldemo'>
+                      <tr style='background: #F3F2F7;'>
+                       <th>Particular</th>
+                        <th>Opening Balance</th>
+                        <th>Debit</th>
+                        <th>Credit</th>
+                        <th>Closing Balance</th>
+                        </tr>";
+		List<FinancialReport> lstTypes = report.TrailBalance(dtFromDate, dtToDate, 1);
+		//int counter = 0;
+		decimal decDebit = 0;
+		decimal decCredit = 0;
+		foreach (FinancialReport dto in lstTypes)
+		{
+			//counter++;
+			decDebit = decDebit + dto.Debit;
+			decCredit = decCredit + dto.Credit;
+			values += @"<tr>
+<td >" + dto.Name.ToString() + @"</td>
+<td>" + PublicVariables._Symbol + dto.OpeningBalance + @"</td>
+<td>" + PublicVariables._Symbol + dto.Debit + @"</td>
+<td>" + PublicVariables._Symbol + dto.Credit + @"</td>
+<td>" + PublicVariables._Symbol + dto.Balance + @"</td>
+                </tr>";
+		}
+		values += @"<tr>
+<td style='font-style:700; color:black;font-size:16px'>" + "Total" + @"</td>
+<td style='font-style:700; color:black;font-size:16px'>" + "" + @"</td>
+<td style='font-style:700; color:black;font-size:16px'>" + decDebit + @"</td>
+<td style='font-style:700; color:black;font-size:16px'>" + decCredit + @"</td>
+<td style='font-style:700; color:black;font-size:16px'>" + "" + @"</td>
+</tr>";
+		values += " </table>";
+		myMarkup = values;
+		StateHasChanged();
+	}
+}

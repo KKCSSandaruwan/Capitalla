@@ -1,0 +1,170 @@
+﻿@page "/app/monthlysalarysetting"
+@inject ISalaryMonthSetting _salaryMonthSetting
+@inject ISalaryPackage _package
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Salary Month Setting</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Salary Month Setting</h3>
+        </div>
+        @*<div class="page-btn">
+            <a class="btn btn-added" style="float:left;" href="/app/salarypackageadd"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New</a>
+        </div>*@
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="form-group padding1">
+            <div class="row" style="display: ruby;">
+                <div class="col-lg-2 col-sm-3 col-3">
+                    
+                        <label>Salary Month</label> </div>
+                        @*<div class="row">*@
+                            <div class="col-lg-4 col-sm-6 col-4">
+                                <RadzenDatePicker @bind-Value=@master.SalaryMonth DateFormat="MMMMyyyy" Change="()=>ChangeDate()" Class="w-100" />
+                            </div>
+                        @*</div>*@
+                    </div>
+                </div>
+                </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Employee Code</th>
+                            <th>Employee Name</th>
+                            <th>Package</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @if (listModel != null)
+                    {
+                        @foreach (var item in listModel)
+                        {
+                            <tr>
+                                <td>@item.EmployeeCode</td>
+                                        <td>@item.EmployeeName</td>
+                                <td>
+                                    <select @bind="@item.SalaryPackageId" class="table-select">
+                                        @if(listPackage !=null)
+                                        {
+                                       @foreach(var items in listPackage)
+                                            {
+                                                <option value="@items.SalaryPackageId">@items.SalaryPackageName</option>
+                                            }
+                                        }
+                                    </select>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    </tbody>
+                </table>
+            @*</div>*@
+            <br /> @*<br />*@
+            <div class="row padding1">
+                <div class="col-lg-12">
+                    <button @onclick="@Save" class="btn btn-submit me-2">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    MonthlySalary master = new MonthlySalary();
+    IList<MonthlySalarySettingView> listModel;
+    IList<SalaryPackage> listPackage;
+    int intSalaryPackageId;
+    string monthYear;
+    string strMenu = "Human Resources";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        master.SalaryMonth = DateTime.UtcNow;
+        string strMonth = master.SalaryMonth.ToString("MMMMyyyy");
+        string Month = strMonth.Substring(0, 3);
+        string strmonthYear = Convert.ToDateTime(strMonth.ToString()).Year.ToString();
+        monthYear = Month + " " + strmonthYear;
+        listModel = await _salaryMonthSetting.GetAll(monthYear);
+        listPackage = await _package.GetAll();
+        //master.Amount = TodoList.Sum(item => item.ReceiveAmount);
+        StateHasChanged();
+    }
+    private async Task ChangeDate()
+    {
+        string strMonth = master.SalaryMonth.ToString("MMMMyyyy");
+        string Month = strMonth.Substring(0, 3);
+        string strmonthYear = Convert.ToDateTime(strMonth.ToString()).Year.ToString();
+        monthYear = Month + " " + strmonthYear;
+        listModel = await _salaryMonthSetting.GetAll(monthYear);
+        listPackage = await _package.GetAll();
+        StateHasChanged();
+    }
+    private async void Save()
+    {
+        if (listModel == null)
+        {
+            Snackbar.Add("Invalid.", Severity.Error);
+        }
+        else
+        {
+            master.YearMonth = monthYear;
+            master.Narration = string.Empty;
+            master.AddedDate = DateTime.UtcNow;
+            foreach (var item in listModel)
+            {
+                if(item.SalaryPackageId > 0)
+                {
+                    MonthlySalaryDetails details = new MonthlySalaryDetails();
+                    details.MonthlySalaryDetailsId = item.MonthlySalaryDetailsId;
+                    details.EmployeeId = item.EmployeeId;
+                    details.SalaryPackageId = item.SalaryPackageId;
+                    details.MonthlySalaryId = item.MonthlySalaryId;
+                    master.listOrder.Add(details);
+                }
+            }
+            var result = await _salaryMonthSetting.Save(master);
+
+            if (result > 0)
+            {
+                Snackbar.Add("Monthly Salary Setting Created Successfully.", Severity.Success);
+                await LoadData();
+                navigation.NavigateTo("/app/monthlysetting");
+                StateHasChanged();
+            }
+            else
+            {
+                Snackbar.Add("Transaction Failed.", Severity.Error);
+            }
+        }
+    }
+}

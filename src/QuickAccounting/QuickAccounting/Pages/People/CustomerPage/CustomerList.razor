@@ -1,0 +1,339 @@
+﻿@page "/app/customer"
+@using System.Data;
+@using System.IO;
+@using NPOI.XSSF.UserModel;
+@using NPOI.SS.UserModel
+@inject ICustomerSupplier _customersupplier
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Customer</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Customer</h3>
+            <h5>Manage Customer</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-primary ImportSupplier" style="" @onclick="() =>Show()"><img src="assets/img/icons/download.svg" alt="img" class="me-2">Import Customer</a>
+            <a class="btn btn-added AddNewCustomer" style="" href="/app/customeradd"><img src="assets/img/icons/plus.svg" alt="img">Add New Customer</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<AccountLedgerView,bool>(FilterFunc1)">
+                    <ToolBarContent>
+                        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>LedgerName</MudTh>
+                        <MudTh>Email</MudTh>
+                        <MudTh>Phone</MudTh>
+                        <MudTh>Address</MudTh>
+                        <MudTh>Is Default</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="LedgerName">@context.LedgerName</MudTd>
+                        <MudTd DataLabel="Email">@context.Email</MudTd>
+                        <MudTd DataLabel="Phone">@context.Phone</MudTd>
+                        <MudTd DataLabel="Address">@context.Address</MudTd>
+                        <MudTd DataLabel="IsDefault">@context.IsDefault</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3" href="/app/customeredit/@context.LedgerId">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.LedgerId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" class="ImportPuopup" Style="">
+    <TitleContent>
+        <MudText Typo="Typo.h4">
+            @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="row">
+            <div class="col-lg-12 col-sm-4 col-12">
+                <div class="form-group">
+                    <div class="mb-3 col-sm-12 col-md-12">
+                        <fieldset class="form-group" id="__BVID__236">
+                            <!---->
+                            <div>
+                                <InputFile OnChange="@ImportExcelFile" />
+                            </div>
+                        </fieldset>
+                    </div>
+                    <div class="col-sm-12 col-md-12">
+                        <button type="button" class="btn btn-secondory btn-sm btn-submit" @onclick="()=>Save()">Submit</button>
+                        &nbsp; <button type="button" @onclick="@(async ()=> {await GenerateExcel();})" class="btn btn-secondory btn-sm btn-submit">Download</button> <!---->
+                        <button type="button" @onclick="@HandleCancel" class="btn btn-secondory btn-sm btn-cancel" style="float:right;">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-12 col-sm-4 col-12">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            @foreach (DataColumn col in dt.Columns)
+                            {
+                                <th>@col.ColumnName</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (DataRow row in dt.Rows)
+                        {
+                            <tr>
+                                @foreach (DataColumn col in dt.Columns)
+                                {
+                                    <td>@row[col.ColumnName].ToString()</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    IList<AccountLedgerView> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    private string searchString1 = "";
+    string strMenu = "Sales";
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    AccountLedger model = new AccountLedger();
+    DataTable dt = new DataTable();
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        listModel = await _customersupplier.GetAll(26);
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        for (int i = 0; i < dt.Rows.Count; i++)
+        {
+            string strSerialNo = await _customersupplier.GetSerialNo();
+            model.LedgerCode = strSerialNo;
+            model.LedgerName = dt.Rows[i]["Name"].ToString();
+            model.Email = dt.Rows[i]["Email"].ToString();
+            model.Phone = dt.Rows[i]["Phone"].ToString();
+            model.Address = dt.Rows[i]["Address"].ToString();
+            model.LedgerId = 0;
+            model.Country = string.Empty;
+            model.City = string.Empty;
+            model.TaxNo = string.Empty;
+            model.ShippingAddress = string.Empty;
+            model.CreditLimit = 0;
+            model.CreditPeriod = 0;
+            model.OpeningBalance = 0;
+            model.ShippingAddress = string.Empty;
+            model.CrOrDr = "Dr";
+            model.IsDefault = false;
+            model.AccountName = string.Empty;
+            model.AccountNo = string.Empty;
+            model.AccountGroupId = 26; // 26 is Customer
+            model.Type = "Customer";
+            model.CompanyId = 1;
+            model.AddedDate = DateTime.Now;
+            var isCheck = await _customersupplier.CheckName(model.LedgerName);
+            if (isCheck == true)
+            {
+                //Snackbar.Add("Customer name already exists.", Severity.Info);
+            }
+            else
+            {
+                var result = await _customersupplier.Save(model);
+
+                if (result > 0)
+                {
+                    StateHasChanged();
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+            Snackbar.Add("Save Successfully.", Severity.Success);
+        }
+    }
+    async Task ImportExcelFile(InputFileChangeEventArgs e)
+    {
+        var fileStream = e.File.OpenReadStream();
+        var ms = new MemoryStream();
+        await fileStream.CopyToAsync(ms);
+        fileStream.Close();
+        ms.Position = 0;
+
+        ISheet sheet;
+        var xsswb = new XSSFWorkbook(ms);
+
+        sheet = xsswb.GetSheetAt(0);
+        IRow hr = sheet.GetRow(0);
+        var rl = new List<string>();
+
+        int cc = hr.LastCellNum;
+        for (var j = 0; j < cc; j++)
+        {
+            ICell cell = hr.GetCell(j);
+            dt.Columns.Add(cell.ToString());
+        }
+
+        for (var j = (sheet.FirstRowNum + 1); j <= sheet.LastRowNum; j++)
+        {
+            var r = sheet.GetRow(j);
+            for (var i = r.FirstCellNum; i < cc; i++)
+            {
+                rl.Add(r.GetCell(i).ToString());
+            }
+
+            if (rl.Count > 0)
+            {
+                dt.Rows.Add(rl.ToArray());
+            }
+            rl.Clear();
+        }
+    }
+    protected async Task GenerateExcel()
+    {
+        IWorkbook workbook = new XSSFWorkbook();
+        var dataFormat = workbook.CreateDataFormat();
+        var dataStyle = workbook.CreateCellStyle();
+        dataStyle.DataFormat = dataFormat.GetFormat("MM/yy/dddd HH:mm:ss");
+        ISheet worksheet = workbook.CreateSheet("Sheet1");
+
+
+
+        //int rowNumber1 = 0;
+        //IRow row1 = worksheet.CreateRow(rowNumber1++);
+        ////TbleHeder
+        //ICell cell1 = row1.CreateCell(3);
+        //cell1.SetCellValue("PurchaseInvoice");
+
+        int rowNumber = 0;
+        IRow row = worksheet.CreateRow(rowNumber++);
+        //TbleHeder
+        ICell cell = row.CreateCell(0);
+        cell.SetCellValue("Name");
+
+        cell = row.CreateCell(1);
+        cell.SetCellValue("Phone");
+
+        cell = row.CreateCell(2);
+        cell.SetCellValue("Email");
+
+        cell = row.CreateCell(3);
+        cell.SetCellValue("Address");
+
+        //Tble Body
+        row = worksheet.CreateRow(rowNumber++);
+
+        cell = row.CreateCell(0);
+        cell.SetCellValue("Walk In Customer");
+
+        cell = row.CreateCell(1);
+        cell.SetCellValue("+97798000000");
+
+        cell = row.CreateCell(2);
+        cell.SetCellValue("bryanhamal@gmail.com");
+
+        cell = row.CreateCell(3);
+        cell.SetCellValue("Birendranagar Surkhet");
+
+
+
+        MemoryStream ms = new MemoryStream();
+        workbook.Write(ms);
+        byte[] bytes = ms.ToArray();
+        ms.Close();
+
+        await JSRuntime.SaveAsFileAsync("ImportCustomer", bytes, "application/vnd.ms-excel");
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Import Customer";
+        StateHasChanged();
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+    private bool FilterFunc1(AccountLedgerView element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(AccountLedgerView element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.LedgerName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.Address.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            var result = await _customersupplier.Delete(id);
+            if (result == true)
+            {
+                await LoadData();
+                StateHasChanged();
+                Snackbar.Add("Delete Successfully.", Severity.Success);
+			}
+			else
+			{
+                Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                StateHasChanged();
+			}
+        }
+    }
+}

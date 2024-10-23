@@ -1,0 +1,332 @@
+﻿@page "/app/expensesedit/{id}"
+@inject ICustomerSupplier _ledger
+@inject IExpenses _expenses
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Expenses Edit</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Edit Expenses</h3>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-body p-3">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>#Expense</label>
+                        @*<div class="row">
+                            <div class="col-lg-10 col-sm-10 col-10">*@
+                                <input type="text" @bind="master.VoucherNo" readonly />
+                            @*</div>
+                        </div>*@
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Paid To</label>
+                        @*<div class="row">
+                            <div class="col-lg-12 col-sm-11 col-11">*@
+                                <RadzenDropDown Style="width:100%;" @bind-Value="@master.LedgerId" Placeholder="Choose Supplier" AllowFiltering="true" Data="@(listLedger)" TextProperty="LedgerName" ValueProperty="LedgerId" />
+                            @*</div>
+                        </div>*@
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Date </label>
+                        <div class="input-groupicon">
+                            <RadzenDatePicker @bind-Value=@master.Date DateFormat="d" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Amount </label>
+                        <div class="input-groupicon">
+                            <input type="number" @bind="master.Amount" class="form-control" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Note </label>
+                        <div class="input-groupicon">
+                            <input type="text" style="width:100%;" @bind="master.Narration" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Accounts</th>
+                                <th>Amount</th>
+                                <th>Narration</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int sno = 0;
+                            }
+                            @foreach (var td in TodoList)
+							{
+                                
+                            <tr>
+                                  @{
+                                        sno++;
+                                    }  
+                                    <td><RadzenDropDown Style="width:100%;" @bind-Value="td.LedgerId" Placeholder="Choose Account" AllowFiltering="true" Data="@(listExpense)" TextProperty="LedgerName" ValueProperty="LedgerId" Change="@(e => editItem(td.Id))" /></td>
+                                    <td><input type="number" @bind-value="td.Amount" style="width: 120px" class="form-control" @onkeyup="@(e => editItem(td.Id))" @onclick="@(e => editItem(td.Id))" @bind-value:event="oninput"></td>
+                                    <td><input type="text" @bind-value="td.Narration" class="form-control" @onkeyup="@(e => editItem(td.Id))" @onclick="@(e => editItem(td.Id))" @bind-value:event="oninput"></td>
+                                    <td>
+                                        <a type="button" @onclick="@DefaultAddtoList" class="PlusButton"><img src="assets/img/icons/add-circle.svg" alt="svg"></a>
+                                        <a @onclick="@(e => deleteItem(td.Id , sno, td.ExpensesDetailsId))"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <br /> <br />
+            <div class="row">
+                <div class="col-lg-12">
+                    <button @onclick="@Save" class="btn btn-submit me-2">Save</button>
+                    <a href="/app/expenses" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    ExpenseMaster master = new ExpenseMaster();
+    IList<AccountLedgerView> listLedger;
+    IList<AccountLedgerView> listExpense;
+    int intExpenseId = 0;
+    int decExpenseVoucherTypeId = 11;
+    int editedID = 0;
+    IList<ExpensesDetailsView> TodoList = new List<ExpensesDetailsView>();
+    ExpensesDetailsView details = new ExpensesDetailsView();
+    int counts;
+    //HoldDeleteItem
+    List<DeleteItem> deleteNo = new List<DeleteItem>();
+    string strMenu = "Expenses";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        master = await _expenses.GetbyId(Convert.ToInt32(id));
+        listLedger = await _ledger.GetAll(22);
+        OnChange();
+        StateHasChanged();
+    }
+    private async void Save()
+    {
+        if (TodoList == null)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else if (master.LedgerId == 0)
+        {
+            Snackbar.Add("Choose Supplier.", Severity.Info);
+        }
+        else if (master.VoucherNo == string.Empty)
+        {
+            Snackbar.Add("Type Voucher No.", Severity.Info);
+        }
+        else
+        {
+            var authState = await authenticationState;
+            var user = authState.User;
+            string userName = user.FindFirst(ClaimTypes.Name).Value;
+            master.VoucherTypeId = decExpenseVoucherTypeId;
+            master.Status = "Approved";
+            master.UserId = userName;
+            master.FinancialYearId = 1;
+            master.WarehouseId = 1;
+            master.CompanyId = 1;
+            master.Narration = string.Empty;
+            master.AddedDate = DateTime.UtcNow;
+
+            foreach (var item in TodoList)
+            {
+
+                ExpensesDetails details = new ExpensesDetails();
+                if (item != null)
+                {
+
+                    if (item.LedgerId > 0)
+                    {
+                        details.ExpensesDetailsId = item.ExpensesDetailsId;
+                        details.LedgerId = item.LedgerId;
+                        details.Amount = item.Amount;
+                        details.Narration = item.Narration;
+                        master.listOrder.Add(details);
+                    }
+
+                }
+            }
+            foreach (var items in deleteNo)
+            {
+                DeleteItem details = new DeleteItem();
+                if (items != null)
+                {
+                    details.DeleteExpenditureId = items.DeleteExpenditureId;
+                    master.listDelete.Add(details);
+                }
+
+            }
+            var result = await _expenses.Update(master);
+
+            if (result == true)
+            {
+                Snackbar.Add("Successfully Update Expenses.", Severity.Info);
+                navigation.NavigateTo($"/app/expensesview/{master.ExpensiveMasterId}");
+            }
+            else
+            {
+                Snackbar.Add("Invalid.", Severity.Info);
+            }
+        }
+    }
+    private async void OnChange()
+    {
+        //Addtolist
+        listExpense = await _ledger.GetAllExpenses();
+        TodoList = await _expenses.ExpensesDetailsView(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async void DefaultAddtoList()
+    {
+        var myTodoItem = new ExpensesDetailsView()
+            {
+                Id = TodoList.Count() + 1,
+                ExpensesDetailsId = 0,
+                LedgerId = 0,
+                Amount = 0,
+                Narration = string.Empty,
+            };
+        TodoList.Add(myTodoItem);
+        details.LedgerId = 0;
+        details.Amount = 0;
+        details.Narration = string.Empty;
+        StateHasChanged();
+    }
+    private async void AddToList()
+    {
+        
+        if (editedID == 0)
+        {
+            var myTodoItem = new ExpensesDetailsView()
+                {
+                    Id = TodoList.Count() + 1,
+                    ExpensesDetailsId = details.ExpensesDetailsId,
+                    LedgerId = details.LedgerId,
+                    Amount = details.Amount,
+                    Narration = details.Narration
+
+                };
+            TodoList.Add(myTodoItem);
+            details.ExpensesDetailsId = 0;
+            details.LedgerId = 0;
+            details.Amount = 0;
+            details.Narration = string.Empty;
+        }
+        else
+        {
+            var myTodos = TodoList.FirstOrDefault(x => x.Id == editedID);
+            myTodos.ExpensesDetailsId = details.ExpensesDetailsId;
+            myTodos.LedgerId = details.LedgerId;
+            myTodos.Amount = details.Amount;
+            myTodos.Narration = details.Narration;
+            editedID = 0;
+            details.ExpensesDetailsId = 0;
+            details.LedgerId = 0;
+            details.Amount = 0;
+            details.Narration = string.Empty;
+        }
+        CalculateTotal();
+        StateHasChanged();
+    }
+    void editItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+        details.ExpensesDetailsId = myTodo.ExpensesDetailsId;
+        details.LedgerId = myTodo.LedgerId;
+        details.Narration = myTodo.Narration;
+        details.Amount = myTodo.Amount;
+        editedID = id;
+        AddToList();
+    }
+    private async Task deleteItem(int id, int index, int intExpensesDetailsId)
+    {
+
+        if (index > 1)
+        {
+            if (intExpensesDetailsId == 0)
+            {
+                var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+                TodoList.Remove(myTodo);
+                
+            }
+            else
+            {
+                var myTodo = TodoList.FirstOrDefault(x => x.ExpensesDetailsId == intExpensesDetailsId);
+                TodoList.Remove(myTodo);
+
+                //HoldId
+                var myHoldId = new DeleteItem()
+                    {
+                        DeleteExpenditureId = myTodo.ExpensesDetailsId,
+                    };
+                deleteNo.Add(myHoldId);
+            }
+            editedID = 0;
+            CalculateTotal();
+            StateHasChanged();
+        }
+        else
+        {
+            Snackbar.Add("Default value cannot be delete.", Severity.Info);
+        }
+    }
+    void CalculateTotal()
+    {
+        decimal decTotalAmount = 0;
+        foreach (var todo in TodoList)
+        {
+            decTotalAmount = decTotalAmount + todo.Amount;
+        }
+        master.Amount = Math.Round(decTotalAmount, 2);
+    }
+}

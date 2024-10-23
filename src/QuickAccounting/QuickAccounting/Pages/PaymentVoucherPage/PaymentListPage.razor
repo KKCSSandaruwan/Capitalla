@@ -1,0 +1,174 @@
+﻿@page "/app/payment"
+@inject IPaymentOut _payment
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Payment Voucher</PageTitle>
+<div class="content">
+	<div class="page-header">
+		<div class="page-title">
+			<h3>Payment</h3>
+		</div>
+		<div class="page-btn">
+			<a href="/app/paymentadd" class="btn btn-added">
+				<img src="assets/img/icons/plus.svg" alt="img">Add New
+			</a>
+		</div>
+	</div>
+
+						<!-- /product list -->
+	<div class="card">
+		<div class="card-body">
+			<!-- /Filter -->
+			<div class="padding1">
+				<div class="card-body pb-0">
+					<div class="row">
+						<div class="col-lg col-sm-6 col-12">
+							<div class="form-group">
+								From Date
+								@*<input type="date" @bind="@dtFromDate" class="form-control">*@
+								<RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg col-sm-6 col-12">
+							<div class="form-group">
+								To Date
+								@*<input type="date" @bind="@dtToDate" class="form-control">*@
+								<RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg col-sm-6 col-12">
+							<div class="form-group">
+								Payment No
+								<input type="text" @bind="@strVoucherNo" placeholder="Payment No">
+							</div>
+						</div>
+						<div class="col-lg-1 col-sm-6 col-12">
+							<div class="form-group" style="margin-top:20px;">
+								<a class="btn ms-auto search-button" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Filter -->
+								<div class="table-responsive">
+				<MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<PaymentReceiveView,bool>(FilterFunc1)">
+					<ToolBarContent>
+						<MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+					</ToolBarContent>
+					<HeaderContent>
+						<MudTh>Payment Date</MudTh>
+						<MudTh>Payment No</MudTh>
+						<MudTh>Paid From</MudTh>
+						<MudTh>Amount</MudTh>
+						<MudTh>Status</MudTh>
+						<MudTh></MudTh>
+					</HeaderContent>
+					<RowTemplate>
+						<MudTd DataLabel="LedgerName">@context.Date</MudTd>
+						<MudTd DataLabel="VoucherNo">@context.VoucherNo</MudTd>
+						<MudTd DataLabel="Date">@context.LedgerName</MudTd>
+						<MudTd DataLabel="Amount">@PublicVariables._Symbol@context.Amount</MudTd>
+						@if (context.PaymentType == "Draft")
+						{
+							<MudTd DataLabel="PaymentType" Class="badges bg-lightred statusbutton">@context.PaymentType</MudTd> @*<br />*@
+							<MudTd DataLabel="PaymentType" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+						}
+						else
+						{
+							<MudTd DataLabel="PaymentType" Class="badges bg-lightgreen statusbutton">@context.PaymentType</MudTd>
+						}
+						<MudTd DataLabel="" Class="text-align:center;">
+							<a class="me-3" href="/app/paymentview/@context.PaymentMasterId">
+								<img src="assets/img/icons/edit.svg" alt="img">
+							</a>
+							<a class="confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context)">
+								<img src="assets/img/icons/delete.svg" alt="img">
+							</a>
+						</MudTd>
+					</RowTemplate>
+					<PagerContent>
+						<MudTablePager />
+					</PagerContent>
+				</MudTable>
+			</div>
+		</div>
+	</div>
+						<!-- /product list -->
+</div>
+
+@code {
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	private bool dense = true;
+	private bool hover = true;
+	IList<PaymentReceiveView> listModel;
+	PaymentMaster paymentDelete = new PaymentMaster();
+	private string searchString1 = "";
+	DateTime dtFromDate = DateTime.Now.AddDays(-7);
+	DateTime dtToDate = DateTime.Now;
+	string strVoucherNo = string.Empty;
+	string strType = "PaymentVoucher";
+	string strMenu = "Accounting";
+	protected override async Task OnInitializedAsync()
+	{
+		
+		//CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+           await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+		listModel = await _payment.GetAll(dtFromDate , dtToDate , strVoucherNo, strType);
+		StateHasChanged();
+	}
+	private bool FilterFunc1(PaymentReceiveView element) => FilterFunc(element, searchString1);
+
+	private bool FilterFunc(PaymentReceiveView element, string searchString)
+	{
+		if (string.IsNullOrWhiteSpace(searchString))
+			return true;
+		if (element.LedgerName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		if (element.VoucherNo.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		if (element.PaymentType.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		return false;
+	}
+	private async void Delete(PaymentReceiveView brand)
+	{
+		bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+		if (confirmed)
+		{
+			paymentDelete = await _payment.GetbyId(brand.PaymentMasterId);
+			var result = await _payment.Delete(paymentDelete);
+			if (result == true)
+			{
+				await LoadData();
+				Snackbar.Add("Delete Successfully.", Severity.Success);
+				StateHasChanged();
+			}
+			else
+			{
+				Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+			}
+		}
+	}
+}

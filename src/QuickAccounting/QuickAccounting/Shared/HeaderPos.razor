@@ -1,0 +1,84 @@
+﻿@inject AuthenticationStateProvider authStateProvider
+@inject NavigationManager navManager
+<div class="header">
+
+	<!-- Logo -->
+	<div class="header-left active" style="background:#ffffff;">
+		<a style="cursor:pointer" class="logo" @onclick="Navigate">
+			<img src="img/logo.svg" alt="">
+		</a>
+		<a style="cursor:pointer;" @onclick="Navigate" class="logo-small">
+			<img src="img/logo.svg" alt="">
+		</a>
+		@*<a id="toggle_btn" href="javascript:void(0);">
+		</a>*@
+	</div>
+	<!-- /Logo -->
+
+	<a id="mobile_btn" class="mobile_btn" href="#sidebar">
+		<span class="bar-icon">
+			<span></span>
+			<span></span>
+			<span></span>
+		</span>
+	</a>
+
+	<!-- Header Menu -->
+	<ul class="nav user-menu">
+
+		<NotificationLayout />
+		<li class="nav-item dropdown has-arrow main-drop">
+			<a href="javascript:void(0);" class="dropdown-toggle nav-link userset" data-bs-toggle="dropdown">
+				<span class="user-img">
+					<img src="img/user.png" alt="">
+					<span class="status online"></span>
+				</span>
+			</a>
+			<div class="dropdown-menu menu-drop-user">
+				<AuthorizeView>
+					<Authorized>
+						<div class="profilename">
+							<div class="profileset">
+								<span class="user-img">
+									<img src="img/user.png" alt="">
+									<span class="status online"></span>
+								</span>
+								<div class="profilesets">
+									<h6>@context.User.Identity.Name</h6>
+								</div>
+							</div>
+							<hr class="m-0">
+							<a class="dropdown-item" href="/app/userprofile"> <i class="me-2" data-feather="user"></i> My Profile</a>
+							<a class="dropdown-item" href="/app/company"><i class="me-2" data-feather="settings"></i>Settings</a>
+							<hr class="m-0">
+							<a style="cursor:pointer" class="dropdown-item logout pb-0" @onclick="@Logout"><img src="assets/img/icons/log-out.svg" class="me-2" alt="img">Logout</a>
+						</div>
+					</Authorized>
+				</AuthorizeView>
+			</div>
+		</li>
+	</ul>
+	<!-- /Header Menu -->
+	<!-- Mobile Menu -->
+	<div class="dropdown mobile-user-menu">
+		<a href="javascript:void(0);" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis-v"></i></a>
+		<div class="dropdown-menu dropdown-menu-right">
+			<a class="dropdown-item" href="/app/userprofile">My Profile</a>
+			<a class="dropdown-item" href="/app/company">Settings</a>
+			<a class="dropdown-item" style="cursor:pointer;" @onclick="@Logout">Logout</a>
+		</div>
+	</div>
+	<!-- /Mobile Menu -->
+</div>
+@code {
+	private async Task Logout()
+	{
+		var customAuthStateProvider = (CustomAuthenticationStateProvider)authStateProvider;
+		await customAuthStateProvider.UpdateAuthenticationState(null);
+		navManager.NavigateTo("/", true);
+	}
+	private void Navigate()
+	{
+		navManager.NavigateTo("/app/dashboard", true);
+	}
+}

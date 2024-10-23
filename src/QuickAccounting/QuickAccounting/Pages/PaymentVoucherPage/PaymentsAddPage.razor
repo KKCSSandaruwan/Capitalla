@@ -1,0 +1,296 @@
+﻿@page "/app/paymentadd"
+@inject ICustomerSupplier _ledger
+@inject IPaymentOut _payment
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Payment Voucher</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>New Payment</h3>
+        </div>
+    </div>
+    <div class="card padding1">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>#Payment No</label>
+                                <input type="text" @bind="master.VoucherNo" readonly />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Paid From</label>
+                        <RadzenDropDown Style="width:100%;" @bind-Value="@master.LedgerId" Placeholder="Choose Supplier" AllowFiltering="true" Data="@(listLedger)" TextProperty="LedgerName" ValueProperty="LedgerId" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Payment Date </label>
+                        <div class="input-groupicon">
+                            <RadzenDatePicker @bind-Value=@master.Date DateFormat="d" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+
+            <div class="row mt-3">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Accounts</th>
+                                <th>Amount</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int sno = 0;
+                            }
+                            @foreach (var td in TodoList)
+							{
+                                
+                            <tr>
+                                  @{
+                                        sno++;
+                                    }
+                                    <td><RadzenDropDown Style="width:100%;" @bind-Value="td.LedgerId" Placeholder="Choose Cash/Bank account" AllowFiltering="true" Data="@(listCashBank)" TextProperty="LedgerName" ValueProperty="LedgerId" Change="@(e => editItem(td.Id))" /></td>
+                                    <td><input type="number" @bind-value="td.TotalAmount" style="width: 120px" class="form-control" @onkeyup="@(e => editItem(td.Id))" @onclick="@(e => editItem(td.Id))" @bind-value:event="oninput"></td>
+                                    <td style="text-align:center;">
+                                        <a type="button" @onclick="@DefaultAddtoList" class="PlusButton me-3"><img src="assets/img/icons/add-circle.svg" alt="svg"></a>
+                                        <a @onclick="@(e => deleteItem(td.Id , sno))"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <br/>
+            <div class="row">
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Total </label>
+                        <div class="input-groupicon">
+                            <input type="number" @bind="master.Amount" class="form-control" readonly>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Note </label>
+                        <div class="input-groupicon">
+                            <input type="text" style="width:100%;" @bind="master.Narration" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br /> <br />
+            <div class="row">
+                <div class="col-lg-12">
+                    <button @onclick="@Save" class="btn btn-submit me-2">Save</button>
+                    <a href="/app/payment" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    PaymentMaster master = new PaymentMaster();
+    IList<AccountLedgerView> listCashBank;
+    IList<AccountLedgerView> listLedger;
+    int decPaymentOutVoucher = 4;
+    int editedID = 0;
+    List<PaymentDetailsView> TodoList = new List<PaymentDetailsView>();
+    PaymentDetailsView details = new PaymentDetailsView();
+    int counts;
+    string strMenu = "Accounting";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        //GetSerialNo
+        string serial = await _payment.GetSerialNo();
+        master.SerialNo = serial;
+        listCashBank = await _ledger.GetCashOrBank();
+
+        master.VoucherNo = "DRAFT";
+        master.Date = DateTime.Now;
+        master.Narration = string.Empty;
+        master.Amount = 0;
+        OnChange();
+        StateHasChanged();
+    }
+    private async void Save()
+    {
+        if (TodoList == null)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else if (master.LedgerId == 0)
+        {
+            Snackbar.Add("Choose Cash/Bank Account.", Severity.Info);
+        }
+        else if (master.VoucherNo == string.Empty)
+        {
+            Snackbar.Add("Type Voucher No.", Severity.Info);
+        }
+        else if (master.Amount == 0)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else
+        {
+            var authState = await authenticationState;
+            var user = authState.User;
+            string userName = user.FindFirst(ClaimTypes.Name).Value;
+            master.VoucherTypeId = decPaymentOutVoucher;
+            master.PaymentType = "Draft";
+            master.Type = "PaymentVoucher";
+            master.UserId = userName;
+            master.FinancialYearId = 1;
+            master.CompanyId = 1;
+            master.PurchaseMasterId = 0;
+            master.Narration = string.Empty;
+            master.AddedDate = DateTime.Now;
+
+            foreach (var item in TodoList)
+            {
+                PaymentDetails details = new PaymentDetails();
+                if (item != null)
+                {
+                    details.PurchaseMasterId = 0;
+                    details.LedgerId = item.LedgerId;
+                    details.TotalAmount = item.TotalAmount;
+                    details.ReceiveAmount = 0;
+                    details.DueAmount = 0;
+                    master.listOrder.Add(details);
+                }
+            }
+            var result = await _payment.Save(master);
+
+            if (result > 0)
+            {
+                Snackbar.Add("Successfully Save Payment.", Severity.Success);
+                navigation.NavigateTo($"/app/paymentview/{result}");
+            }
+            else
+            {
+                Snackbar.Add("Invalid.", Severity.Info);
+            }
+        }
+    }
+    private async void OnChange()
+    {
+        //Addtolist
+        listLedger = await _ledger.GetAll(22);
+        DefaultAddtoList();
+    }
+    private async void DefaultAddtoList()
+    {
+        var myTodoItem = new PaymentDetailsView()
+            {
+                Id = TodoList.Count() + 1,
+                PaymentDetailsId = 0,
+                LedgerId = 0,
+                TotalAmount = 0
+            };
+        TodoList.Add(myTodoItem);
+        details.LedgerId = 0;
+        details.TotalAmount = 0;
+        StateHasChanged();
+    }
+    private async void AddToList()
+    {
+        //if (details.LedgerId == 0)
+        //{
+        //    Snackbar.Add("Invalid Product.", Severity.Info);
+        //    return;
+        //}
+        //else if (details.Amount == 0)
+        //{
+        //    Snackbar.Add("Invalid Unit.", Severity.Info);
+        //    return;
+        //}
+        if (editedID == 0)
+        {
+            var myTodoItem = new PaymentDetailsView()
+                {
+                    Id = TodoList.Count() + 1,
+                    PaymentDetailsId = 0,
+                    LedgerId = details.LedgerId,
+                    TotalAmount = details.TotalAmount
+
+                };
+            TodoList.Add(myTodoItem);
+            details.LedgerId = 0;
+            details.TotalAmount = 0;
+        }
+        //else
+        //{
+        //    //Calculate
+        //    editedID = 0;
+        //}
+        CalculateTotal();
+        StateHasChanged();
+    }
+    void editItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+        details.LedgerId = myTodo.LedgerId;
+        details.TotalAmount = myTodo.TotalAmount;
+        editedID = id;
+        AddToList();
+    }
+    private async Task deleteItem(int id, int index)
+    {
+
+        if (index > 1)
+        {
+            var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+            TodoList.Remove(myTodo);
+
+            editedID = 0;
+            CalculateTotal();
+            StateHasChanged();
+        }
+        else
+        {
+            Snackbar.Add("Default value cannot be delete.", Severity.Info);
+        }
+    }
+    void CalculateTotal()
+    {
+        decimal decTotalAmount = 0;
+        foreach (var todo in TodoList)
+        {
+            decTotalAmount = decTotalAmount + todo.TotalAmount;
+        }
+        master.Amount = Math.Round(decTotalAmount, 2);
+    }
+}

@@ -1,0 +1,229 @@
+﻿@page "/app/taxDetails"
+@inject ITaxDetails _taxDetails
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+<PageTitle>Tax Details</PageTitle>
+
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Tax Details</h3>
+            <h5>Manage Tax Details</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added AddNewSupplier" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New Tax Details</a>
+       </div>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModelTaxDetailsView" Dense="@dense" Hover="@hover" >
+                    <HeaderContent>
+                        <MudTh>Tax Code</MudTh>
+                        <MudTh>Tax Name</MudTh>
+                        <MudTh>Active</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    
+                    <RowTemplate>
+                        <MudTd DataLabel="TaxCode">@context.TaxCode</MudTd>
+                            <MudTd DataLabel="TaxName">@context.TaxName</MudTd>
+                            <MudTd DataLabel="IsActive"><MudCheckBox ReadOnly="true" Checked="@context.IsActive"></MudCheckBox> </MudTd>
+                            <MudTd DataLabel="">
+                                <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(context.Id)">
+                                    <img src="assets/img/icons/edit.svg" alt="img">
+                                </a>
+                                <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.Id)">
+                                    <img src="assets/img/icons/delete.svg" alt="img">
+                                </a>
+                            </MudTd>
+                        </RowTemplate>
+   
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                    </MudTable>
+                </div>
+            </div>
+        </div>
+</div>
+
+    <MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Tax Code</label>
+                        <input type="text" @bind="model.TaxCode">
+                        <ValidationMessage For="@(() => model.TaxCode)" />
+                    </div>
+                </div>
+
+                @foreach (var item in model.listModel)
+                        {
+                    <div class="col-md-6">
+                        <div class="form-group" style="display: ruby;">
+                            <label>@item.TaxName &emsp;</label>
+                            <input type="checkbox" @bind="item.Checked" />
+                        </div>
+                    </div>
+
+                        }
+
+                <div class="col-md-12 mt-3">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+
+
+
+@code {
+    string yourGroupingField = "Column1";
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    TaxDetailsView model = new TaxDetailsView();
+    IList<TaxDetailsView> listModelTaxDetailsView;
+    private bool visible;
+    private bool dense = true;
+    private bool hover = true;
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTaxAll();
+        await GetTaksDetails();
+    }
+    private async Task Save()
+    {
+
+        if (string.IsNullOrWhiteSpace(model.TaxCode))
+        {
+            Snackbar.Add("Tax Code is Required.", Severity.Info);
+        }
+        else
+        {
+
+            if (model.Id == 0)
+            {
+                if (await _taxDetails.CheckTaxCode(model.TaxCode.Trim()))
+                {
+                    Snackbar.Add("Tax Code already exists.", Severity.Info);
+                }
+                else
+                {
+                    var res =   await _taxDetails.Save(model);
+                    if(res > 0)
+                    {
+                        Snackbar.Add("Save Successfully.", Severity.Success);
+                        await GetTaksDetails();
+                        visible = false;
+                        StateHasChanged();
+                    }
+
+                }
+            }
+            else
+            {
+                bool result = false;
+                var res = new TaxDetails
+                    {
+                        Id = model.Id,
+                        TaxCode = model.TaxCode.Trim(),
+                        TaxNameId = model.TaxNameId,
+                        IsActive = model.listModel[0].Checked,
+                        CreatedDateTime = DateTime.UtcNow,
+                        Active = true
+                    };
+                result = await _taxDetails.Update(res);
+                if (result)
+                {
+                    Snackbar.Add("Update Successfully.", Severity.Success);
+                    model.listModel.Clear();
+                    await GetTaksDetails();
+                    visible = false;
+                    StateHasChanged();
+                }
+               
+                
+            }
+
+        }
+
+    }
+
+
+
+
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Tax Details/ Add";
+        await GetTaxAll();
+        model.TaxCode = "";
+        model.Id = 0;
+        StateHasChanged();
+    }
+
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            var result = await _taxDetails.Delete(id);
+            if (result == true)
+            {
+                await GetTaksDetails();
+                StateHasChanged();
+                Snackbar.Add("Delete Successfully.", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                StateHasChanged();
+            }
+
+        }
+    }
+
+
+
+    private async Task GetTaksDetails()
+    {
+        listModelTaxDetailsView = await _taxDetails.GetTaxDetails();
+        StateHasChanged();
+    }
+
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Tax / Edit";
+        model = await _taxDetails.GetTaxDetailById(Convert.ToInt32(id));
+        // var res =   listModel.(x => x.TaxId == model.TaxNameId).IsActive;
+        // listModel
+
+       
+        StateHasChanged();
+    }
+
+    private async Task GetTaxAll()
+    {
+        //listModel = await _taxDetails.GetTaxAll();
+        model.listModel = await _taxDetails.GetTaxAll();
+        StateHasChanged();
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+}

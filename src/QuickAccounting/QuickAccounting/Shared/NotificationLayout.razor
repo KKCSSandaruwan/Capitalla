@@ -1,0 +1,64 @@
+﻿@inject IInventoryReport report
+<!-- Notifications -->
+<li class="nav-item dropdown">
+	<a href="javascript:void(0);" class="dropdown-toggle nav-link" data-bs-toggle="dropdown">
+		<img src="assets/img/icons/notification-bing.svg" alt="img"> <span class="badge rounded-pill">2</span>
+	</a>
+	<div class="dropdown-menu notifications">
+		<div class="topnav-dropdown-header">
+			<span class="notification-title">Notifications</span>
+			<a href="javascript:void(0)" class="clear-noti"> Clear All </a>
+		</div>
+		<div class="noti-content">
+			<ul class="notification-list">
+				<li class="notification-message">
+					<a>
+						<div class="media d-flex">
+							<span class="avatar flex-shrink-0">
+								<img alt="" src="assets/img/icons/calendars.svg">
+							</span>
+							<div class="media-body flex-grow-1">
+								<p class="noti-details"><span class="noti-title">Cost is not getting updated after enabling the cost reposting option</span></p>
+								<p class="noti-time"><span class="notification-time">10 mins ago</span></p>
+							</div>
+						</div>
+					</a>
+				</li>
+				<li class="notification-message">
+					<a>
+						<div class="media d-flex">
+							<span class="avatar flex-shrink-0">
+								<img alt="" src="assets/img/icons/calendars.svg">
+							</span>
+							<div class="media-body flex-grow-1">
+								<p class="noti-details"><span class="noti-title">Stock was showing in (-ve) even after stock is available is now resolved</span></p>
+								<p class="noti-time"><span class="notification-time">10 mins ago</span></p>
+							</div>
+						</div>
+					</a>
+				</li>
+			</ul>
+		</div>
+		<div class="topnav-dropdown-footer">
+			<a href="/app/dashboard">View all Notifications</a>
+		</div>
+	</div>
+</li>
+<!-- /Notifications -->
+@code {
+	//ReminderStock
+	string Purchasereminder = string.Empty;
+	string Salesreminder = string.Empty;
+	string Personalreminder = string.Empty;
+	string NegativeStkreminder = string.Empty;
+	string MinStkreminder = string.Empty;
+	string MaxStkreminder = string.Empty;
+	string ReordrStkreminder = string.Empty;
+	string ShortExpiryReminder = string.Empty;
+	protected override void OnInitialized()
+	{
+		StateHasChanged();
+
+	}
+
+}

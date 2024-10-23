@@ -1,0 +1,156 @@
+﻿@page "/app/supplier-payable-summary"
+@inject IInventoryReport report
+@inject ICompany _company;
+@inject IInvoiceSetting _invoice
+@inject ICustomerSupplier _ledger
+@using System.Data;
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Supplier Payable Summary</PageTitle>
+<div class="content">
+						<div class="page-header">
+							<div class="page-title">
+			<h3>Supplier Payable Summary</h3>
+							</div>
+						</div>
+
+						<!-- /product list -->
+						<div class="card">
+							<div class="card-body">
+			<!-- /Filter -->
+				<div class="padding1">
+					<div class="card-body pb-0">
+					<div class="row">
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								From Date
+								<RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group">
+								To Date
+								<RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+							</div>
+						</div>
+						<div class="col-lg-3 col-sm-6 col-12">
+							<div class="form-group" style="margin-top:20px;">
+                                <a style="float:left; margin-right:4px;" class="btn btn-filters ms-auto" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
+                                <a style="float:left;" class="btn btn-filters ms-auto" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer-white.svg" alt="img" style="width:1.25em;"></a>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- /Filter -->
+			<div id="PrintDiv">
+								<div class="table-responsive">
+									@*<br/>
+									<hr/>*@
+				<table style="width: 100%;line-height: inherit;text-align: left;">
+					<tbody>
+						<tr>
+							<td style="padding:5px;vertical-align:top;text-align:center;padding-bottom:20px">
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 21px;color:#000;font-weight: 600;"> @company.CompanyName </font></font><br>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.Address &ensp;|</font></font>@*<br>*@
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">&ensp; @company.PhoneNo</font></font><br>
+									<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 18px;color:#000;font-weight: 600;text-transform:uppercase;"> Supplier Payable Summary</font></font><br>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+<br/>
+				@if(listModel == null)
+				{
+
+				}
+				else
+				{
+						<table class="table">
+
+							<thead>
+							<tr style="background: #F3F2F7;">
+								<th>S.No</th>
+									<th>Supplier</th>
+									<th style="">
+										Opening Balance
+									</th>
+									<th style="">
+										Transaction Debit
+									</th>
+									<th style="">
+										Transaction Credit
+									</th>
+									<th>
+										Closing Balance
+									</th>
+							</tr>
+							</thead>
+							@{
+								int sno = 0;
+							}
+							@foreach (var item in listModel)
+							{
+								<tr>
+									<td>
+										@{
+											sno++;
+										}
+										@sno
+									</td>
+									<td>@item.LedgerName</td>
+									<td>@PublicVariables._Symbol @item.Opening</td>
+									<td>@PublicVariables._Symbol @item.Debit</td>
+									<td>@PublicVariables._Symbol @item.Credit</td>
+									<td>@PublicVariables._Symbol @item.Closing</td>
+								</tr>
+							}
+						</table>
+				}
+								</div>
+								</div>
+							</div>
+						</div>
+						<!-- /product list -->
+					</div>
+
+@code {
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	DateTime dtFromDate = DateTime.UtcNow.AddDays(-1);
+	DateTime dtToDate = DateTime.UtcNow;
+	IList<FinancialReport> listModel;
+	Company company = new Company();
+	string myMarkup;
+	string strVoucherNo = string.Empty;
+	string strMenu = "Reports";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			company = await _company.GetbyId(1);
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+
+		listModel = await report.CustomerReceiveSummary(dtFromDate, dtToDate, 22, 0);
+		StateHasChanged();
+	}
+}

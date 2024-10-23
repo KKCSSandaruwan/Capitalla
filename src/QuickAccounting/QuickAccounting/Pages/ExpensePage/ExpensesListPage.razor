@@ -1,0 +1,130 @@
+﻿@page "/app/expenses"
+@inject IExpenses _expenses
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Expenses</PageTitle>
+<div class="content">
+	<div class="page-header">
+		<div class="page-title">
+			<h3>Expenses</h3>
+		</div>
+		<div class="page-btn">
+			<a href="/app/expensesadd" class="btn btn-added">
+				<img src="assets/img/icons/plus.svg" alt="img">Add New
+			</a>
+		</div>
+	</div>
+
+						<!-- /product list -->
+	<div class="card">
+		<div class="card-body">
+			
+			<div class="table-responsive">
+				<MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<ExpensesMasterView,bool>(FilterFunc1)">
+					<ToolBarContent>
+						<MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+					</ToolBarContent>
+					<HeaderContent>
+						<MudTh>Supplier</MudTh>
+						<MudTh>Bill No</MudTh>
+						<MudTh>Narration</MudTh>
+						<MudTh>Date</MudTh>
+						<MudTh>Total</MudTh>
+						<MudTh></MudTh>
+					</HeaderContent>
+					<RowTemplate>
+						<MudTd DataLabel="LedgerName">@context.LedgerName</MudTd>
+						<MudTd DataLabel="VoucherNo">@context.VoucherNo</MudTd>
+						<MudTd DataLabel="Narration">@context.Narration</MudTd>
+						<MudTd DataLabel="Date">@context.Date</MudTd>
+						<MudTd DataLabel="Amount">@PublicVariables._Symbol@context.Amount</MudTd>
+						<MudTd DataLabel="">
+							<a class="me-3" href="/app/expensesview/@context.ExpensiveMasterId">
+								<img src="assets/img/icons/edit.svg" alt="img">
+							</a>
+							<a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context)">
+								<img src="assets/img/icons/delete.svg" alt="img">
+							</a>
+						</MudTd>
+					</RowTemplate>
+					<PagerContent>
+						<MudTablePager />
+					</PagerContent>
+				</MudTable>
+			</div>
+		</div>
+	</div>
+						<!-- /product list -->
+</div>
+
+@code {
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	private bool dense = true;
+	private bool hover = true;
+	IList<ExpensesMasterView> listModel;
+	ExpenseMaster expensesDelete = new ExpenseMaster();
+	private string searchString1 = "";
+	string strMenu = "Expenses";
+	protected override async Task OnInitializedAsync()
+	{
+		
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+		StateHasChanged();
+	}
+	private async Task LoadData()
+	{
+		listModel = await _expenses.GetAll();
+		StateHasChanged();
+	}
+	private bool FilterFunc1(ExpensesMasterView element) => FilterFunc(element, searchString1);
+
+	private bool FilterFunc(ExpensesMasterView element, string searchString)
+	{
+		if (string.IsNullOrWhiteSpace(searchString))
+			return true;
+		if (element.LedgerName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		if (element.VoucherNo.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		if (element.Status.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+			return true;
+		return false;
+	}
+	private async void Delete(ExpensesMasterView brand)
+	{
+		bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+		if (confirmed)
+		{
+			expensesDelete = await _expenses.GetbyId(brand.ExpensiveMasterId);
+			var result = await _expenses.Delete(expensesDelete);
+			if (result == true)
+			{
+				await LoadData();
+				Snackbar.Add("Delete Successfully.", Severity.Success);
+				StateHasChanged();
+			}
+			else
+			{
+				Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+			}
+		}
+	}
+}

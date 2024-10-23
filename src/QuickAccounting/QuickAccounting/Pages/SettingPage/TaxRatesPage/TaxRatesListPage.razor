@@ -1,0 +1,223 @@
+﻿@page "/app/taxRates"
+@inject ITax _tax
+@inject ITaxRates _taxRates
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Tax Rates</PageTitle>
+
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Tax Rates</h3>
+            <h5>Manage Tax Rates</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added AddNewSupplier" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New Tax Rates</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModelRate" Dense="@dense" Hover="@hover">
+                    <HeaderContent>
+                        <MudTh>From Date</MudTh>
+                        <MudTh>Tax Name</MudTh>
+                        <MudTh>Rate</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+
+                    <RowTemplate>
+                        <MudTd DataLabel="TaxCode">@Convert.ToDateTime(@context.FromDate).ToString("dd/MM/yyyy")</MudTd>
+                            <MudTd DataLabel="TaxName">@context.TaxName</MudTd>
+                            <MudTd DataLabel="Tax Rate">@context.Rate</MudTd>
+                            <MudTd DataLabel="">
+                                <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(context.Id)">
+                                    <img src="assets/img/icons/edit.svg" alt="img">
+                                </a>
+                                <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.Id)">
+                                    <img src="assets/img/icons/delete.svg" alt="img">
+                                </a>
+                            </MudTd>
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                    </MudTable>
+                </div>
+            </div>
+        </div>
+</div>
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Tax Name</label>
+                        <RadzenDropDown Style="width:100%;" @bind-Value="model.TaxNameId" Placeholder="Select One" AllowFiltering="true" Data="@(listModel)" TextProperty="TaxName" ValueProperty="TaxId" />
+                        <ValidationMessage For="@(() => model.TaxNameId)" />
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Opening Date</label>
+                        <input type="date" class="form-control" @bind="model.FromDate">
+                    </div>
+                </div>
+               
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>New Rate</label>
+                        <input type="text" @bind="model.Rate">
+                        <ValidationMessage For="@(() => model.Rate)" />
+                    </div>
+                </div>
+
+                <div class="col-lg-12 mt-3">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    private bool visible;
+    string ShowDialogue;
+    TaxRates model = new TaxRates();
+    IList<TaxView> listModel;
+    IList<TaxRatesView> listModelRate;
+    private bool dense = true;
+    private bool hover = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        await GetActiveAll();
+        await GetTaxRatesAll();
+        model.FromDate = DateTime.UtcNow;
+        StateHasChanged();
+    }
+
+    public async Task GetTaxRatesAll()
+    {
+        listModelRate = await _taxRates.GetAll();
+
+    }
+
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Tax Rates/ Add";
+        model.Id = 0;
+        model.FromDate = DateTime.UtcNow;
+        model.TaxNameId = 0;
+        model.Rate = 0;
+        model.Active = false;
+        model.CreatedDateTime = null;
+        model.UpdatedDateTime = null;
+
+    }
+    private async Task GetActiveAll()
+    {
+        listModel = await _tax.GetActiveAll();
+    }
+    private async Task Save()
+    {
+        if(model.Id == 0)
+        {
+            if (model.TaxNameId <= 0)
+            {
+                Snackbar.Add("Tax Name is Required.", Severity.Info);
+            }
+            else if (model.Rate <= 0)
+            {
+                Snackbar.Add("Tax Rate is Required.", Severity.Info);
+            }
+            else
+            {
+                model.Active = true;
+                model.CreatedDateTime = DateTime.UtcNow;
+                var res = await _taxRates.Save(model);
+                if (res > 0)
+                {
+                    Snackbar.Add("Saved Successfully.", Severity.Success);
+                    await LoadData();
+                    StateHasChanged();
+                    visible = false;
+                }
+            }
+        }
+        else
+        {
+            bool result = false;
+            model.UpdatedDateTime = DateTime.UtcNow;
+            result = await _taxRates.Update(model);
+
+            if (result == true)
+            {
+                Snackbar.Add("Update Successfully.", Severity.Success);
+                await LoadData();
+                StateHasChanged();
+                visible = false;
+            }
+            else
+            {
+                Snackbar.Add("Invalid.", Severity.Error);
+                StateHasChanged();
+            }
+        }
+
+
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+           
+                var result = await _taxRates.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+            
+        }
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Tax / Edit";
+        model = await _taxRates.GetbyId(id);
+        StateHasChanged();
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+
+}

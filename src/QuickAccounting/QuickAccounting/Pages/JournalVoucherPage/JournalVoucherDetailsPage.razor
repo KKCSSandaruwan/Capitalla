@@ -1,0 +1,292 @@
+﻿@page "/app/journalvoucherview/{id}"
+@inject IJournalVoucher _journal
+@inject ICompany _company
+@inject IInvoiceSetting _setting
+@inject ISnackbar Snackbar
+@using QuickAccounting.Components
+@using QuickAccounting.Repository
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@inject IDialogService Dialog
+@attribute [Authorize]
+<PageTitle>JournalVoucher Details</PageTitle>
+<div class="content">
+	<div class="page-header">
+		<div class="page-title">
+			<h3>Journal Voucher</h3>
+		</div>
+	</div>
+	<div class="card padding1">
+		<div class="card-body">
+			<div class="card-sales-split">
+				<h2 style="font-size:15px; font-weight:600;">JournalVoucher Detail : @model.VoucherNo</h2>
+				<ul>
+					@if (@model.Status == "Draft")
+					{
+						<li>
+							<a style="cursor:pointer;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+						<li class="ApprovedButton">
+							<a @onclick="() => OpenDeleteDialog()"><img src="../assets/img/icons/tick-white.svg" alt="img" class="viewtopbutton">Approved</a>
+						</li>
+					}
+					else
+					{
+						<li>
+							<a href="/app/journalvoucheredit/@model.JournalMasterId"><img src="assets/img/icons/edit.svg" alt="img" class="viewtopbutton">Edit</a>
+						</li>
+						<li>
+							<a style="cursor:pointer;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+					}
+				</ul>
+			</div>
+			<div id="PrintDiv">
+			<div class="invoice-box table-height" style="max-width: 1600px;width:100%;overflow: auto;margin:15px auto;padding: 0;font-size: 15px;line-height: 24px;color: #555;">
+				<table cellpadding="0" cellspacing="0" style="width: 100%;line-height: inherit;text-align: left;">
+					<tbody>
+						<tr class="top">
+							<td colspan="6" style="padding: 5px;vertical-align: top;">
+								<table style="width: 100%;line-height: inherit;text-align: left;">
+									<tbody>
+										<tr>
+												<td style=" width:72%; padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+													<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Company Info</font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @company.CompanyName </font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.Email</font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.PhoneNo</font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @company.Address</font></font><br>
+												</td>
+												<td></td>
+											<td style="padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+												<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Journal Voucher Details</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 600;">Voucher No: @model.VoucherNo</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 600;"> Date: @model.Date</font></font><br>
+													<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 600;"> Status: @model.Status</font></font><br>
+											</td>
+											
+										</tr>
+									</tbody>
+								</table>
+							</td>
+						</tr>
+						
+					</tbody>
+					
+				</table>
+				<table class="table" style="width:100%;">
+					<tr class="heading " style="background: #F3F2F7;">
+							<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 15px;padding: 10px; ">
+								Account
+							</td>
+							<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 15px;padding: 10px; ">
+								Debit
+							</td>
+							<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 15px;padding: 10px; ">
+								Credit
+							</td>
+							<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 15px;padding: 10px; ">
+								Narration
+							</td>
+						</tr>
+						@if(listJournalDetails == null)
+						{
+
+						}
+						else
+						{
+						@foreach (var item in listJournalDetails)
+						{
+							<tr class="details" style="border-bottom:1px solid #E9ECEF ;">
+								<td style="width:260px; padding: 10px;vertical-align: top; display: flex;align-items: center;">
+									@item.LedgerName
+								</td>
+								<td style="padding: 10px;vertical-align: top; ">
+									@PublicVariables._Symbol @item.Debit
+								</td>
+								<td style="padding: 10px;vertical-align: top; ">
+									@PublicVariables._Symbol @item.Credit
+								</td>
+								<td style="padding: 10px;vertical-align: top; ">
+									@item.Narration
+								</td>
+							</tr>
+						}
+						}
+						<tfoot>
+						<tr class="total-order w-100 max-widthauto m-auto mb-4">
+							<td style="font-weight:700;">Total</td>
+							<td style="font-weight:700;">@PublicVariables._Symbol @model.Amount</td>
+								<td style="font-weight:700;">@PublicVariables._Symbol @model.Amount</td>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+			<div class="row">
+					<table style="margin-left:1em;">
+						<tr>
+								<td>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Amount In Words: </font></font>@*<br>*@
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @strNumberToWords </font></font><br>
+								</td>
+							</tr>
+							<tr>
+							<td>
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Narration   : </font></font>@*<br>*@
+								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @model.Narration </font></font><br>
+							</td>
+						</tr>
+					</table>
+					
+					<div class="col-lg-6 ">
+						<div class="total-order w-100 max-widthauto m-auto mb-4">
+						</div>
+					</div>
+				<div class="row">
+					<div class="col-lg-10">
+						<h7>Created by:</h7> <br />
+						<h7>@model.AddedDate</h7>
+					</div>
+					<div class="col-lg-2" style="float:right;">
+						<h7>Approved by:</h7> <br />
+						<h5>
+							@if (model.Status == "Draft")
+							{
+								<span style="font-size:12px;">Not Approved</span>
+							}
+							else
+							{
+									<h6 style="font-size:12px;">@model.UserId</h6>
+							}
+						</h5>
+					</div>
+				</div>
+			</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@if (DeleteDialogOpen)
+{
+    <ModalDialog Title="Approve Journal Voucher"
+			 Text="Are you sure you want to approve this Journal Voucher? This will add Journal voucher entry."
+             OnClose="@OnDeleteDialogClose"
+             DialogType="ModalDialog.ModalDialogType.Ok">
+    </ModalDialog>
+}
+@code {
+	[Parameter]
+	public string id { get; set; }
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	Company company = new Company();
+	JournalMasterView model = new JournalMasterView();
+	JournalMaster master = new JournalMaster();
+	IList<JournalDetailsView> listJournalDetails;
+	InvoiceSetting setting = new InvoiceSetting();
+	string strNumberToWords;
+	int decJournalVoucherTypeId = 5;
+	public bool DeleteDialogOpen { get; set; }
+	string strMenu = "Accounting";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+	}
+	private async Task LoadData()
+	{
+		company = await _company.GetbyId(1);
+		model = await _journal.JournalView(Convert.ToInt32(id));
+		master = await _journal.GetbyId(Convert.ToInt32(id));
+		listJournalDetails = await _journal.JournalDetailsView(Convert.ToInt32(id));
+		strNumberToWords = NumberToWords.ConvertAmount( Convert.ToDouble(model.Amount.ToString())); 
+
+		//GetSerialNo
+		string	serial = await _journal.GetSerialNo();
+		setting = await _setting.GetbyId(decJournalVoucherTypeId);
+		master.VoucherNo = setting.Prefix + serial + setting.Suffix;
+		master.SerialNo = serial;
+		StateHasChanged();
+	}
+	private async void ApprovedOk()
+	{
+
+		if (master.VoucherNo == string.Empty)
+		{
+			Snackbar.Add("Type Voucher No.", Severity.Info);
+		}
+		else if (master.Amount == 0)
+		{
+			Snackbar.Add("Invalid Entry.", Severity.Info);
+		}
+		else
+		{
+			var authState = await authenticationState;
+            var user = authState.User;
+            string userName = user.FindFirst(ClaimTypes.Name).Value;
+            master.VoucherTypeId = decJournalVoucherTypeId;
+            master.Status = "Approved";
+            master.UserId = userName;
+            master.FinancialYearId = 1;
+            master.CompanyId = 1;
+            master.Narration = string.Empty;
+            master.ModifyDate = DateTime.UtcNow;
+			foreach (var item in listJournalDetails)
+			{
+				JournalDetails details = new JournalDetails();
+				if (item != null)
+				{
+					details.JournalDetailsId = item.JournalDetailsId;
+					details.LedgerId = item.LedgerId;
+					details.Debit = item.Debit;
+					details.Credit = item.Credit;
+                    details.Narration = item.Narration;
+					master.listOrder.Add(details);
+                }
+            }
+			var result = await _journal.ApprovedOk(master);
+
+            if (result == true)
+            {
+                
+                await LoadData();
+                StateHasChanged();
+				Snackbar.Add("Successfully Save JournalVoucher.", Severity.Success);
+            }
+            else
+            {
+				Snackbar.Add("Error.", Severity.Error);
+            }
+		}
+	}
+	private async Task OnDeleteDialogClose(bool accepted)
+	{
+		if (accepted)
+		{
+			ApprovedOk();
+		}
+
+		DeleteDialogOpen = false;
+		StateHasChanged();
+	}
+
+	private void OpenDeleteDialog()
+	{
+		DeleteDialogOpen = true;
+		StateHasChanged();
+	}
+}

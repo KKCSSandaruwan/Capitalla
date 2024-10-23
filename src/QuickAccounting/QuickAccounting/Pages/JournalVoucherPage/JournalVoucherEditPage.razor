@@ -1,0 +1,416 @@
+﻿@page "/app/journalvoucheredit/{id}"
+@inject ICustomerSupplier _ledger
+@inject IJournalVoucher _journal
+@inject IGeneralSetting _setting
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject NavigationManager navigation
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@attribute [Authorize]
+<PageTitle>JournalVoucher Edit</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Edit JournalVoucher</h3>
+        </div>
+    </div>
+    <div class="card padding1">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>#Voucher No</label>
+                        <div class="row">
+                            <div class="col-lg-10 col-sm-10 col-10">
+                                <input type="text" @bind="master.VoucherNo" readonly />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Date </label>
+                        <div class="input-groupicon">
+                            <RadzenDatePicker @bind-Value=@master.Date DateFormat="d" Class="w-100" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Accounts</th>
+                                <th>Dr Amount</th>
+                                <th>Cr Amount</th>
+                                <th>Narration</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int sno = 0;
+                            }
+                            @foreach (var td in TodoList)
+							{
+                                
+                            <tr>
+                                  @{
+                                        sno++;
+                                    }
+                                    <td><RadzenDropDown Style="width:100%;" @bind-Value="td.LedgerId" Placeholder="Choose Account" AllowFiltering="true" Data="@(listLedger)" TextProperty="LedgerName" ValueProperty="LedgerId" Change="@(e => editItem(td.Id))" /></td>
+                                    <td><input type="number" @bind-value="td.Debit" style="width: 120px" class="form-control" @onkeyup="@(e => editItem(td.Id))" @onclick="@(e => editItem(td.Id))" @bind-value:event="oninput"></td>
+                                    <td><input type="number" @bind-value="td.Credit" style="width: 120px" class="form-control" @onkeyup="@(e => editItem(td.Id))" @onclick="@(e => editItem(td.Id))" @bind-value:event="oninput"></td>
+                                    <td><input type="text" @bind-value="td.Narration" class="form-control" @onkeyup="@(e => editItem(td.Id))" @onclick="@(e => editItem(td.Id))" @bind-value:event="oninput"></td>
+                                    <td>
+                                        <a type="button" @onclick="@DefaultAddtoList" class="PlusButton me-3"><img src="assets/img/icons/add-circle.svg" alt="svg"></a>
+                                        <a @onclick="@(e => deleteItem(td.Id , sno, td.JournalDetailsId))"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#eaf1f9">
+                                <td style="font-weight:600;">Total</td>
+                                <td style="font-weight:600;">@PublicVariables._Symbol@decTotalDebit</td>
+                                <td style="font-weight:600;">@PublicVariables._Symbol@decTotalCredit</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td style="float:right; font-weight:600;"></td>
+                                <td></td>
+                                <td style="font-weight:600;">Different: &nbsp;&nbsp;@PublicVariables._Symbol@decimalTotalDifferent</td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Note </label>
+                        <div class="input-groupicon">
+                            <textarea type="text" style="width:100%;" @bind="master.Narration" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br /> <br />
+            <div class="row">
+                <div class="col-lg-12">
+                    <button @onclick="@Save" class="btn btn-submit me-2">Save</button>
+                    <a href="/app/journalvoucher" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    JournalMaster master = new JournalMaster();
+    IList<AccountLedgerView> listLedger;
+    IList<AccountLedgerView> listExpense;
+    int intLedgerId = 0;
+    int decJournalVoucherTypeId = 5;
+    int editedID = 0;
+    IList<JournalDetailsView> TodoList = new List<JournalDetailsView>();
+    JournalDetailsView details = new JournalDetailsView();
+    int counts;
+    //HoldDeleteItem
+    List<DeleteItem> deleteNo = new List<DeleteItem>();
+    decimal decTotalDebit = 0;
+    decimal decTotalCredit = 0;
+    decimal decimalTotalDifferent = 0;
+    GeneralSetting setting;
+    string strMenu = "Accounting";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+        var authState = await authenticationState;
+        var strRole = authState.User;
+        string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+        var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+        if (strShow.ShowAction == true)
+        {
+            await LoadData();
+        }
+        else
+        {
+            navigation.NavigateTo("/app/dashboard");
+            Snackbar.Add("You dont have to privilege..", Severity.Error);
+        }
+    }
+    private async Task LoadData()
+    {
+        setting = await _setting.GetbyId(1);
+        master = await _journal.GetbyId(Convert.ToInt32(id));
+        OnChange();
+        StateHasChanged();
+    }
+    private async void Save()
+    {
+        string strStatus = setting.NegativeCash;
+        decimal decBalance = 0;
+        decimal decCalcAmount = 0;
+        bool isNegativeLedger = false;
+        foreach (var item in TodoList)
+        {
+            if (item.LedgerId > 0)
+            {
+                decBalance = _journal.CheckLedgerBalance(item.LedgerId);
+                decimal decDrCr = 0;
+                decDrCr = item.Debit - item.Credit;
+                decCalcAmount = decBalance - decDrCr;
+                if (decCalcAmount < 0)
+                {
+                    isNegativeLedger = true;
+                    break;
+                }
+            }
+        }
+        if (decCalcAmount < 0)
+        {
+
+            if (strStatus == "Warn")
+            {
+                bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Negative balance exists,Do you want to Continue?");
+                if (confirmed)
+                {
+
+                }
+                else
+                {
+                    return;
+                }
+            }
+            else if (strStatus == "Reject")
+            {
+                Snackbar.Add("Cannot continue ,due to negative balance.", Severity.Info);
+                return;
+            }
+            else
+            {
+
+            }
+        }
+        else
+        {
+
+        }
+        if (TodoList == null)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else if (master.VoucherNo == string.Empty)
+        {
+            Snackbar.Add("Type Voucher No.", Severity.Info);
+        }
+        else if(decTotalDebit != decTotalCredit)
+        {
+            Snackbar.Add("DR amount and CR amount must be equal.", Severity.Info);
+        }
+        else if (decTotalDebit == 0)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else if (decTotalCredit == 0)
+        {
+            Snackbar.Add("Invalid Entry.", Severity.Info);
+        }
+        else
+        {
+            var authState = await authenticationState;
+            var user = authState.User;
+            string userName = user.FindFirst(ClaimTypes.Name).Value;
+            master.VoucherTypeId = decJournalVoucherTypeId;
+            master.Status = "Approved";
+            master.UserId = userName;
+            master.FinancialYearId = 1;
+            master.CompanyId = 1;
+            master.Narration = string.Empty;
+            master.ModifyDate = DateTime.UtcNow;
+
+            foreach (var item in TodoList)
+            {
+
+                JournalDetails details = new JournalDetails();
+                if (item != null)
+                {
+
+                    if (item.LedgerId > 0)
+                    {
+                        details.JournalDetailsId = item.JournalDetailsId;
+                        details.LedgerId = item.LedgerId;
+                        details.Debit = item.Debit;
+                        details.Credit = item.Credit;
+                        details.Narration = item.Narration;
+                        master.listOrder.Add(details);
+                    }
+
+                }
+            }
+            foreach (var items in deleteNo)
+            {
+                DeleteItem details = new DeleteItem();
+                if (items != null)
+                {
+                    details.DeleteJournalDetailsId = items.DeleteJournalDetailsId;
+                    master.listDelete.Add(details);
+                }
+
+            }
+            var result = await _journal.Update(master);
+
+            if (result == true)
+            {
+                Snackbar.Add("Successfully Update JournalVoucher.", Severity.Info);
+                navigation.NavigateTo($"/app/journalvoucherview/{master.JournalMasterId}");
+            }
+            else
+            {
+                Snackbar.Add("Invalid.", Severity.Info);
+            }
+        }
+    }
+    private async void OnChange()
+    {
+        //Addtolist
+        listLedger = await _ledger.GetAll();
+        TodoList = await _journal.JournalDetailsView(Convert.ToInt32(id));
+        CalculateTotal();
+        StateHasChanged();
+    }
+    private async void DefaultAddtoList()
+    {
+        var myTodoItem = new JournalDetailsView()
+            {
+                Id = TodoList.Count() + 1,
+                JournalDetailsId = 0,
+                LedgerId = 0,
+                Debit = 0,
+                Credit = 0,
+                Narration = string.Empty,
+            };
+        TodoList.Add(myTodoItem);
+        details.LedgerId = 0;
+        details.Debit = 0;
+        details.Credit = 0;
+        details.Narration = string.Empty;
+        StateHasChanged();
+    }
+    private async void AddToList()
+    {
+        if (editedID == 0)
+        {
+            var myTodoItem = new JournalDetailsView()
+                {
+                    Id = TodoList.Count() + 1,
+                    JournalDetailsId = details.JournalDetailsId,
+                    LedgerId = details.LedgerId,
+                    Debit = details.Debit,
+                    Credit = details.Credit,
+                    Narration = details.Narration
+
+                };
+            TodoList.Add(myTodoItem);
+            details.JournalDetailsId = 0;
+            details.LedgerId = 0;
+            details.Debit = 0;
+            details.Credit = 0;
+            details.Narration = string.Empty;
+        }
+        else
+        {
+            var myTodos = TodoList.FirstOrDefault(x => x.Id == editedID);
+            myTodos.JournalDetailsId = details.JournalDetailsId;
+            myTodos.LedgerId = details.LedgerId;
+            if (myTodos.Debit > 0)
+            {
+                myTodos.Debit = details.Debit;
+                myTodos.Credit = 0;
+            }
+            else
+            {
+                myTodos.Debit = 0;
+                myTodos.Credit = details.Credit;
+            }
+            myTodos.Narration = details.Narration;
+            details.JournalDetailsId = 0;
+            details.LedgerId = 0;
+            details.Debit = 0;
+            details.Credit = 0;
+            details.Narration = string.Empty;
+            editedID = 0;
+        }
+        CalculateTotal();
+        StateHasChanged();
+    }
+    void editItem(int id)
+    {
+        var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+        details.JournalDetailsId = myTodo.JournalDetailsId;
+        details.LedgerId = myTodo.LedgerId;
+        details.Narration = myTodo.Narration;
+        details.Debit = myTodo.Debit;
+        details.Credit = myTodo.Credit;
+        editedID = id;
+        AddToList();
+    }
+    private async Task deleteItem(int id, int index, int intJournalDetailsId)
+    {
+
+        if (index > 1)
+        {
+            if (intJournalDetailsId == 0)
+            {
+                var myTodo = TodoList.FirstOrDefault(x => x.Id == id);
+                TodoList.Remove(myTodo);
+
+            }
+            else
+            {
+                var myTodo = TodoList.FirstOrDefault(x => x.JournalDetailsId == intJournalDetailsId);
+                TodoList.Remove(myTodo);
+
+                //HoldId
+                var myHoldId = new DeleteItem()
+                    {
+                        DeleteJournalDetailsId = myTodo.JournalDetailsId,
+                    };
+                deleteNo.Add(myHoldId);
+            }
+            editedID = 0;
+            CalculateTotal();
+            StateHasChanged();
+        }
+        else
+        {
+            Snackbar.Add("Default value cannot be delete.", Severity.Info);
+        }
+    }
+    void CalculateTotal()
+    {
+        decimal decDebit = 0;
+        decimal decCredit = 0;
+        foreach (var todo in TodoList)
+        {
+            decDebit = decDebit + todo.Debit;
+            decCredit = decCredit + todo.Credit;
+        }
+        master.Amount = Math.Round(decDebit, 2);
+        decTotalDebit = Math.Round(decDebit, 2);
+        decTotalCredit = Math.Round(decCredit, 2);
+        decimalTotalDifferent = Math.Round(decTotalDebit - decTotalCredit, 2);
+        StateHasChanged();
+    }
+}

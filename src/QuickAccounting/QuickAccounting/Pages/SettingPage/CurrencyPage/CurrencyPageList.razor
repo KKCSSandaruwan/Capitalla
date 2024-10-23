@@ -1,0 +1,256 @@
+﻿@page "/app/currency"
+@inject ICurrency _currency
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@attribute [Authorize]
+<PageTitle>Currency</PageTitle>
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Currency</h3>
+            <h5>Manage Currency</h5>
+        </div>
+        <div class="page-btn">
+            <a class="btn btn-added" style="cursor:pointer;" @onclick="() =>Show()"><img src="assets/img/icons/plus.svg" alt="img" class="me-1">Add New</a>
+        </div>
+    </div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <MudTable Items="@listModel" Dense="@dense" Hover="@hover" Filter="new Func<CurrencyView,bool>(FilterFunc1)">
+                    <ToolBarContent>
+                        <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Currency Name</MudTh>
+                        <MudTh>Currency Symbol</MudTh>
+                        <MudTh>No.Of.DecimalPlaces</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="CurrencyName">@context.CurrencyName</MudTd>
+                        <MudTd DataLabel="CurrencySymbol">@context.CurrencySymbol</MudTd>
+                        <MudTd DataLabel="NoOfDecimalPlaces">@context.NoOfDecimalPlaces</MudTd>
+                        <MudTd DataLabel="">
+                            <a class="me-3" style="cursor:pointer;" @onclick="() =>Edit(context.CurrencyId)">
+                                <img src="assets/img/icons/edit.svg" alt="img">
+                            </a>
+                            <a class="me-3 confirm-text" style="cursor:pointer;" @onclick="() =>Delete(context.CurrencyId)">
+                                <img src="assets/img/icons/delete.svg" alt="img">
+                            </a>
+                        </MudTd>
+                    </RowTemplate>
+                    <PagerContent>
+                        <MudTablePager />
+                    </PagerContent>
+                </MudTable>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
+
+
+
+<MudDialog @bind-IsVisible="visible" Options="dialogOptions" Class="PopupDialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" /> @ShowDialogue
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="model" OnValidSubmit="Save">
+            <DataAnnotationsValidator />
+            <div class="row">
+                <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Currency Name</label>
+                        <input type="text" @bind="model.CurrencyName">
+                        <ValidationMessage For="@(() => model.CurrencyName)" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>Symbol</label>
+                        <input type="text" @bind="model.CurrencySymbol">
+                        <ValidationMessage For="@(() => model.CurrencySymbol)" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group">
+                        <label>No.Of.Decimal Places</label>
+                        <input type="number" class="form-control" @bind="model.NoOfDecimalPlaces">
+                        <ValidationMessage For="@(() => model.NoOfDecimalPlaces)" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-12 col-12">
+                    <div class="form-group" style="display: ruby;">
+                        <label>Status &emsp;</label>
+                        <input type="checkbox" @bind="model.IsDefault">
+                    </div>
+                </div>
+
+                <div class="col-lg-12 mt-3">
+                    <button type="submit" class="btn btn-submit me-2">Save</button>
+                    <a @onclick="@HandleCancel" class="btn btn-cancel">Cancel</a>
+                </div>
+            </div>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public Task<AuthenticationState> authenticationState { get; set; }
+    private bool visible;
+    private MudBlazor.DialogOptions dialogOptions = new() { FullWidth = true };
+    string ShowDialogue;
+    Currency model = new Currency();
+    IList<CurrencyView> listModel;
+    private bool dense = true;
+    private bool hover = true;
+    private string searchString1 = "";
+    string strMenu = "Configuration";
+    protected override async Task OnInitializedAsync()
+    {
+        //CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+    }
+    private async Task LoadData()
+    {
+        listModel = await _currency.GetAll();
+        StateHasChanged();
+    }
+    private async Task Show()
+    {
+        visible = true;
+        ShowDialogue = "Currency / Add";
+        model.CurrencyId = 0;
+        model.CurrencyName = string.Empty;
+        model.CurrencySymbol = string.Empty;
+        model.NoOfDecimalPlaces = 0;
+        model.IsDefault = true;
+        StateHasChanged();
+    }
+    private async Task Edit(int id)
+    {
+        visible = true;
+        ShowDialogue = "Currency / Edit";
+        model = await _currency.GetbyId(Convert.ToInt32(id));
+        StateHasChanged();
+    }
+    private async Task Save()
+    {
+        if (model.CurrencyId == 0)
+        {
+            var isCheck = await _currency.CheckName(model.CurrencyName);
+            if (isCheck == true)
+            {
+                Snackbar.Add("Currency name already exists.", Severity.Info);
+            }
+            else
+            {
+                var result = await _currency.Save(model);
+
+                if (result > 0)
+                {
+                    Snackbar.Add("Save Successfully.", Severity.Success);
+                    await LoadData();
+                    StateHasChanged();
+                    visible = false;
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+        }
+        else
+        {
+            var isCheck = await _currency.CheckNameId(model.CurrencyName);
+            if (isCheck == model.CurrencyId || isCheck == 0)
+            {
+                bool result = false;
+                result = await _currency.Update(model);
+
+                if (result == true)
+                {
+                    Snackbar.Add("Update Successfully.", Severity.Success);
+                    await LoadData();
+                    StateHasChanged();
+                    visible = false;
+                }
+                else
+                {
+                    Snackbar.Add("Invalid.", Severity.Error);
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                Snackbar.Add("Currency name already exists.", Severity.Info);
+                StateHasChanged();
+            }
+        }
+    }
+    private async Task Delete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure?");
+        if (confirmed)
+        {
+            if (id == 1)
+            {
+                Snackbar.Add("Delete value cannot be delete.", Severity.Error);
+            }
+            else
+            {
+                var result = await _currency.Delete(id);
+                if (result == true)
+                {
+                    await LoadData();
+                    StateHasChanged();
+                    Snackbar.Add("Delete Successfully.", Severity.Success);
+                }
+                else
+                {
+                    Snackbar.Add("Cannot be delete. already in used.", Severity.Info);
+                    StateHasChanged();
+                }
+            }
+        }
+    }
+    private bool FilterFunc1(CurrencyView element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(CurrencyView element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (element.CurrencyName.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (element.CurrencySymbol.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+    private void HandleCancel()
+    {
+        visible = false;
+        StateHasChanged();
+    }
+}

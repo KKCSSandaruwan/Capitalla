@@ -1,0 +1,148 @@
+﻿@page "/fetchdata"
+@using System.Data;
+@using System.IO;
+@using NPOI.XSSF.UserModel;
+@using NPOI.SS.UserModel
+@inject IJSRuntime JsRuntime
+<PageTitle>Weather forecast</PageTitle>
+<InputFile OnChange="@ImportExcelFile"/>
+<button type="button" @onclick="@(async ()=> {await GenerateExcel();})" class="btn btn-outline-danger btn-icon m-1">
+    <i class="i-File-Excel"></i> EXCEL
+</button>
+<table class="table">
+    <thead>
+        <tr>
+            @foreach(DataColumn col in dt.Columns)
+            {
+                <th>@col.ColumnName</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(DataRow row in dt.Rows)
+        {
+            <tr>
+                @foreach(DataColumn col in dt.Columns)
+                {
+                    <td>@row[col.ColumnName].ToString()</td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code{
+    DataTable dt = new DataTable();
+    async Task ImportExcelFile(InputFileChangeEventArgs e)
+    {
+        var fileStream = e.File.OpenReadStream();
+        var ms = new MemoryStream();
+        await fileStream.CopyToAsync(ms);
+        fileStream.Close();
+        ms.Position = 0;
+
+        ISheet sheet;
+        var xsswb = new XSSFWorkbook(ms);
+
+        sheet = xsswb.GetSheetAt(0);
+        IRow hr = sheet.GetRow(0);
+        var rl = new List<string>();
+
+        int cc = hr.LastCellNum;
+        for(var j=0; j < cc; j++)
+        {
+            ICell cell = hr.GetCell(j);
+            dt.Columns.Add(cell.ToString());
+        }
+
+        for(var j = (sheet.FirstRowNum+1); j<=sheet.LastRowNum; j++)
+        {
+            var r = sheet.GetRow(j);
+            for(var i=r.FirstCellNum; i<cc;i++)
+            {
+                rl.Add(r.GetCell(i).ToString());
+            }
+
+            if(rl.Count > 0)
+            {
+                dt.Rows.Add(rl.ToArray());
+            }
+            rl.Clear();
+        }
+    }
+    protected async Task GenerateExcel()
+    {
+        IWorkbook workbook = new XSSFWorkbook();
+        var dataFormat = workbook.CreateDataFormat();
+        var dataStyle = workbook.CreateCellStyle();
+        dataStyle.DataFormat = dataFormat.GetFormat("MM/yy/dddd HH:mm:ss");
+        ISheet worksheet = workbook.CreateSheet("Sheet1");
+
+
+
+        //int rowNumber1 = 0;
+        //IRow row1 = worksheet.CreateRow(rowNumber1++);
+        ////TbleHeder
+        //ICell cell1 = row1.CreateCell(3);
+        //cell1.SetCellValue("PurchaseInvoice");
+
+        int rowNumber = 0;
+        IRow row = worksheet.CreateRow(rowNumber++);
+        //TbleHeder
+        ICell cell = row.CreateCell(0);
+        cell.SetCellValue("Voucher No");
+
+        cell = row.CreateCell(1);
+        cell.SetCellValue("Date");
+
+        cell = row.CreateCell(2);
+        cell.SetCellValue("Supplier Name");
+
+        cell = row.CreateCell(3);
+        cell.SetCellValue("Voucher Type");
+
+        cell = row.CreateCell(4);
+        cell.SetCellValue("Amount");
+
+        cell = row.CreateCell(5);
+        cell.SetCellValue("Balance Due");
+
+        cell = row.CreateCell(6);
+        cell.SetCellValue("Status");
+
+
+        //Tble Body
+        //foreach (var objDue in listModel)
+        //{
+            row = worksheet.CreateRow(rowNumber++);
+
+            cell = row.CreateCell(0);
+            cell.SetCellValue("VoucherNo");
+
+            cell = row.CreateCell(1);
+            cell.SetCellValue("Date");
+
+            cell = row.CreateCell(2);
+            cell.SetCellValue("LedgerName");
+
+            cell = row.CreateCell(3);
+            cell.SetCellValue("VoucherTypeName");
+
+            cell = row.CreateCell(4);
+            cell.SetCellValue("GrandTotal");
+
+            cell = row.CreateCell(5);
+            cell.SetCellValue("BalanceDue");
+
+            cell = row.CreateCell(6);
+            cell.SetCellValue("Status");
+
+        //}
+        MemoryStream ms = new MemoryStream();
+        workbook.Write(ms);
+        byte[] bytes = ms.ToArray();
+        ms.Close();
+
+        await JsRuntime.SaveAsFileAsync("PurchaseInvoice", bytes, "application/vnd.ms-excel");
+    }
+}

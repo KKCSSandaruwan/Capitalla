@@ -1,0 +1,550 @@
+﻿@page "/app/dashboard"
+@using System.Globalization
+@inject IJournalVoucher _voucher
+@inject IPaymentIn _paymentin
+@inject IInventoryReport report
+@inject IPurchaseInvoice _purchase
+@inject IPurchaseReturn _purchasereturn
+@inject IPaymentOut _paymentout
+@inject ISalesInvoice _sales
+@inject ISalesReturn _salesreturn
+@inject IPaymentIn _paymentin
+@attribute [Authorize]
+<PageTitle>Dashboard</PageTitle>
+<div class="content">
+	<div class="container-fluid">
+		<div class="row">
+			<div class="dashboard-header">
+				<div class="col-md-6 brand-text float-left">
+					<h2>Welcome </h2>
+				</div>
+				<div class="col-md-6 filter-toggle btn-group">
+					<button class="btn btn-secondary date-btn @strDay1" @onclick="DayOne" style="border-radius: 2em 0em 0em 2em;">Today</button>
+					<button class="btn btn-secondary date-btn @strDay7" @onclick="DaySeven">Last 7 Days</button>
+					<button class="btn btn-secondary date-btn @strDay30" @onclick="DayMonth">This Month</button>
+					<button class="btn btn-secondary date-btn @strDay365" @onclick="DayYear" style="border-radius: 0em 2em 2em 0em;">This Year</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		
+		<div class="col-lg-3 col-sm-6 col-12">
+			<div class="dash-widget">
+				<div class="dash-widgetimg">
+					<span><img src="assets/img/icons/dash1.svg" alt="img"></span>
+				</div>
+				<div class="dash-widgetcontent">
+					<h5><span class="counters">@PublicVariables._Symbol @TotalPurchase</span></h5>
+					<h6>Purchase</h6>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-3 col-sm-6 col-12">
+			<div class="dash-widget dash1">
+				<div class="dash-widgetimg">
+					<span><img src="assets/img/icons/dash2.svg" alt="img"></span>
+				</div>
+				<div class="dash-widgetcontent">
+					<h5><span class="counters">@PublicVariables._Symbol @TotalSale</span></h5>
+					<h6>Sales</h6>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-3 col-sm-6 col-12">
+			<div class="dash-widget dash2">
+				<div class="dash-widgetimg">
+					<span><img src="assets/img/icons/dash3.svg" alt="img"></span>
+				</div>
+				<div class="dash-widgetcontent">
+					<h5><span class="counters">@PublicVariables._Symbol @CashAmount</span></h5>
+					<h6>Receipt</h6>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-3 col-sm-6 col-12">
+			<div class="dash-widget dash3">
+				<div class="dash-widgetimg">
+					<span><img src="assets/img/icons/dash4.svg" alt="img"></span>
+				</div>
+				<div class="dash-widgetcontent">
+					<h5><span class="counters">@PublicVariables._Symbol @PaymentCashAmount</span></h5>
+					<h6>Payment</h6>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Button trigger modal -->
+
+	<div class="row">
+		<div class="col-lg-6 col-sm-12 col-12 d-flex">
+			<div class="card flex-fill">
+				@*<div class="card-header pb-0 d-flex justify-content-between align-items-center">*@
+					<div class="card-header d-flex justify-content-between align-items-center">
+					@*<h5 class="card-title mb-0">Income</h5>*@
+					<h5 class="card-title">Income</h5>
+				</div>
+				<div class="card-body">
+					<RadzenChart>
+						<RadzenPieSeries Data="@listIncomeExpenses" Title="Income" CategoryProperty="LedgerName" ValueProperty="Credit">
+                        <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                    </RadzenPieSeries>
+                </RadzenChart>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-6 col-sm-12 col-12 d-flex">
+			<div class="card flex-fill">
+				<div class="card-header d-flex justify-content-between align-items-center">
+					<h5 class="card-title">Top 10 Product</h5>
+				</div>
+				<div class="card-body">
+					<RadzenChart>
+						<RadzenPieSeries Data="@listProduct" Title="Product" CategoryProperty="ProductName" ValueProperty="Qty">
+                        <RadzenSeriesDataLabels Visible="@showDataLabels" />
+                    </RadzenPieSeries>
+                </RadzenChart>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-12 col-sm-12 col-12 d-flex">
+			<div class="card flex-fill">
+				<div class="card-header d-flex justify-content-between align-items-center">
+					<h5 class="card-title">Bank and Cash Balance</h5>
+				</div>
+				<div class="card-body  mt-2">
+					<div class="table-responsive">
+						<table class="table">
+							<thead>
+								<tr>
+									<th>Cash / Bank</th>
+									<th>Amount</th>
+								</tr>
+							</thead>
+							<tbody  Class="table-content">
+								@if(listCashBank == null)
+								{
+
+								}
+								else
+								{
+									@foreach (var item in listCashBank)
+									{
+								<tr>
+									
+									<td class="productimgname">
+										@item.LedgerName
+									</td>
+									<td>@PublicVariables._Symbol @item.Balance</td>
+								</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="card">
+		<div class="card-body">
+			<h5 class="card-title">Recent Transaction</h5>
+			<div class="table-responsive">
+				<MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+
+					<MudTabPanel Text="Sales">
+						<MudTable Items="@listSales" Dense="@dense" Hover="@hover">
+							<HeaderContent>
+								<MudTh>Customer Name</MudTh>
+								<MudTh>Invoice No</MudTh>
+								<MudTh>Reference</MudTh>
+								<MudTh>Date</MudTh>
+								<MudTh>Total</MudTh>
+								<MudTh>Status</MudTh>
+							</HeaderContent>
+							<RowTemplate>
+								<MudTd DataLabel="LedgerName" Class="table-content">@context.LedgerName</MudTd>
+								<MudTd DataLabel="Email" Class="table-content">@context.VoucherNo</MudTd>
+								<MudTd DataLabel="Reference" Class="table-content">@context.Reference</MudTd>
+								<MudTd DataLabel="Date" Class="table-content">@context.Date</MudTd>
+								<MudTd DataLabel="GrandTotal" Class="table-content">@PublicVariables._Symbol @context.GrandTotal</MudTd>
+								@if (context.PaymentStatus == "Draft")
+								{
+									<MudTd DataLabel="PaymentStatus" Class="badges bg-lightred statusbutton">@context.PaymentStatus</MudTd> @*<br />*@
+									<MudTd DataLabel="PaymentStatus" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+								}
+								else
+								{
+									<MudTd DataLabel="PaymentStatus" Class="badges bg-lightgreen statusbutton">@context.PaymentStatus</MudTd>
+								}
+							</RowTemplate>
+							<PagerContent>
+								<MudTablePager />
+							</PagerContent>
+						</MudTable>
+
+					</MudTabPanel>
+
+					<MudTabPanel Text="Purchase">
+						<MudTable Items="@listPurchase" Dense="@dense" Hover="@hover">
+							<HeaderContent>
+								<MudTh>Supplier Name</MudTh>
+								<MudTh>Bill No</MudTh>
+								<MudTh>Reference</MudTh>
+								<MudTh>Date</MudTh>
+								<MudTh>Total</MudTh>
+								<MudTh>Status</MudTh>
+							</HeaderContent>
+							<RowTemplate>
+								<MudTd DataLabel="LedgerName">@context.LedgerName</MudTd>
+								<MudTd DataLabel="Email">@context.VoucherNo</MudTd>
+								<MudTd DataLabel="Reference">@context.Reference</MudTd>
+								<MudTd DataLabel="Date">@context.Date</MudTd>
+								<MudTd DataLabel="GrandTotal">@PublicVariables._Symbol @context.GrandTotal</MudTd>
+								@if (context.PaymentStatus == "Draft")
+								{
+									<MudTd DataLabel="PaymentStatus" Class="badges bg-lightred statusbutton">@context.PaymentStatus</MudTd> @*<br />*@
+									<MudTd DataLabel="PaymentStatus" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+								}
+								else
+								{
+									<MudTd DataLabel="PaymentStatus" Class="badges bg-lightgreen statusbutton">@context.PaymentStatus</MudTd>
+								}
+							</RowTemplate>
+							<PagerContent>
+								<MudTablePager />
+							</PagerContent>
+						</MudTable>
+					</MudTabPanel>
+    
+					
+					<MudTabPanel Text="Credit Note">
+						<MudTabPanel Text="Credit Note">
+							<MudTable Items="@listSalesReturn" Dense="@dense" Hover="@hover">
+								<HeaderContent>
+									<MudTh>Supplier Name</MudTh>
+									<MudTh>Bill No</MudTh>
+									<MudTh>Date</MudTh>
+									<MudTh>Total</MudTh>
+									<MudTh>Status</MudTh>
+								</HeaderContent>
+								<RowTemplate>
+									<MudTd DataLabel="LedgerName">@context.LedgerName</MudTd>
+									<MudTd DataLabel="Email">@context.VoucherNo</MudTd>
+									<MudTd DataLabel="Date">@context.Date</MudTd>
+									<MudTd DataLabel="GrandTotal">@PublicVariables._Symbol @context.GrandTotal</MudTd>
+									@if (context.Status == "Draft")
+									{
+										<MudTd DataLabel="Status" Class="badges bg-lightred statusbutton">@context.Status</MudTd> @*<br />*@
+										<MudTd DataLabel="PaymentStatus" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+									}
+									else
+									{
+										<MudTd DataLabel="Status" Class="badges bg-lightgreen statusbutton">@context.Status</MudTd>
+									}
+								</RowTemplate>
+								<PagerContent>
+									<MudTablePager />
+								</PagerContent>
+							</MudTable>
+						</MudTabPanel>
+
+					</MudTabPanel>
+    
+
+					<MudTabPanel Text="Debit Note">
+						<MudTable Items="@listPurchaseReturn" Dense="@dense" Hover="@hover">
+							<HeaderContent>
+								<MudTh>Supplier Name</MudTh>
+								<MudTh>Bill No</MudTh>
+								<MudTh>Date</MudTh>
+								<MudTh>Total</MudTh>
+								<MudTh>Status</MudTh>
+								<MudTh></MudTh>
+							</HeaderContent>
+							<RowTemplate>
+								<MudTd DataLabel="LedgerName">@context.LedgerName</MudTd>
+								<MudTd DataLabel="Email">@context.VoucherNo</MudTd>
+								<MudTd DataLabel="Date">@context.Date</MudTd>
+								<MudTd DataLabel="GrandTotal">@PublicVariables._Symbol @context.GrandTotal</MudTd>
+								@if (context.Status == "Draft")
+								{
+									<MudTd DataLabel="Status" Class="badges bg-lightred statusbutton">@context.Status</MudTd>@* <br />*@
+									<MudTd DataLabel="PaymentStatus" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+								}
+								else
+								{
+									<MudTd DataLabel="Status" Class="badges bg-lightgreen statusbutton">@context.Status</MudTd>
+								}
+							</RowTemplate>
+							<PagerContent>
+								<MudTablePager />
+							</PagerContent>
+						</MudTable>
+					</MudTabPanel>
+
+
+
+					<MudTabPanel Text="Journal Voucher">
+						<MudTable Items="@listVoucher" Dense="@dense" Hover="@hover">
+							<HeaderContent>
+								<MudTh>Date</MudTh>
+								<MudTh>Voucher No</MudTh>
+								<MudTh>Amount</MudTh>
+								<MudTh>Narration</MudTh>
+								<MudTh>Status</MudTh>
+							</HeaderContent>
+							<RowTemplate>
+								<MudTd DataLabel="LedgerName">@context.Date</MudTd>
+								<MudTd DataLabel="VoucherNo">@context.VoucherNo</MudTd>
+								<MudTd DataLabel="Narration">@PublicVariables._Symbol@context.Amount</MudTd>
+								<MudTd DataLabel="Date">@context.Narration</MudTd>
+								@if (context.Status == "Draft")
+								{
+									<MudTd DataLabel="Status" Class="badges bg-lightred statusbutton">@context.Status</MudTd>@* <br />*@
+									<MudTd DataLabel="Status" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+								}
+								else
+								{
+									<MudTd DataLabel="Status" Class="badges bg-lightgreen statusbutton">@context.Status</MudTd>
+								}
+							</RowTemplate>
+							<PagerContent>
+								<MudTablePager />
+							</PagerContent>
+						</MudTable>
+					</MudTabPanel>
+					<MudTabPanel Text="Receipt Voucher">
+						<MudTable Items="@listPaymentIn" Dense="@dense" Hover="@hover">
+							<HeaderContent>
+								<MudTh>Receipt Date</MudTh>
+								<MudTh>Receipt No</MudTh>
+								<MudTh>Paid From</MudTh>
+								<MudTh>Amount</MudTh>
+								<MudTh>Status</MudTh>
+							</HeaderContent>
+							<RowTemplate>
+								<MudTd DataLabel="LedgerName">@context.Date</MudTd>
+								<MudTd DataLabel="VoucherNo">@context.VoucherNo</MudTd>
+								<MudTd DataLabel="Date">@context.LedgerName</MudTd>
+								<MudTd DataLabel="Amount">@PublicVariables._Symbol@context.Amount</MudTd>
+								@if (context.PaymentType == "Draft")
+								{
+									<MudTd DataLabel="PaymentType" Class="badges bg-lightred statusbutton">@context.PaymentType</MudTd> @*<br />*@
+									<MudTd DataLabel="PaymentType" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+								}
+								else
+								{
+									<MudTd DataLabel="PaymentType" Class="badges bg-lightgreen statusbutton">@context.PaymentType</MudTd>
+								}
+							</RowTemplate>
+							<PagerContent>
+								<MudTablePager />
+							</PagerContent>
+						</MudTable>
+					</MudTabPanel>
+					<MudTabPanel Text="Payment Voucher">
+						<MudTable Items="@listPaymentOut" Dense="@dense" Hover="@hover">
+							<HeaderContent>
+								<MudTh>Payment Date</MudTh>
+								<MudTh>Payment No</MudTh>
+								<MudTh>Paid From</MudTh>
+								<MudTh>Amount</MudTh>
+								<MudTh>Status</MudTh>
+							</HeaderContent>
+							<RowTemplate>
+								<MudTd DataLabel="LedgerName">@context.Date</MudTd>
+								<MudTd DataLabel="VoucherNo">@context.VoucherNo</MudTd>
+								<MudTd DataLabel="Date">@context.LedgerName</MudTd>
+								<MudTd DataLabel="Amount">@PublicVariables._Symbol@context.Amount</MudTd>
+								@if (context.PaymentType == "Draft")
+								{
+									<MudTd DataLabel="PaymentType" Class="badges bg-lightred statusbutton">@context.PaymentType</MudTd> @*<br />*@
+									<MudTd DataLabel="PaymentType" Class="badges bg-lightred statusbutton">APPROVAL PENDING</MudTd>
+								}
+								else
+								{
+									<MudTd DataLabel="PaymentType" Class="badges bg-lightgreen statusbutton">@context.PaymentType</MudTd>
+								}
+							</RowTemplate>
+							<PagerContent>
+								<MudTablePager />
+							</PagerContent>
+						</MudTable>
+					</MudTabPanel>
+
+</MudTabs>
+			</div>
+		</div>
+	</div>
+</div>
+@code{
+	private bool dense = true;
+	private bool hover = true;
+	bool value = true;
+	decimal TotalSale;
+	decimal TotalPurchase;
+	decimal CashAmount;
+	decimal PaymentCashAmount;
+	IList<JournalMasterView> listVoucher;
+	IList<PaymentReceiveView> listPaymentIn;
+	IList<PaymentReceiveView> listPaymentOut;
+	IList<PurchaseMasterView> listPurchase;
+	IList<SalesMasterView> listSales;
+	IList<PurchaseReturnMasterView> listPurchaseReturn;
+	IList<SalesReturnMasterView> listSalesReturn;
+	IList<FinancialReport> listCashBank;
+	IList<FinancialReport> listIncomeExpenses;
+	IList<ProductView> listProduct;
+	bool showDataLabels = false;
+	string strDay1 = "DeActive";
+	string strDay7 = "active";
+	string strDay30 = "DeActive";
+	string strDay365 = "DeActive";
+
+	TabPosition tabPosition = TabPosition.Top;
+
+	protected async override void OnInitialized()
+	{
+		listProduct = await report.GetTopProduct();
+		DaySeven();
+		StateHasChanged();
+
+	}
+	private async void DayOne()
+	{
+		string strDay1 = "active";
+		string strDay7 = "DeActive";
+		string strDay30 = "DeActive";
+		string strDay365 = "DeActive";
+		DateTime dtFromDate = DateTime.UtcNow.AddDays(-1);
+		DateTime dtToDate = DateTime.UtcNow;
+		var result = report.SalesPurchaseTotal( dtFromDate , dtToDate, 1); //GetTotalSales&Purchase
+		TotalSale = result.totalSale;
+		TotalPurchase = result.totalPurchase;
+
+		var resultSales = report.Receive(dtFromDate , dtToDate, 1); //GetYouWillReceive
+		CashAmount = resultSales.Purchase;
+
+		var resultPyment = report.Pay(dtFromDate, dtToDate,  1); //GetYouWillPay
+		PaymentCashAmount = resultPyment.Payment;
+
+		listIncomeExpenses = await report.GetIncomeExpenses(dtFromDate, dtToDate);
+
+		listVoucher = await _voucher.GetAll(dtFromDate, dtToDate, string.Empty);
+		listPaymentIn = await _paymentin.GetAll(dtFromDate, dtToDate, string.Empty, "ReceiptVoucher");
+		listPaymentOut = await _paymentout.GetAll(dtFromDate, dtToDate, string.Empty, "PaymentVoucher");
+		listPurchase = await _purchase.PurchaseInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSales = await _sales.SalesInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSalesReturn = await _salesreturn.SalesReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listPurchaseReturn = await _purchasereturn.PurchaseReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+
+		//Cash/Bank
+		listCashBank = await report.CashBankBalance(dtFromDate, dtToDate);
+	}
+	private async void DaySeven()
+	{
+		string strDay1 = "DeActive";
+		string strDay7 = "active";
+		string strDay30 = "DeActive";
+		string strDay365 = "DeActive";
+		DateTime dtFromDate = DateTime.UtcNow.AddDays(-7);
+		DateTime dtToDate = DateTime.UtcNow;
+		var result = report.SalesPurchaseTotal(dtFromDate, dtToDate, 1); //GetTotalSales&Purchase
+		TotalSale = result.totalSale;
+		TotalPurchase = result.totalPurchase;
+
+		var resultSales = report.Receive(dtFromDate, dtToDate, 1); //GetYouWillReceive
+		CashAmount = resultSales.Purchase;
+
+		var resultPyment = report.Pay(dtFromDate, dtToDate, 1); //GetYouWillPay
+		PaymentCashAmount = resultPyment.Payment;
+
+		listIncomeExpenses = await report.GetIncomeExpenses(dtFromDate, dtToDate);
+
+		listVoucher = await _voucher.GetAll(dtFromDate, dtToDate, string.Empty);
+		listPaymentIn = await _paymentin.GetAll(dtFromDate, dtToDate, string.Empty, "ReceiptVoucher");
+		listPaymentOut = await _paymentout.GetAll(dtFromDate, dtToDate, string.Empty, "PaymentVoucher");
+		listPurchase = await _purchase.PurchaseInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSales = await _sales.SalesInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSalesReturn = await _salesreturn.SalesReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listPurchaseReturn = await _purchasereturn.PurchaseReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+
+		//Cash/Bank
+		listCashBank = await report.CashBankBalance(dtFromDate, dtToDate);
+	}
+	private async void DayMonth()
+	{
+		string strDay1 = "DeActive";
+		string strDay7 = "DeActive";
+		string strDay30 = "active";
+		string strDay365 = "DeActive";
+		DateTime dtFromDate = DateTime.UtcNow.AddDays(-30);
+		DateTime dtToDate = DateTime.UtcNow;
+		var result = report.SalesPurchaseTotal(dtFromDate, dtToDate, 1); //GetTotalSales&Purchase
+		TotalSale = result.totalSale;
+		TotalPurchase = result.totalPurchase;
+
+		var resultSales = report.Receive(dtFromDate, dtToDate, 1); //GetYouWillReceive
+		CashAmount = resultSales.Purchase;
+
+		var resultPyment = report.Pay(dtFromDate, dtToDate, 1); //GetYouWillPay
+		PaymentCashAmount = resultPyment.Payment;
+
+		listIncomeExpenses = await report.GetIncomeExpenses(dtFromDate, dtToDate);
+
+		listVoucher = await _voucher.GetAll(dtFromDate, dtToDate, string.Empty);
+		listPaymentIn = await _paymentin.GetAll(dtFromDate, dtToDate, string.Empty, "ReceiptVoucher");
+		listPaymentOut = await _paymentout.GetAll(dtFromDate, dtToDate, string.Empty, "PaymentVoucher");
+		listPurchase = await _purchase.PurchaseInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSales = await _sales.SalesInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSalesReturn = await _salesreturn.SalesReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listPurchaseReturn = await _purchasereturn.PurchaseReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+
+		//Cash/Bank
+		listCashBank = await report.CashBankBalance(dtFromDate, dtToDate);
+	}
+	private async void DayYear()
+	{
+		string strDay1 = "DeActive";
+		string strDay7 = "DeActive";
+		string strDay30 = "DeActive";
+		string strDay365 = "active";
+		DateTime dtFromDate = DateTime.UtcNow.AddDays(-365);
+		DateTime dtToDate = DateTime.UtcNow;
+		var result = report.SalesPurchaseTotal(dtFromDate, dtToDate, 1); //GetTotalSales&Purchase
+		TotalSale = result.totalSale;
+		TotalPurchase = result.totalPurchase;
+
+		var resultSales = report.Receive(dtFromDate, dtToDate, 1); //GetYouWillReceive
+		CashAmount = resultSales.Purchase;
+
+		var resultPyment = report.Pay(dtFromDate, dtToDate, 1); //GetYouWillPay
+		PaymentCashAmount = resultPyment.Payment;
+
+		listIncomeExpenses = await report.GetIncomeExpenses(dtFromDate, dtToDate);
+
+		listVoucher = await _voucher.GetAll(dtFromDate, dtToDate, string.Empty);
+		listPaymentIn = await _paymentin.GetAll(dtFromDate, dtToDate, string.Empty, "ReceiptVoucher");
+		listPaymentOut = await _paymentout.GetAll(dtFromDate, dtToDate, string.Empty, "PaymentVoucher");
+		listPurchase = await _purchase.PurchaseInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSales = await _sales.SalesInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listSalesReturn = await _salesreturn.SalesReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+		listPurchaseReturn = await _purchasereturn.PurchaseReturnInvoiceSearch(dtFromDate, dtToDate, string.Empty, 0);
+
+		//Cash/Bank
+		listCashBank = await report.CashBankBalance(dtFromDate, dtToDate);
+	}
+	void OnChange(int index)
+	{
+
+	}
+	void OnChange(bool? value, string name)
+	{
+		value = true;
+	}
+	//string FormatAsUSD(object value)
+	//{
+	//	//return PublicVariables._Symbol;
+	//}
+}

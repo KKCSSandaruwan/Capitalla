@@ -1,0 +1,283 @@
+﻿@page "/app/receiptview/{id}"
+@inject IPaymentIn _payment
+@inject ICompany _company
+@inject IInvoiceSetting _setting
+@inject ISnackbar Snackbar
+@using QuickAccounting.Components
+@using QuickAccounting.Repository
+@using System.Security.Claims
+@inject IPrivilege _privilege
+@inject NavigationManager navigation
+@inject IDialogService Dialog
+@attribute [Authorize]
+<PageTitle>ReceiptVoucher View</PageTitle>
+<div class="content">
+	<div class="page-header">
+		<div class="page-title">
+			<h3>Receipt View</h3>
+		</div>
+	</div>
+	<div class="card padding1">
+		<div class="card-body">
+			<div class="card-sales-split">
+				<h2 style="font-size:15px; font-weight:700;">Receipt Detail : @model.VoucherNo</h2>
+				<ul>
+					@if (@model.PaymentType == "Draft")
+					{
+						<li>
+							<a style="cursor:pointer;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+						<li class="ApprovedButton">
+							<a @onclick="() => OpenDeleteDialog()"><img src="../assets/img/icons/tick-white.svg" alt="img" class="viewtopbutton">Approved</a>
+						</li>
+					}
+					else
+					{
+						<li>
+							<a href="/app/receiptedit/@model.ReceiptMasterId"><img src="assets/img/icons/edit.svg" alt="img" class="viewtopbutton">Edit</a>
+						</li>
+						<li>
+							<a style="cursor:pointer;" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer.svg" alt="img" class="viewtopbutton">Print</a>
+						</li>
+					}
+				</ul>
+			</div>
+			<div id="PrintDiv">
+			<div class="invoice-box table-height" style="max-width: 1600px;width:100%;overflow: auto;margin:15px auto;padding: 0;font-size: 14px;line-height: 24px;color: #555;">
+				<table cellpadding="0" cellspacing="0" style="width: 100%;line-height: inherit;text-align: left;">
+					<tbody>
+						<tr class="top">
+							<td colspan="6" style="padding: 5px;vertical-align: top;">
+								<table style="width: 100%;line-height: inherit;text-align: left;">
+									<tbody>
+										<tr>
+											<td style="width:40%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+												<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Paid To</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.LedgerName</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Email</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @model.Address</font></font><br>
+											</td>
+											<td style="width:34%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+												<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Company Info</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @company.CompanyName </font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">@company.Email</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">@company.PhoneNo</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @company.Address</font></font><br>
+											</td>
+											<td style="padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+												<font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text">Customer Receipt</font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Receipt No: @model.VoucherNo </font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;"> Date: @model.Date </font></font><br>
+												<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;"> Status:  @model.PaymentType</font></font><br>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</td>
+						</tr>
+						
+					</tbody>
+					
+				</table>
+				<table class="table" style="width:100%;">
+					<tr class="heading " style="background: #F3F2F7;">
+							<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+								Receipt Details
+							</td>
+							<td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+								Amount
+							</td>
+						</tr>
+						@if(listPaymentDetails == null)
+						{
+
+						}
+						else
+						{
+						@foreach (var item in listPaymentDetails)
+						{
+							<tr class="details" style="border-bottom:1px solid #E9ECEF ;">
+								<td style="padding: 10px;vertical-align: top; display: flex;align-items: center;">
+									@item.LedgerName
+								</td>
+								<td style="padding: 10px;vertical-align: top; ">
+										@PublicVariables._Symbol@item.Amount
+								</td>
+							</tr>
+						}
+						}
+						<tfoot>
+						<tr class="total-order w-100 max-widthauto m-auto mb-4">
+							<td style="font-weight:700;">Net Credit</td>
+							<td style="font-weight:700;">@PublicVariables._Symbol@model.Amount</td>
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+			<table>
+					<tr>
+						<td>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Amount In Words </font></font><br>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @strNumberToWords </font></font><br>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 700;"> Narration </font></font><br>
+							<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;"> @model.Narration </font></font><br>
+						</td>
+					</tr>
+			</table>
+				<div class="row">
+					<div class="col-lg-10">
+						<h7>Created by:</h7> <br />
+						<h7>@model.AddedDate</h7>
+					</div>
+					<div class="col-lg-2" style="float:right;">
+						<h7>Approved by:</h7> <br />
+						<h5>
+							@if (model.PaymentType == "Draft")
+							{
+								<span style="font-size:12px;">Not Approved</span>
+							}
+							else
+							{
+								<h6 style="font-size:12px;">@model.UserId</h6>
+							}
+						</h5>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+@if (DeleteDialogOpen)
+{
+    <ModalDialog Title="Approve Receipt Voucher"
+			 Text="Are you sure you want to approve this Receipt Voucher? This will add Receipt voucher entry."
+             OnClose="@OnDeleteDialogClose"
+             DialogType="ModalDialog.ModalDialogType.Ok">
+    </ModalDialog>
+}
+@code {
+	[Parameter]
+	public string id { get; set; }
+	[CascadingParameter]
+	public Task<AuthenticationState> authenticationState { get; set; }
+	Company company = new Company();
+	PaymentReceiveView model = new PaymentReceiveView();
+	ReceiptMaster master = new ReceiptMaster();
+	IList<PaymentReceiveView> listPaymentDetails;
+	InvoiceSetting setting = new InvoiceSetting();
+	string strNumberToWords;
+	int decPaymentInVoucher = 3;
+	public bool DeleteDialogOpen { get; set; }
+	string strMenu = "Accounting";
+	protected override async Task OnInitializedAsync()
+	{
+		//CheckPriviliagee
+		var authState = await authenticationState;
+		var strRole = authState.User;
+		string strName = strRole.FindFirst(ClaimTypes.Role).Value;
+		var strShow = await _privilege.PriviliageCheck(strMenu, strName);
+		if (strShow.ShowAction == true)
+		{
+			await LoadData();
+		}
+		else
+		{
+			navigation.NavigateTo("/app/dashboard");
+			Snackbar.Add("You dont have to privilege..", Severity.Error);
+		}
+	}
+	private async Task LoadData()
+	{
+		company = await _company.GetbyId(1);
+		model = await _payment.PaymentInView(Convert.ToInt32(id));
+		master = await _payment.GetbyId(Convert.ToInt32(id));
+		listPaymentDetails = await _payment.PaymentInDetailsView(Convert.ToInt32(id));
+		strNumberToWords = NumberToWords.ConvertAmount( Convert.ToDouble(model.Amount.ToString())); 
+
+		//GetSerialNo
+		string	serial = await _payment.GetSerialNo();
+		setting = await _setting.GetbyId(decPaymentInVoucher);
+		master.VoucherNo = setting.Prefix + serial + setting.Suffix;
+		master.SerialNo = serial;
+		StateHasChanged();
+	}
+	private async void ApprovedOk()
+	{
+		if(listPaymentDetails == null)
+		{
+			Snackbar.Add("Invalid.", Severity.Info);
+		}
+	    else if (master.LedgerId == 0)
+		{
+			Snackbar.Add("Choose Cash / Bank Account.", Severity.Info);
+		}
+		else if (master.VoucherNo == string.Empty)
+		{
+			Snackbar.Add("Type Voucher No.", Severity.Info);
+		}
+		else if (master.Amount == 0)
+		{
+			Snackbar.Add("Invalid Entry.", Severity.Info);
+		}
+		else
+		{
+			var authState = await authenticationState;
+			var user = authState.User;
+			string userName = user.FindFirst(ClaimTypes.Name).Value;
+			master.VoucherTypeId = decPaymentInVoucher;
+			master.UserId = userName;
+			master.FinancialYearId = 1;
+			master.CompanyId = 1;
+			master.PaymentType = "Approved";
+			master.ModifyDate = DateTime.Now;
+			foreach (var item in listPaymentDetails)
+			{
+				ReceiptDetails details = new ReceiptDetails();
+				if (item != null)
+				{
+					details.ReceiptDetailsId = item.ReceiptDetailsId;
+					details.LedgerId = item.LedgerId;
+					details.SalesMasterId = item.SalesMasterId;
+                    details.TotalAmount = item.Amount;
+                    details.ReceiveAmount = item.ReceiveAmount;
+                    details.DueAmount = 0;
+					master.listOrder.Add(details);
+                }
+            }
+			var result = await _payment.ApprovedOk(master);
+
+            if (result == true)
+            {
+                
+                await LoadData();
+                StateHasChanged();
+				Snackbar.Add("Successfully Save Receipt.", Severity.Success);
+            }
+            else
+            {
+				Snackbar.Add("Error.", Severity.Error);
+            }
+		}
+	}
+	private async Task OnDeleteDialogClose(bool accepted)
+	{
+		if (accepted)
+		{
+			ApprovedOk();
+		}
+
+		DeleteDialogOpen = false;
+		StateHasChanged();
+	}
+
+	private void OpenDeleteDialog()
+	{
+		DeleteDialogOpen = true;
+		StateHasChanged();
+	}
+}
