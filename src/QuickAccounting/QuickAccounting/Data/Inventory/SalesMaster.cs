@@ -42,14 +42,11 @@ namespace QuickAccounting.Data.Inventory
         public bool POS { get; set; }
         public int FinancialYearId { get; set; }
         public int CompanyId { get; set; }
- 
-
 		public DateTime? AddedDate { get; set; }
         public DateTime? ModifyDate { get; set; }
         [NotMapped]
         public List<SalesDetails> listOrder { get; set; } = new List<SalesDetails>();
         [NotMapped]
         public List<DeleteItem> listDelete { get; set; } = new List<DeleteItem>();
-
     }
 }
