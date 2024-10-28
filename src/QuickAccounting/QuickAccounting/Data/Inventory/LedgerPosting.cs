@@ -11,8 +11,20 @@ namespace QuickAccounting.Data.Inventory
         public int VoucherTypeId { get; set; }
         public string VoucherNo { get; set; }
         public int LedgerId { get; set; }
-        public Decimal Debit { get; set; }
-        public Decimal Credit { get; set; }
+
+        /// <summary>
+        /// (හර)
+        /// Amount entered as a debit in double-entry accounting. 
+        /// Used to increase asset or expense accounts and decrease liabilities or revenue.
+        /// </summary>
+        public decimal Debit { get; set; }
+
+        /// <summary>
+        /// (බැ ර)
+        /// Amount entered as a credit in double-entry accounting. 
+        /// Used to decrease asset or expense accounts and increase liabilities or revenue.
+        /// </summary>
+        public decimal Credit { get; set; }
         public int DetailsId { get; set; }
         public int YearId { get; set; }
         public string InvoiceNo { get; set; }
