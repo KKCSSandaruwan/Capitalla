@@ -1,9 +1,10 @@
 ﻿@page "/app/purchase/invoices/settlement"
 
 @inject IPurchaseInvoiceSettlement PurchaseInvoiceService
+@inject IAccountLedger AccountLedgerService
 @inject ISnackbar Snackbar
 
-@using QuickAccounting.Enums
+@using System.Globalization
 
 <PageTitle>Purchase Invoice Settlement</PageTitle>
 
@@ -21,7 +22,9 @@
                 <div class="col-lg-4 col-sm-6 col-12">
                     <div class="form-group">
                         <label>Supplier</label>
-                        <RadzenDropDown Class="w-100" AllowFiltering="true" Placeholder="Choose Supplier"
+                        <RadzenDropDown Class="w-100" AllowFiltering="true"
+                                        Placeholder="@(!HasLoadedSuppliers ? "Loading suppliers..." : (SupplierList == null || !SupplierList.Any() ? "No unsettled suppliers found!" : "Choose a supplier"))"
+                                        Disabled="@(SupplierList == null || !SupplierList.Any())"
                                         @bind-Value="@SupplierId" Data="@(SupplierList)" TextProperty="LedgerName" ValueProperty="LedgerId"
                                         Change="@((args) => OnSupplierSelectedAsync((int)args))" />
                     </div>
@@ -29,7 +32,9 @@
                 <div class="col-lg-4 col-sm-6 col-12">
                     <div class="form-group">
                         <label>Payment Source</label>
-                        <RadzenDropDown Class="w-100" AllowFiltering="true" Placeholder="Choose Payment Source"
+                        <RadzenDropDown Class="w-100" AllowFiltering="true"
+                                        Placeholder="@(!HasLoadedAccounts ? "Loading payment sources..." : (AccountList == null || !AccountList.Any() ? "No payment sources available!" : "Choose payment Source"))"
+                                        Disabled="@(AccountList == null || !AccountList.Any())"
                                         @bind-Value="@AccountId" Data="@(AccountList)" TextProperty="LedgerName" ValueProperty="LedgerId" />
                     </div>
                 </div>
@@ -48,9 +53,10 @@
                     <div class="form-group">
                         <label>Purchase Invoice</label>
                         <div class="input-groupicon">
-                            <RadzenDropDownDataGrid Class="w-100" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith"
-                                                    AllowVirtualization="true" AllowFiltering="true" AllowClear="true" Placeholder="@InvoicePlaceholder"
-                                                    Disabled="!IsInvoiceLoaded" @bind-Value="@InvoiceNo" Data=@InvoiceList TextProperty="VoucherNo" ValueProperty="VoucherNo"
+                            <RadzenDropDownDataGrid Class="w-100" AllowClear="true" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith"
+                                                    Placeholder="@((SupplierId == 0)? "Choose a supplier first": (!HasLoadedInvoices)? "Loading invoices..." : (InvoiceList == null || !InvoiceList.Any())? "No invoices available for this supplier!" : "Choose invoice")"
+                                                    Disabled="SupplierId == 0 || !HasLoadedInvoices || (InvoiceList == null || !InvoiceList.Any())"
+                                                    @bind-Value="@SelectedInvoice" Data=@InvoiceList TextProperty="VoucherNo" ValueProperty="VoucherNo"
                                                     Change=@(args => OnInvoiceSelected((string)args, "DropDownDataGrid with virtualization using IQueryable"))>
                                 <Columns>
                                     <RadzenDropDownDataGridColumn Property="VoucherNo" Title="Voucher Number" Width="25%" />
@@ -83,7 +89,7 @@
                             @foreach (var td in TodoList)
                             {
                                 <tr>
-                                    <td> @td.Date</td>
+                                    <td>@td.Date.ToString("g", System.Globalization.CultureInfo.CurrentCulture)</td>
                                     <td> @td.VoucherNo</td>
                                     <td> @td.GrandTotal</td>
                                     <td> @td.PayAmount</td>
@@ -114,8 +120,8 @@
                                 <RadzenNumeric Class="w-100" ShowUpDown="false" Disabled="true" Value="SettleAmount" Format="N2" />
                             </li>
                             <li>
-                                <h4>Invoice Amount (Rs.)</h4>
-                                <RadzenNumeric Class="w-100" ShowUpDown="false" Disabled="true" Value="TotalInvoiceAmount" Format="N2" />
+                                <h4>Due Amount (Rs.)</h4>
+                                <RadzenNumeric Class="w-100" ShowUpDown="false" Disabled="true" Value="TotalDueInvoiceAmount" Format="N2" />
                             </li>
                             <li>
                                 <h4>Balance Amount (Rs.)</h4>
@@ -138,25 +144,24 @@
 </div>
 
 @code {
+    private bool HasLoadedSuppliers { get; set; } = false;
+    private bool HasLoadedAccounts { get; set; } = false;
+    private bool HasLoadedInvoices { get; set; } = false;
     private int SupplierId { get; set; } = 0;
     private int AccountId { get; set; } = 0;
-    private bool IsInvoiceLoaded { get; set; } = false;
-    private string InvoicePlaceholder { get; set; } = "Choose a supplier first";
-    private string InvoiceNo { get; set; } = string.Empty;
     private double SettleAmount { get; set; } = 0.00;
-    private double TotalInvoiceAmount { get; set; } = 0.00;
-    private double BalanceAmount { get; set; } = 0.00;
+    private string SelectedInvoice { get; set; } = string.Empty;
     private string Remark { get; set; } = string.Empty;
+    private double TotalDueInvoiceAmount { get; set; } = 0.00;
+    private double BalanceAmount { get; set; } = 0.00;
 
     private IList<AccountLedgerView>? SupplierList { get; set; }
     private IList<AccountLedgerView>? AccountList { get; set; }
-    private IList<PurchaseMaster>? InvoiceList { get; set; }
+    private List<PurchaseMaster>? InvoiceList { get; set; }
     private List<PurchaseMaster> TodoList { get; set; } = new List<PurchaseMaster>();
 
     private DateTime SettlementDate;
     private bool IsInvoiceAddAllowed = true;
-
-    private PurchaseMaster PurchaseInvoice = new PurchaseMaster();
 
     /// <summary>
     /// Initializes the component by loading the list of unsettled suppliers and accounts
@@ -166,9 +171,14 @@
         try
         {
             SettlementDate = DateTime.Today;
+
             SupplierList = await PurchaseInvoiceService.GetUnsettledSuppliersAsync();
-            AccountList = await PurchaseInvoiceService.GetPaymentSourcesAsync();
+            HasLoadedSuppliers = true;
+
+            AccountList = await AccountLedgerService.GetPaymentSourcesAsync();
+            HasLoadedAccounts = true;
         }
+
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading suppliers: {ex.Message}");
@@ -184,21 +194,18 @@
     {
         try
         {
-            SupplierId = selectedSupplierId;
-            InvoicePlaceholder = "Loading invoices...";
-            RefreshView();
+            // Reset the form state without initializing form fields
+            ResetForm(isInitializeFormFields: false);
 
+            SupplierId = selectedSupplierId;
+            HasLoadedInvoices = false;
+
+            // Load the updated InvoiceList based on the new SupplierId
             InvoiceList = await PurchaseInvoiceService.GetUnsettledInvoicesBySupplierAsync(SupplierId);
-            if (InvoiceList.Any())
-            {
-                IsInvoiceLoaded = true;
-                InvoicePlaceholder = "Choose Invoice";
-            }
-            else
-            {
-                IsInvoiceLoaded = false;
-                InvoicePlaceholder = "No invoices available for this supplier";
-            }
+            await Task.Delay(100);
+            HasLoadedInvoices = true;
+
+            // Refresh the UI to reflect the updated invoice list
             RefreshView();
         }
         catch (Exception ex)
@@ -444,9 +451,6 @@
 
             // Add the new purchase invoice to the TodoList
             TodoList.Add(newPurchaseInvoice);
-
-            // Clear or reset the PurchaseInvoice object for future use
-            PurchaseInvoice = new PurchaseMaster();
         }
         catch (Exception ex)
         {
@@ -463,7 +467,7 @@
     {
         try
         {
-            double totalAmount = invoiceList.Sum((invoice) => (double)invoice.GrandTotal);
+            double totalAmount = invoiceList.Sum((invoice) => (double)invoice.BalanceDue);
 
             return SettleAmount >= totalAmount;
         }
@@ -481,12 +485,12 @@
     {
         try
         {
-            TotalInvoiceAmount = 0.00;
+            TotalDueInvoiceAmount = 0.00;
             BalanceAmount = 0.00;
 
-            TotalInvoiceAmount = invoiceList.Sum((invoice) => (double)invoice.GrandTotal);
+            TotalDueInvoiceAmount = invoiceList.Sum((invoice) => (double)invoice.BalanceDue);
 
-            BalanceAmount = SettleAmount - TotalInvoiceAmount;
+            BalanceAmount = SettleAmount - TotalDueInvoiceAmount;
             if (BalanceAmount <= 0.00) BalanceAmount = 0.00;
 
             // Refresh the view to reflect the updated Todo list
@@ -501,22 +505,30 @@
     /// <summary>
     /// Resets the form to its initial state after a successful save or cancel action.
     /// </summary>
-    private void ResetForm()
+
+    private void ResetForm(bool isInitializeFormFields = true)
     {
         try
         {
-            SupplierId = 0;
-            InvoiceNo = null;
-            InvoiceList = new List<PurchaseMaster>();
-            IsInvoiceLoaded = false;
+            if (isInitializeFormFields)
+            {
+                HasLoadedSuppliers = true;
+                HasLoadedAccounts = true;
+                SupplierId = 0;
+                AccountId = 0;
+                SettleAmount = 0.00;
+            }
+
+            HasLoadedInvoices = false;
             IsInvoiceAddAllowed = true;
-            InvoicePlaceholder = "Choose a supplier first";
+            SelectedInvoice = null;
+            InvoiceList = new List<PurchaseMaster>();
             TodoList.Clear();
-            SettleAmount = 0.00;
-            TotalInvoiceAmount = 0.00;
+            TotalDueInvoiceAmount = 0.00;
             BalanceAmount = 0.00;
             Remark = String.Empty;
-            RefreshView();
+
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -539,6 +551,3 @@
         }
     }
 }
-
-
-

@@ -54,30 +54,6 @@ namespace QuickAccounting.Repository.Repository
             }
         }
 
-        // Retrieves a list of available payment sources.
-        public async Task<List<AccountLedgerView>> GetPaymentSourcesAsync()
-        {
-            try
-            {
-                var result = await (from al in _context.AccountLedger
-                                    join ag in _context.AccountGroup on al.AccountGroupId equals ag.AccountGroupId
-                                    where new[] { 27, 28 }.Contains(al.AccountGroupId)
-                                    select new AccountLedgerView
-                                    {
-                                        LedgerId = al.LedgerId,
-                                        LedgerName = al.LedgerName,
-                                        LedgerCode = al.LedgerCode,
-                                    }).ToListAsync();
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error retrieving payment sources: {ex.Message}");
-                throw new Exception("An error occurred while fetching payment sources.");
-            }
-        }
-
         // Retrieves unsettled invoices for a specified supplier.
         public async Task<List<PurchaseMaster>> GetUnsettledInvoicesBySupplierAsync(int supplierId)
         {
@@ -114,9 +90,10 @@ namespace QuickAccounting.Repository.Repository
                 {
                     LedgerId = invoicesToSettle.First().LedgerId,
                     AccountId = invoicesToSettle.First().AccountId ?? 0,
-                    PaymentType = PaymentMethod.Supplier.ToString(),
-                    SettlmentType = SettlmentType.Multiple.ToString(),
+                    //TransactionType = TransactionType.SupplierPurchase.ToString(),
                     InvoiceType = InvoiceType.Purchase.ToString(),
+                    SettlmentType = ProcessType.Multiple.ToString(),
+                    PaymentType = PaymentMethod.Supplier.ToString(),
                     FinancialYearId = invoicesToSettle.First().FinancialYearId,
                     CompanyId = invoicesToSettle.First().CompanyId,
                     UserId = userName,
@@ -236,7 +213,7 @@ namespace QuickAccounting.Repository.Repository
             {
                 Console.WriteLine($"Error during invoice settlement: {ex.Message}");
                 await transaction.RollbackAsync();
-                throw new Exception("An error occurred during the settlement process.");
+                throw new Exception("An error occurred during the settlement process.", ex);
             }
         }
     }
