@@ -198,7 +198,6 @@
             ResetForm(isInitializeFormFields: false);
 
             SupplierId = selectedSupplierId;
-            HasLoadedInvoices = false;
 
             // Load the updated InvoiceList based on the new SupplierId
             InvoiceList = await PurchaseInvoiceService.GetUnsettledInvoicesBySupplierAsync(SupplierId);
