@@ -197,7 +197,7 @@
             ResetForm(isInitializeFormFields: false);
 
             CustomerId = selectedCustomerId;
-            
+
             // Load the updated InvoiceList based on the new CustomerId
             InvoiceList = await SalesInvoiceService.GetUnsettledInvoicesByCustomerAsync(CustomerId);
             await Task.Delay(100);
