@@ -53,8 +53,7 @@
                     <div class="form-group">
                         <label>Sales Invoice</label>
                         <div class="input-groupicon">
-                            <RadzenDropDownDataGrid Class="w-100" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith"
-                                                    AllowVirtualization="true" AllowFiltering="true" AllowClear="true"
+                            <RadzenDropDownDataGrid Class="w-100" AllowClear="true" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith"
                                                     Placeholder="@((CustomerId == 0)? "Choose a customer first": (!HasLoadedInvoices)? "Loading invoices..." : (InvoiceList == null || !InvoiceList.Any())? "No invoices available for this customer!" : "Choose invoice")"
                                                     Disabled="CustomerId == 0 || !HasLoadedInvoices || (InvoiceList == null || !InvoiceList.Any())"
                                                     @bind-Value="@InvoiceNo" Data=@InvoiceList TextProperty="VoucherNo" ValueProperty="VoucherNo"
@@ -89,16 +88,16 @@
                         <tbody>
                             @foreach (var td in TodoList)
                             {
-                                <tr>
-                                    <td>@td.Date.ToString("g", System.Globalization.CultureInfo.CurrentCulture)</td>
-                                    <td> @td.VoucherNo</td>
-                                    <td> @td.GrandTotal</td>
-                                    <td> @td.PayAmount</td>
-                                    <td> @td.BalanceDue</td>
-                                    <td class="text-end">
-                                        <a @onclick="() => OnDeleteFromTodoList(td.VoucherNo)"><img src="assets/img/icons/delete.svg" alt="svg"></a>
-                                    </td>
-                                </tr>
+                                    <tr>
+                                        <td>@td.Date.ToString("g", System.Globalization.CultureInfo.CurrentCulture)</td>
+                                        <td> @td.VoucherNo</td>
+                                        <td> @td.GrandTotal</td>
+                                        <td> @td.PayAmount</td>
+                                        <td> @td.BalanceDue</td>
+                                        <td class="text-end">
+                                            <a @onclick="() => OnDeleteFromTodoList(td.VoucherNo)"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+                                        </td>
+                                    </tr>
                             }
                         </tbody>
                     </table>
@@ -194,13 +193,17 @@
     {
         try
         {
+            // Reset the form state without initializing form fields
             ResetForm(isInitializeFormFields: false);
 
             CustomerId = selectedCustomerId;
+            
+            // Load the updated InvoiceList based on the new CustomerId
             InvoiceList = await SalesInvoiceService.GetUnsettledInvoicesByCustomerAsync(CustomerId);
+            await Task.Delay(100);
             HasLoadedInvoices = InvoiceList.Any();
 
-            // Refresh the view to reflect the updated InvoiceList
+            // Refresh the UI to reflect the updated invoice list
             RefreshView();
         }
         catch (Exception ex)
