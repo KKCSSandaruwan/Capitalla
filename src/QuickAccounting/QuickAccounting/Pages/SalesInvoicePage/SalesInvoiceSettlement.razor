@@ -58,11 +58,23 @@
                                                     Disabled="CustomerId == 0 || !HasLoadedInvoices || (InvoiceList == null || !InvoiceList.Any())"
                                                     @bind-Value="@InvoiceNo" Data=@InvoiceList TextProperty="VoucherNo" ValueProperty="VoucherNo"
                                                     Change=@(args => OnInvoiceSelected((string)args, "DropDownDataGrid with virtualization using IQueryable"))>
-                                <Columns>
+                               <Columns>
                                     <RadzenDropDownDataGridColumn Property="VoucherNo" Title="Voucher Number" Width="25%" />
-                                    <RadzenDropDownDataGridColumn Property="GrandTotal" Title="Total Amount" Width="20%" />
-                                    <RadzenDropDownDataGridColumn Property="PayAmount" Title="Paid Amount" Width="20%" />
-                                    <RadzenDropDownDataGridColumn Property="BalanceDue" Title="Due Amount" Width="20%" />
+                                    <RadzenDropDownDataGridColumn Title="Total Amount" Width="20%">
+                                        <Template>
+                                            @NumberFormatter.FormatCurrency((decimal)@context.GrandTotal)
+                                        </Template>
+                                    </RadzenDropDownDataGridColumn>
+                                    <RadzenDropDownDataGridColumn Title="Paid Amount" Width="20%">
+                                        <Template>
+                                            @NumberFormatter.FormatCurrency((decimal)@context.PayAmount)
+                                        </Template>
+                                    </RadzenDropDownDataGridColumn>
+                                    <RadzenDropDownDataGridColumn Title="Due Amount" Width="20%">
+                                        <Template>
+                                            @NumberFormatter.FormatCurrency((decimal)@context.BalanceDue)
+                                        </Template>
+                                    </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Property="Status" Title="Status" Width="15%" />
                                 </Columns>
                             </RadzenDropDownDataGrid>
@@ -89,11 +101,11 @@
                             @foreach (var td in TodoList)
                             {
                                     <tr>
-                                        <td>@td.Date.ToString("g", System.Globalization.CultureInfo.CurrentCulture)</td>
+                                        <td> @DateFormatter.FormatDate(@td.Date)</td>
                                         <td> @td.VoucherNo</td>
-                                        <td> @td.GrandTotal</td>
-                                        <td> @td.PayAmount</td>
-                                        <td> @td.BalanceDue</td>
+                                        <td> @NumberFormatter.FormatCurrency(@td.GrandTotal)</td>
+                                        <td> @NumberFormatter.FormatCurrency(@td.PayAmount)</td>
+                                        <td> @NumberFormatter.FormatCurrency(@td.BalanceDue)</td>
                                         <td class="text-end">
                                             <a @onclick="() => OnDeleteFromTodoList(td.VoucherNo)"><img src="assets/img/icons/delete.svg" alt="svg"></a>
                                         </td>

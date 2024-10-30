@@ -37,7 +37,8 @@ namespace QuickAccounting.Repository.Repository
                 var result = await (from pm in _context.PurchaseMaster
                                     join al in _context.AccountLedger
                                     on pm.LedgerId equals al.LedgerId
-                                    where pm.Status == "Unpaid"
+                                    where pm.Status == "Unpaid" &&
+                                          pm.PaymentStatus == "Approved"
                                     select new AccountLedgerView
                                     {
                                         LedgerId = al.LedgerId,
@@ -61,10 +62,10 @@ namespace QuickAccounting.Repository.Repository
             {
                 var result = await (from pm in _context.PurchaseMaster
                                                        .Include(pm => pm.PurchaseDetails)
-                                    where pm.Active == true
-                                            && pm.Status != "Paid"
-                                            && pm.PaymentStatus == "Approved"
-                                            && pm.LedgerId == supplierId
+                                    where pm.Active == true &&
+                                           pm.Status != "Paid" &&
+                                           pm.PaymentStatus == "Approved" &&
+                                           pm.LedgerId == supplierId
                                     select pm).ToListAsync();
 
                 return result;
