@@ -14,14 +14,6 @@ namespace QuickAccounting.Repository.Interface
         Task<List<AccountLedgerView>> GetUnsettledSuppliersAsync();
 
         /// <summary>
-        /// Asynchronously retrieves a list of available payment sources.
-        /// </summary>
-        /// <returns>
-        /// A <see cref="Task"/> that represents the asynchronous operation, containing a list of <see cref="AccountLedgerView"/> objects representing the payment sources.
-        /// </returns>
-        Task<List<AccountLedgerView>> GetPaymentSourcesAsync();
-
-        /// <summary>
         /// Asynchronously retrieves a list of unsettled invoices for the specified supplier.
         /// </summary>
         /// <param name="supplierId">The ID of the supplier whose unsettled invoices are to be retrieved.</param>
