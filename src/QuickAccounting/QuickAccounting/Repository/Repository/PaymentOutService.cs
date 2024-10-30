@@ -124,41 +124,43 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<PaymentReceiveView> PaymentOutView(int id)
         {
-            var result = await (from a in _context.PaymentMaster
-                                join c in _context.AccountLedger on a.LedgerId equals c.LedgerId
-                                where a.PaymentMasterId == id
+            var result = await (from pm in _context.PaymentMasterDup
+                                join pd in _context.PaymentDetailsDup on pm.PaymentMasterId equals pd.PaymentMasterId
+                                join al in _context.AccountLedger on pm.LedgerId equals al.LedgerId
+                                where pm.PaymentMasterId == id
                                 select new PaymentReceiveView
                                 {
-                                    PaymentMasterId = a.PaymentMasterId,
-                                    Date = a.Date,
-                                    VoucherNo = a.VoucherNo,
-                                    Amount = a.Amount,
-                                    Narration = a.Narration,
-                                    PaymentType = a.PaymentType,
-                                    Type = a.Type,
-                                    UserId = a.UserId,
-                                    AddedDate = a.AddedDate,
-                                    LedgerName = c.LedgerName,
-                                    Email = c.Email,
-                                    Address = c.Address
+                                    PaymentMasterId = pm.PaymentMasterId,
+                                    Date = pm.AddedDate,
+                                    VoucherNo = pd.VoucherNo,
+                                    Amount = pd.PaidAmount,
+                                    Narration = pm.Narration,
+                                    PaymentType = pm.PaymentType,
+                                    Type = pm.PaymentType,
+                                    UserId = pm.UserId,
+                                    AddedDate = pm.AddedDate,
+                                    LedgerName = al.LedgerName,
+                                    Email = al.Email,
+                                    Address = al.Address
                                 }).FirstOrDefaultAsync();
             return result;
         }
         public async Task<IList<PaymentReceiveView>> PaymentOutDetailsView(int id)
         {
-            var result = await (from a in _context.PaymentDetails
-                                join c in _context.AccountLedger on a.LedgerId equals c.LedgerId
-                                where a.PaymentMasterId == id
+            var result = await (from pm in _context.PaymentMasterDup
+                                join pd in _context.PaymentDetailsDup on pm.PaymentMasterId equals pd.PaymentMasterId
+                                join al in _context.AccountLedger on pm.LedgerId equals al.LedgerId
+                                where pm.PaymentMasterId == id
                                 select new PaymentReceiveView
                                 {
-                                    PaymentDetailsId = a.PaymentDetailsId,
-                                    PaymentMasterId = a.PaymentMasterId,
-                                    LedgerId = a.LedgerId,
-                                    Amount = a.TotalAmount,
-                                    DueAmount = a.DueAmount,
-                                    ReceiveAmount = a.ReceiveAmount,
-                                    PurchaseMasterId = a.PurchaseMasterId,
-                                    LedgerName = c.LedgerName
+                                    PaymentDetailsId = pd.PaymentDetailId,
+                                    PaymentMasterId = pm.PaymentMasterId,
+                                    LedgerId = pm.LedgerId,
+                                    Amount = pd.TotalAmount,
+                                    DueAmount = pd.DueAmount,
+                                    ReceiveAmount = pd.PaidAmount,
+                                    PurchaseMasterId = pd.PurchaseMasterId,
+                                    LedgerName = al.LedgerName
                                 }).ToListAsync();
             return result;
         }
