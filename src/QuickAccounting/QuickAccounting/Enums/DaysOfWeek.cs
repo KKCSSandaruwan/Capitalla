@@ -1,5 +1,11 @@
 ﻿namespace QuickAccounting.Enums
 {
+    /*
+     * Note: 
+     * - Do not change the values in this enum as they map directly to the database.
+     * - Modifying these values may cause issues with data consistency.
+     * - If changes are necessary, consult with the project leader and obtain approval.
+     */
     public enum DaysOfWeek
     {
         /// <summary>

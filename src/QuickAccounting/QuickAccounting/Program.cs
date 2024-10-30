@@ -69,6 +69,7 @@ builder.Services.AddTransient<ITaxRates, TaxRatesService>();
 builder.Services.AddTransient<IPurchaseOrder, PurchaseOrderService>();
 
 builder.Services.AddTransient<IPurchaseInvoiceSettlement, PurchaseInvoiceSettlementService>();
+builder.Services.AddTransient<ISalesInvoiceSettlement, SalesInvoiceSettlementService>();
 
 builder.Services.AddTransient<DataAccess>();
 builder.Services.AddTransient<DatabaseConnection>();

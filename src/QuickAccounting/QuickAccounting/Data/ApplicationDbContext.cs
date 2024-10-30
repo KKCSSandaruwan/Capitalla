@@ -89,9 +89,13 @@ namespace QuickAccounting.Data
         //PurchaseOrdersDetais
         public DbSet<PurchaseOrderDetail> PurchaseOrderDetails { get; set; } = null!;
 
+
         //Payment Master & Detail (Duplicate tables)
         public DbSet<PaymentMasterDup> PaymentMasterDup { get; set; }
-
         public DbSet<PaymentDetailsDup> PaymentDetailsDup { get; set; }
+
+        //Receipt Master & Detail (Duplicate tables)
+        public DbSet<ReceiptMasterDup> ReceiptMasterDup { get; set; }
+        public DbSet<ReceiptDetailsDup> ReceiptDetailsDup { get; set; }
     }
 }
