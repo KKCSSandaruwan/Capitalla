@@ -16,7 +16,7 @@ namespace QuickAccounting.Data.Inventory
         public decimal PaidAmount { get; set; } 
         public decimal DueAmount { get; set; } 
         public string? PaymentStatus { get; set; } 
-        public DateTime? AddedDate { get; set; } 
+        public DateTime AddedDate { get; set; } 
         public DateTime? ModifyDate { get; set; }
 
 

@@ -16,7 +16,7 @@ namespace QuickAccounting.Data.Inventory
         public int CompanyId { get; set; }
         public string UserId { get; set; }
         public string Narration { get; set; }
-        public DateTime? AddedDate { get; set; }
+        public DateTime AddedDate { get; set; }
         public DateTime? ModifyDate { get; set; }
 
 

@@ -1,0 +1,560 @@
+﻿@page "/app/sales/invoices/settlement"
+
+@inject ISalesInvoiceSettlement SalesInvoiceService
+@inject IAccountLedger AccountLedgerService
+@inject ISnackbar Snackbar
+
+@using System.Globalization
+
+<PageTitle>Sales Invoice Settlement</PageTitle>
+
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Sales Invoice Settlement</h3>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Form Row 1: Customer, Payment Source, and Settle Amount -->
+            <div class="row ml-2 mr-2">
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Customer</label>
+                        <RadzenDropDown Class="w-100" AllowFiltering="true"
+                                        Placeholder="@(!HasLoadedCustomers ? "Loading customers..." : (CustomerList == null || !CustomerList.Any() ? "No unsettled customers found!" : "Choose a customer"))"
+                                        Disabled="@(CustomerList == null || !CustomerList.Any())"
+                                        @bind-Value="@CustomerId" Data="@(CustomerList)" TextProperty="LedgerName" ValueProperty="LedgerId"
+                                        Change="@((args) => OnCustomerSelectedAsync((int)args))" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Payment Source</label>
+                        <RadzenDropDown Class="w-100" AllowFiltering="true"
+                                        Placeholder="@(!HasLoadedAccounts ? "Loading payment sources..." : (AccountList == null || !AccountList.Any() ? "No payment sources available!" : "Choose payment Source"))"
+                                        Disabled="@(AccountList == null || !AccountList.Any())"
+                                        @bind-Value="@AccountId" Data="@(AccountList)" TextProperty="LedgerName" ValueProperty="LedgerId" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Settle Amount (Rs.)</label>
+                        <RadzenNumeric Class="w-100" Placeholder="Enter or clear value" Format="N2"
+                                       TValue="double" Value=@SettleAmount ValueChanged="@((args)=> OnSettleAmountChanged(args))" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Row 2: Sales Invoice Dropdown with Details -->
+            <div class="row ml-2 mr-2">
+                <div class="col-lg-12 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Sales Invoice</label>
+                        <div class="input-groupicon">
+                            <RadzenDropDownDataGrid Class="w-100" AllowClear="true" AllowFiltering="true" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive" FilterOperator="StringFilterOperator.StartsWith"
+                                                    Placeholder="@((CustomerId == 0)? "Choose a customer first": (!HasLoadedInvoices)? "Loading invoices..." : (InvoiceList == null || !InvoiceList.Any())? "No invoices available for this customer!" : "Choose invoice")"
+                                                    Disabled="CustomerId == 0 || !HasLoadedInvoices || (InvoiceList == null || !InvoiceList.Any())"
+                                                    @bind-Value="@InvoiceNo" Data=@InvoiceList TextProperty="VoucherNo" ValueProperty="VoucherNo"
+                                                    Change=@(args => OnInvoiceSelected((string)args, "DropDownDataGrid with virtualization using IQueryable"))>
+                               <Columns>
+                                    <RadzenDropDownDataGridColumn Property="VoucherNo" Title="Voucher Number" Width="25%" />
+                                    <RadzenDropDownDataGridColumn Title="Total Amount" Width="20%">
+                                        <Template>
+                                            @NumberFormatter.FormatCurrency((decimal)@context.GrandTotal)
+                                        </Template>
+                                    </RadzenDropDownDataGridColumn>
+                                    <RadzenDropDownDataGridColumn Title="Paid Amount" Width="20%">
+                                        <Template>
+                                            @NumberFormatter.FormatCurrency((decimal)@context.PayAmount)
+                                        </Template>
+                                    </RadzenDropDownDataGridColumn>
+                                    <RadzenDropDownDataGridColumn Title="Due Amount" Width="20%">
+                                        <Template>
+                                            @NumberFormatter.FormatCurrency((decimal)@context.BalanceDue)
+                                        </Template>
+                                    </RadzenDropDownDataGridColumn>
+                                    <RadzenDropDownDataGridColumn Property="Status" Title="Status" Width="15%" />
+                                </Columns>
+                            </RadzenDropDownDataGrid>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Row 3: Invoices Table -->
+            <div class="row ml-2 mr-2 mt-3">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Invoice Date & Time</th>
+                                <th>Voucher Number</th>
+                                <th>Grand Total</th>
+                                <th>Paid Amount</th>
+                                <th>Due Amount</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var td in TodoList)
+                            {
+                                    <tr>
+                                        <td> @DateFormatter.FormatDate(@td.Date)</td>
+                                        <td> @td.VoucherNo</td>
+                                        <td> @NumberFormatter.FormatCurrency(@td.GrandTotal)</td>
+                                        <td> @NumberFormatter.FormatCurrency(@td.PayAmount)</td>
+                                        <td> @NumberFormatter.FormatCurrency(@td.BalanceDue)</td>
+                                        <td class="text-end">
+                                            <a @onclick="() => OnDeleteFromTodoList(td.VoucherNo)"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+                                        </td>
+                                    </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Form Row 4: Remarks and Summary -->
+            <div class="row ml-2 mr-2 mt-3">
+                <div class="col-lg-7">
+                    <div class="form-group">
+                        <label>Remark</label>
+                        <RadzenTextArea class="W-100" @bind-Value=@Remark Placeholder="Enter here..." />
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="total-order">
+                        <ul>
+                            <li>
+                                <h4>Settle Amount (Rs.)</h4>
+                                <RadzenNumeric Class="w-100" ShowUpDown="false" Disabled="true" Value="SettleAmount" Format="N2" />
+                            </li>
+                            <li>
+                                <h4>Due Amount (Rs.)</h4>
+                                <RadzenNumeric Class="w-100" ShowUpDown="false" Disabled="true" Value="TotalDueInvoiceAmount" Format="N2" />
+                            </li>
+                            <li>
+                                <h4>Balance Amount (Rs.)</h4>
+                                <RadzenNumeric Class="w-100" ShowUpDown="false" Disabled="true" Value="BalanceAmount" Format="N2" />
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Row 5: Action Buttons -->
+            <div class="row ml-2 mr-2 mt-2">
+                <div class="col-lg-12">
+                    <button class="btn btn-submit me-2 savebutton" @onclick="OnSaveAsync">Save</button>
+                    <button class="btn btn-cancel cancelbutton" @onclick="OnCancel">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool HasLoadedCustomers { get; set; } = false;
+    private bool HasLoadedAccounts { get; set; } = false;
+    private bool HasLoadedInvoices { get; set; } = false;
+    private int CustomerId { get; set; } = 0;
+    private int AccountId { get; set; } = 0;
+    private double SettleAmount { get; set; } = 0.00;
+    private string InvoiceNo { get; set; } = string.Empty;
+    private string Remark { get; set; } = string.Empty;
+    private double TotalDueInvoiceAmount { get; set; } = 0.00;
+    private double BalanceAmount { get; set; } = 0.00;
+
+    private IList<AccountLedgerView>? CustomerList { get; set; }
+    private IList<AccountLedgerView>? AccountList { get; set; }
+    private List<SalesMasterView>? InvoiceList { get; set; }
+    private List<SalesMasterView> TodoList { get; set; } = new List<SalesMasterView>();
+
+    private DateTime SettlementDate;
+    private bool IsInvoiceAddAllowed = true;
+
+    /// <summary>
+    /// Initializes the component by loading unsettled customers and payment sources.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            SettlementDate = DateTime.Today;
+
+            CustomerList = await SalesInvoiceService.GetUnsettledCustomersAsync();
+            HasLoadedCustomers = true;
+
+            AccountList = await AccountLedgerService.GetPaymentSourcesAsync();
+            HasLoadedAccounts = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading customers or payment sources: {ex.Message}");
+            Snackbar.Add("An error occurred while loading customers or payment sources. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the selection of a customer and retrieves the corresponding unsettled invoices.
+    /// </summary>
+    /// <param name="selectedCustomerId">The ID of the selected customer.</param>
+    private async Task OnCustomerSelectedAsync(int selectedCustomerId)
+    {
+        try
+        {
+            // Reset the form state without initializing form fields
+            ResetForm(isInitializeFormFields: false);
+
+            CustomerId = selectedCustomerId;
+
+            // Load the updated InvoiceList based on the new CustomerId
+            InvoiceList = await SalesInvoiceService.GetUnsettledInvoicesByCustomerAsync(CustomerId);
+            await Task.Delay(100);
+            HasLoadedInvoices = InvoiceList.Any();
+
+            // Refresh the UI to reflect the updated invoice list
+            RefreshView();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error retrieving invoices for customer ID {selectedCustomerId}: {ex.Message}");
+            Snackbar.Add("An error occurred while loading invoices. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Updates the settle amount based on the new value provided and recalculates the summary.
+    /// </summary>
+    /// <param name="newValue">The new settle amount value.</param>
+    private void OnSettleAmountChanged(object newValue)
+    {
+        try
+        {
+            SettleAmount = (double)newValue;
+
+            // Recalculate the summary based on the updated SettleAmount and TodoList
+            CalculateSummary(TodoList);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred: {ex.Message}");
+            Snackbar.Add("An error occurred while updating the settle amount. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the selection of an invoice and adds it to the settle invoice list if valid.
+    /// </summary>
+    /// <param name="selectedVoucherNo">The voucher number of the selected invoice.</param>
+    /// <param name="associatedName">The associated name for the invoice.</param>
+    private void OnInvoiceSelected(string selectedVoucherNo, string associatedName)
+    {
+        try
+        {
+            var selectedInvoice = InvoiceList.FirstOrDefault(inv => inv.VoucherNo == selectedVoucherNo);
+
+            if (selectedInvoice is not null)
+            {
+                bool isInvoiceAlreadyAdded = TodoList.Any(item => item.VoucherNo == selectedInvoice.VoucherNo);
+
+                if (isInvoiceAlreadyAdded)
+                {
+                    Snackbar.Add($"This invoice is already added.", Severity.Warning);
+                    return;
+                }
+
+                if (SettleAmount <= 0)
+                {
+                    Snackbar.Add("Settle amount is required", Severity.Warning);
+                    return;
+                }
+
+                if (!IsInvoiceAddAllowed)
+                {
+                    Snackbar.Add("Cannot add more invoices due to limit.", Severity.Warning);
+                    return;
+                }
+
+                // Add the selected invoice to the settle invoice list
+                AddToTodoList(selectedInvoice);
+
+                // Recalculate the summary after adding the invoice
+                CalculateSummary(TodoList);
+
+                // Check if adding the invoice affects the ability to add more invoices
+                IsInvoiceAddAllowed = IsInvoiceAmountWithinLimit(TodoList);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Unexpected error: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while adding the invoice. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Removes the specified invoice from the todo list and recalculates the summary.
+    /// </summary>
+    /// <param name="voucherNo">The voucher number of the invoice to be removed.</param>
+    private void OnDeleteFromTodoList(string voucherNo)
+    {
+        try
+        {
+            var itemToDelete = TodoList.FirstOrDefault(item => item.VoucherNo == voucherNo);
+
+            if (itemToDelete is null) return;
+
+            TodoList.Remove(itemToDelete);
+            CalculateSummary(TodoList);
+            IsInvoiceAddAllowed = true;
+
+            Snackbar.Add($"Invoice has been successfully removed.", Severity.Normal);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error removing invoice with voucher no. {voucherNo}: {ex.Message}");
+            Snackbar.Add("An error occurred while removing the invoice. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Validates input fields and processes each invoice for full or partial settlement.
+    /// </summary>
+    private async Task OnSaveAsync()
+    {
+        try
+        {
+            // Validate input fields before saving the settlement
+            if (CustomerId == 0)
+            {
+                Snackbar.Add("Customer selection is required.", Severity.Warning);
+                return;
+            }
+
+            if (AccountId == 0)
+            {
+                Snackbar.Add("Payment source selection is required.", Severity.Warning);
+                return;
+            }
+
+            if (SettleAmount <= 0)
+            {
+                Snackbar.Add("Settle amount is required", Severity.Warning);
+                return;
+            }
+
+            if (!TodoList.Any())
+            {
+                Snackbar.Add("No invoices to settle. Please add at least one invoice.", Severity.Warning);
+                return;
+            }
+
+            // Settlement for each invoice in the TodoList
+            double settlemtBalanceAmount = SettleAmount;
+            bool isSettlementSuccessful = false;
+
+            foreach (var invoice in TodoList)
+            {
+                double invoiceAmount = (double)invoice.GrandTotal;
+                double paidAmount = 0.00;
+
+                if (settlemtBalanceAmount >= invoiceAmount)
+                {
+                    // Full Settlement
+                    paidAmount = invoiceAmount;
+                    settlemtBalanceAmount -= invoiceAmount;
+
+                    invoice.Status = PaymentStatus.Paid.ToString();
+                }
+                else
+                {
+                    // Partial Settlement
+                    paidAmount = settlemtBalanceAmount;
+                    settlemtBalanceAmount = 0;
+
+                    invoice.Status = PaymentStatus.Partial.ToString();
+                }
+
+                invoice.PayAmount = (decimal)paidAmount;
+                invoice.BalanceDue = invoice.GrandTotal - (decimal)paidAmount;
+                invoice.PreviousDue = (decimal)paidAmount;
+                invoice.Reference = Remark;
+            }
+
+            isSettlementSuccessful = await SalesInvoiceService.SettleInvoiceAsync(TodoList);
+
+            if (!isSettlementSuccessful)
+            {
+                Snackbar.Add("An error occurred while settling invoices. Please try again.", Severity.Error);
+                return;
+            }
+
+            // If all invoices are successfully settled, clear the form
+            ResetForm();
+            Snackbar.Add("Settlement successful.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving settlement: {ex.Message}");
+            Snackbar.Add("An error occurred while saving the settlement. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Cancels the current operation and resets the form.
+    /// </summary>
+    private void OnCancel()
+    {
+        try
+        {
+            ResetForm();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during cancel operation: {ex.Message}");
+            Snackbar.Add("An error occurred while canceling the operation. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Adds a selected sales invoice to the todo list by creating a copy of the invoice details.
+    /// </summary>
+    /// <param name="selectedInvoice">The sales invoice to be added to the todo list.</param>
+    private void AddToTodoList(SalesMasterView selectedInvoice)
+    {
+        try
+        {
+            // Create a copy of the selected sales invoice object
+            var newSaleInvoice = new SalesMasterView
+                {
+                    // SalesMaster Table Properties
+                    SalesMasterId = selectedInvoice.SalesMasterId,
+                    VoucherNo = selectedInvoice.VoucherNo,
+                    WarehouseId = selectedInvoice.WarehouseId,
+                    VoucherTypeId = selectedInvoice.VoucherTypeId,
+                    Date = selectedInvoice.Date,
+                    LedgerId = selectedInvoice.LedgerId,
+                    AccountId = AccountId,
+                    TaxRate = selectedInvoice.TaxRate,
+                    TotalTax = selectedInvoice.TotalTax,
+                    ShippingAmount = selectedInvoice.ShippingAmount,
+                    GrandTotal = selectedInvoice.GrandTotal,
+                    BillDiscount = selectedInvoice.BillDiscount,
+                    TotalAmount = selectedInvoice.TotalAmount,
+                    NetAmounts = selectedInvoice.NetAmounts,
+                    PayAmount = selectedInvoice.PayAmount,
+                    BalanceDue = selectedInvoice.BalanceDue,
+                    PreviousDue = selectedInvoice.PreviousDue,
+                    PaymentStatus = selectedInvoice.PaymentStatus,
+                    Status = selectedInvoice.Status,
+                    FinancialYearId = selectedInvoice.FinancialYearId,
+                    CompanyId = selectedInvoice.CompanyId,
+                    Narration = selectedInvoice.Narration,
+                    Reference = selectedInvoice.Reference,
+                };
+
+            // Add the new purchase invoice to the TodoList
+            TodoList.Add(newSaleInvoice);
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+    }
+
+    /// <summary>
+    /// Calculates the total invoice amount and balance amount based on the provided invoice list.
+    /// </summary>
+    /// <param name="invoiceList">The list of sales invoices to calculate the summary from.</param>
+    private void CalculateSummary(List<SalesMasterView> invoiceList)
+    {
+        try
+        {
+            TotalDueInvoiceAmount = 0.00;
+            BalanceAmount = 0.00;
+
+            TotalDueInvoiceAmount = invoiceList.Sum((invoice) => (double)invoice.BalanceDue);
+
+            BalanceAmount = SettleAmount - TotalDueInvoiceAmount;
+            if (BalanceAmount <= 0.00) BalanceAmount = 0.00;
+
+            // Refresh the view to reflect the updated Todo list
+            RefreshView();
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+    }
+
+    /// <summary>
+    /// Checks whether the total invoice amount is within the limit of the settle amount.
+    /// </summary>
+    /// <param name="invoiceList">The list of sales invoices to check against the settle amount.</param>
+    /// <returns>True if the settle amount is greater than or equal to the total invoice amount; otherwise, false.</returns>
+    private bool IsInvoiceAmountWithinLimit(List<SalesMasterView> invoiceList)
+    {
+        try
+        {
+            double totalAmount = invoiceList.Sum((invoice) => (double)invoice.BalanceDue);
+
+            // Return true if the settle amount is greater than or equal to the total amount
+            return SettleAmount >= totalAmount;
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+    }
+
+    /// <summary>
+    /// Resets the form to its initial state after a successful save or cancel action.
+    /// </summary>
+    private void ResetForm(bool isInitializeFormFields = true)
+    {
+        try
+        {
+            if (isInitializeFormFields)
+            {
+                HasLoadedCustomers = true;
+                HasLoadedAccounts = true;
+                CustomerId = 0;
+                AccountId = 0;
+                SettleAmount = 0.00;
+            }
+
+            HasLoadedInvoices = false;
+            IsInvoiceAddAllowed = true;
+            InvoiceNo = null;
+            InvoiceList = new List<SalesMasterView>();
+            TodoList.Clear();
+            TotalDueInvoiceAmount = 0.00;
+            BalanceAmount = 0.00;
+            Remark = String.Empty;
+
+            RefreshView();
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+    }
+
+    /// <summary>
+    /// Refreshes the UI to reflect any changes in state.
+    /// </summary>
+    private void RefreshView()
+    {
+        try
+        {
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            throw ex;
+        }
+    }
+}
