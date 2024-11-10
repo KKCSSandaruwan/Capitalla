@@ -26,10 +26,10 @@
         public static string ConvertNumberToWords(decimal number)
         {
             if (number == 0)
-                return "Zero";
+                return "Zero Only";
 
             int integerPart = (int)Math.Floor(number);
-            int fractionalPart = (int)((number - integerPart) * 100); // Assumes two decimal places (cents)
+            int fractionalPart = (int)((number - integerPart) * 100);
 
             string words = $"{ConvertIntegerToWords(integerPart)} Rupees";
 
@@ -37,6 +37,8 @@
             {
                 words += $" and {ConvertIntegerToWords(fractionalPart)} Cents";
             }
+
+            words += " Only";
 
             return words;
         }
