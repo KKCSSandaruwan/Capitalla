@@ -5,9 +5,12 @@ using QuickAccounting.Data;
 using QuickAccounting.Data.Inventory;
 using QuickAccounting.Data.Setting;
 using QuickAccounting.Data.ViewModel;
+using QuickAccounting.Enums;
+using QuickAccounting.Pages.Authentication.UsersPage;
 using QuickAccounting.Repository.Interface;
 using System.Data;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using static MudBlazor.CategoryTypes;
 
 namespace QuickAccounting.Repository.Repository
 {
@@ -15,7 +18,8 @@ namespace QuickAccounting.Repository.Repository
     {
         private readonly ApplicationDbContext _context;
         private readonly DatabaseConnection _conn;
-        public PaymentInService(ApplicationDbContext context, DatabaseConnection conn)
+		private static int ReceiptMasterId = 0;
+		public PaymentInService(ApplicationDbContext context, DatabaseConnection conn)
         {
             _context = context;
             _conn = conn;
@@ -125,8 +129,15 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<ReceiptMaster> GetbyId(int id)
         {
-            ReceiptMaster model = await _context.ReceiptMaster.FindAsync(id);
-            return model;
+            //ReceiptMaster model = await _context.ReceiptMaster.FindAsync(id);
+            //return model;
+            using (SqlConnection sqlcon = new SqlConnection(_conn.DbConn))
+            {
+                var para = new DynamicParameters();
+                para.Add("@ReceiptMasterId", id);
+                var model = sqlcon.Query<ReceiptMaster>("GetbyReceiptMasterId", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
+                return model.First();
+            }
         }
 
         public async Task<string> GetSerialNo()
@@ -140,156 +151,308 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<PaymentReceiveView> PaymentInView(int id)
         {
-            var result = await (from a in _context.ReceiptMaster
-                                join c in _context.AccountLedger on a.LedgerId equals c.LedgerId
-                                where a.ReceiptMasterId == id
-                                select new PaymentReceiveView
-                                {
-                                    ReceiptMasterId = a.ReceiptMasterId,
-                                    Date = a.Date,
-                                    VoucherNo = a.VoucherNo,
-                                    Amount = a.Amount,
-                                    Narration = a.Narration,
-                                    PaymentType = a.PaymentType,
-                                    Type = a.Type,
-                                    UserId = a.UserId,
-                                    AddedDate = a.AddedDate,
-                                    LedgerName = c.LedgerName,
-                                    Email = c.Email,
-                                    Address = c.Address
-                                }).FirstOrDefaultAsync();
-            return result;
-        }
+			//var result = await (from a in _context.ReceiptMaster
+			//                    join c in _context.AccountLedger on a.LedgerId equals c.LedgerId
+			//                    where a.ReceiptMasterId == id
+			//                    select new PaymentReceiveView
+			//                    {
+			//                        ReceiptMasterId = a.ReceiptMasterId,
+			//                        Date = a.Date,
+			//                        VoucherNo = a.VoucherNo,
+			//                        Amount = a.Amount,
+			//                        Narration = a.Narration,
+			//                        PaymentType = a.PaymentType,
+			//                        Type = a.Type,
+			//                        UserId = a.UserId,
+			//                        AddedDate = a.AddedDate,
+			//                        LedgerName = c.LedgerName,
+			//                        Email = c.Email,
+			//                        Address = c.Address
+			//                    }).FirstOrDefaultAsync();
+			//return result;
+
+			var result = await (from rm in _context.ReceiptMasterDup
+								join rd in _context.ReceiptDetailsDup on rm.ReceiptMasterId equals rd.ReceiptMasterId
+								join al in _context.AccountLedger on rm.LedgerId equals al.LedgerId
+								where rm.ReceiptMasterId == id
+								select new PaymentReceiveView
+								{
+									ReceiptMasterId = rm.ReceiptMasterId,
+									Date = rm.AddedDate,
+									VoucherNo = rd.VoucherNo,
+									Amount = rd.ReceivedAmount,
+									Narration = rm.Narration,
+									PaymentType = rd.TransactionStatus,
+									Type = rm.TransactionType,
+									UserId = rm.UserId,
+									AddedDate = rm.AddedDate,
+									LedgerName = al.LedgerName,
+									Email = al.Email,
+									Address = al.Address
+								}).FirstOrDefaultAsync();
+			return result;
+
+		}
         public async Task<IList<PaymentReceiveView>> PaymentInDetailsView(int id)
         {
-            var result = await (from a in _context.ReceiptDetails
-                                join c in _context.AccountLedger on a.LedgerId equals c.LedgerId
-                                where a.ReceiptMasterId == id
-                                select new PaymentReceiveView
-                                {
-                                    ReceiptDetailsId = a.ReceiptDetailsId,
-                                    ReceiptMasterId = a.ReceiptMasterId,
-                                    LedgerId = a.LedgerId,
-                                    Amount = a.TotalAmount,
-                                    DueAmount = a.DueAmount,
-                                    ReceiveAmount = a.ReceiveAmount,
-                                    SalesMasterId = a.SalesMasterId,
-                                    LedgerName = c.LedgerName
-                                }).ToListAsync();
-            return result;
-        }
+			//var result = await (from a in _context.ReceiptDetails
+			//                    join c in _context.AccountLedger on a.LedgerId equals c.LedgerId
+			//                    where a.ReceiptMasterId == id
+			//                    select new PaymentReceiveView
+			//                    {
+			//                        ReceiptDetailsId = a.ReceiptDetailsId,
+			//                        ReceiptMasterId = a.ReceiptMasterId,
+			//                        LedgerId = a.LedgerId,
+			//                        Amount = a.TotalAmount,
+			//                        DueAmount = a.DueAmount,
+			//                        ReceiveAmount = a.ReceiveAmount,
+			//                        SalesMasterId = a.SalesMasterId,
+			//                        LedgerName = c.LedgerName
+			//                    }).ToListAsync();
+			//return result;
+
+			var result = await (from rm in _context.ReceiptMasterDup
+								join rd in _context.ReceiptDetailsDup on rm.ReceiptMasterId equals rd.ReceiptMasterId
+								join al in _context.AccountLedger on rm.LedgerId equals al.LedgerId
+								where rd.ReceiptMasterId == id
+								select new PaymentReceiveView
+								{
+									ReceiptDetailsId = rd.ReceiptDetailsId,
+									ReceiptMasterId = rd.ReceiptMasterId,
+									LedgerId = rm.LedgerId,
+									Amount = rd.TotalAmount,
+									DueAmount = rd.DueAmount,
+									ReceiveAmount = rd.ReceivedAmount,
+									SalesMasterId = rd.SalesMasterId,
+									LedgerName = al.LedgerName
+								}).ToListAsync();
+			return result;
+
+		}
 
         public async Task<int> Save(ReceiptMaster model)
         {
-            _context.ReceiptMaster.Add(model);
-            await _context.SaveChangesAsync();
-            int id = model.ReceiptMasterId;
+			//_context.ReceiptMaster.Add(model);
+			//await _context.SaveChangesAsync();
+			//int id = model.ReceiptMasterId;
 
+			//Insert a new payment record for settling multiple invoices(ReceiptMasterDup Table)
+			ReceiptMasterDup receiptMaster = new ReceiptMasterDup
+			{
+				LedgerId = model.LedgerId,
+				AccountId = model.AccountId,
+				TransactionType = TransactionType.CustomerSales.ToString(),
+				InvoiceType = InvoiceType.Sales.ToString(),
+				ProcessType = ProcessType.Single.ToString(),
+				FinancialYearId = model.FinancialYearId,
+				CompanyId = model.CompanyId,
+				UserId = model.UserId,
+				Narration = model.Narration,
+				AddedDate = DateTime.Now
+			};
 
+			_context.ReceiptMasterDup.Add(receiptMaster);
+			await _context.SaveChangesAsync();
+			int generatedRreceiptMasterId = ReceiptMasterId = receiptMaster.ReceiptMasterId;
 
-            //ReceiptDetails table
-            foreach (var item in model.listOrder)
-            {
-                //AddReceiptDetails
-                ReceiptDetails details = new ReceiptDetails();
-                if (item.LedgerId > 0)
-                {
-                    details.ReceiptMasterId = id;
-                    details.LedgerId = item.LedgerId;
-                    details.SalesMasterId = item.SalesMasterId;
-                    details.TotalAmount = item.TotalAmount;
-                    details.ReceiveAmount = item.ReceiveAmount;
-                    details.DueAmount = item.DueAmount;
-                    _context.ReceiptDetails.Add(details);
-                    await _context.SaveChangesAsync();
-                    int intPurchaseDId = details.ReceiptDetailsId;
-                }
-            }
-            return id;
+			// Insert payment details for the settled invoice (ReceiptDetailsDup Table)
+			ReceiptDetailsDup receiptDetail = new ReceiptDetailsDup
+			{
+				ReceiptMasterId = generatedRreceiptMasterId,
+				SalesMasterId = model.SalesMasterId,
+				TransactionStatus = TransactionStatus.Draft.ToString(),
+				TotalAmount = model.listOrder.First().TotalAmount,
+				ReceivedAmount = model.listOrder.First().ReceiveAmount,
+				DueAmount = model.listOrder.First().TotalAmount - model.listOrder.First().ReceiveAmount,
+				PaymentStatus = PaymentStatus.Unpaid.ToString(),
+				AddedDate = DateTime.Now,
+			};
+
+			_context.ReceiptDetailsDup.Add(receiptDetail);
+			await _context.SaveChangesAsync();
+
+			// After saving, use the generated RreceiptMasterId to create SerialNo and VoucherNo
+			receiptDetail.SerialNo = receiptDetail.ReceiptDetailsId.ToString("D8");
+			receiptDetail.VoucherNo = $"PAY{receiptDetail.SerialNo}IN";
+
+			// Update the record with the new SerialNo and VoucherNo
+			_context.ReceiptDetailsDup.Update(receiptDetail);
+			await _context.SaveChangesAsync();
+
+			////ReceiptDetails table
+			//foreach (var item in model.listOrder)
+			//         {
+			//             //AddReceiptDetails
+			//             ReceiptDetails details = new ReceiptDetails();
+			//             if (item.LedgerId > 0)
+			//             {
+			//                 details.ReceiptMasterId = id;
+			//                 details.LedgerId = item.LedgerId;
+			//                 details.SalesMasterId = item.SalesMasterId;
+			//                 details.TotalAmount = item.TotalAmount;
+			//                 details.ReceiveAmount = item.ReceiveAmount;
+			//                 details.DueAmount = item.DueAmount;
+			//                 _context.ReceiptDetails.Add(details);
+			//                 await _context.SaveChangesAsync();
+			//                 int intPurchaseDId = details.ReceiptDetailsId;
+			//             }
+			//         }
+			return generatedRreceiptMasterId;
         }
 
         public async Task<bool> ApprovedOk(ReceiptMaster model)
         {
             try
             {
-                _context.ReceiptMaster.Update(model);
-                await _context.SaveChangesAsync();
-                //ReceiptDetails table
-                foreach (var item in model.listOrder)
-                {
-                    //AddReceiptDetails
-                    ReceiptDetails details = new ReceiptDetails();
-                    if (model.Amount > 0)
-                    {
-                        details.ReceiptDetailsId = item.ReceiptDetailsId;
-                        details.ReceiptMasterId = model.ReceiptMasterId;
-                        details.LedgerId = item.LedgerId;
-                        details.SalesMasterId = item.SalesMasterId;
-                        details.TotalAmount = item.TotalAmount;
-                        details.ReceiveAmount = item.ReceiveAmount;
-                        details.DueAmount = item.DueAmount;
-                        _context.ReceiptDetails.Update(details);
-                        await _context.SaveChangesAsync();
+				var currentInvoiceDetail = await (from pm in _context.ReceiptDetailsDup
+												  where pm.ReceiptMasterId == ReceiptMasterId
+												  select pm).FirstOrDefaultAsync();
 
-                        if (item.SalesMasterId > 0)
-                        {
-                            SalesMaster master = new SalesMaster();
-                            using (SqlConnection sqlcon = new SqlConnection(_conn.DbConn))
-                            {
-                                var para = new DynamicParameters();
-                                para.Add("@SalesMasterId", item.SalesMasterId);
-                                master = sqlcon.Query<SalesMaster>("SELECT *FROM SalesMaster where SalesMasterId=@SalesMasterId", para, null, true, 0, commandType: CommandType.Text).FirstOrDefault();
-                            }
-                            decimal decPay = master.PayAmount;
-                            master.PayAmount = item.ReceiveAmount + decPay;
-                            master.PreviousDue = (master.GrandTotal) - (item.ReceiveAmount + decPay);
-                            master.BalanceDue = (master.GrandTotal) - (item.ReceiveAmount + decPay);
-                            if (master.BalanceDue == 0)
-                            {
-                                master.Status = "Paid";
-                            }
-                            else
-                            {
-                                master.Status = "Partial";
-                            }
-                            _context.SalesMaster.Update(master);
-                            await _context.SaveChangesAsync();
-                        }
-                        //CashAndBank
-                        LedgerPosting cashPosting = new LedgerPosting();
-                        cashPosting.Date = model.Date;
-                        cashPosting.NepaliDate = String.Empty;
-                        cashPosting.LedgerId = item.LedgerId;
-                        cashPosting.Debit = model.Amount;
-                        cashPosting.Credit = 0;
-                        cashPosting.VoucherNo = model.VoucherNo;
-                        cashPosting.DetailsId = model.ReceiptMasterId;
-                        cashPosting.YearId = model.FinancialYearId;
-                        cashPosting.InvoiceNo = model.VoucherNo;
-                        cashPosting.VoucherTypeId = model.VoucherTypeId;
-                        cashPosting.CompanyId = model.CompanyId;
-                        cashPosting.LongReference = model.Narration;
-                        cashPosting.ReferenceN = model.Narration;
-                        cashPosting.ChequeNo = String.Empty;
-                        cashPosting.ChequeDate = String.Empty;
-                        cashPosting.AddedDate = DateTime.UtcNow;
-                        cashPosting.Active = true;
-						_context.LedgerPosting.Add(cashPosting);
-                        await _context.SaveChangesAsync();
+				// After saving, use the generated RreceiptMasterId to create SerialNo and VoucherNo
+				currentInvoiceDetail.SerialNo = currentInvoiceDetail.ReceiptDetailsId.ToString("D8");
+				currentInvoiceDetail.VoucherNo = $"PAY{currentInvoiceDetail.SerialNo}IN";
+				currentInvoiceDetail.TransactionStatus = TransactionStatus.Approved.ToString();
+				if (currentInvoiceDetail.DueAmount == 0)
+				{
+					currentInvoiceDetail.PaymentStatus = "Paid";
+				}
+				else
+				{
+					currentInvoiceDetail.PaymentStatus = "Partial";
+				}
+
+				// Update the record with the new SerialNo and VoucherNo
+				_context.ReceiptDetailsDup.Update(currentInvoiceDetail);
+				await _context.SaveChangesAsync();
+
+				if (currentInvoiceDetail.SalesMasterId > 0)
+                { 
+					SalesMaster master = new SalesMaster();
+                    using (SqlConnection sqlcon = new SqlConnection(_conn.DbConn))
+                    {
+                        var para = new DynamicParameters();
+                        para.Add("@SalesMasterId", currentInvoiceDetail.SalesMasterId);
+                        master = sqlcon.Query<SalesMaster>("SELECT *FROM SalesMaster where SalesMasterId=@SalesMasterId", para, null, true, 0, commandType: CommandType.Text).FirstOrDefault();
                     }
-                }
+                    decimal decPay = master.PayAmount;
+                    master.PayAmount = currentInvoiceDetail.ReceivedAmount + decPay;
+                    master.PreviousDue = (master.GrandTotal) - (currentInvoiceDetail.ReceivedAmount + decPay);
+                    master.BalanceDue = (master.GrandTotal) - (currentInvoiceDetail.ReceivedAmount + decPay);
+                    if (master.BalanceDue == 0)
+                    {
+                        master.Status = "Paid";
+                    }
+                    else
+                    {
+                        master.Status = "Partial";
+                    }
+                    _context.SalesMaster.Update(master);
+                    await _context.SaveChangesAsync();
+				}
+
+				//CashAndBank
+				LedgerPosting cashPosting = new LedgerPosting();
+                //cashPosting.Date = model.Date;
+                cashPosting.Date = DateTime.Now;
+                cashPosting.NepaliDate = String.Empty;
+				cashPosting.LedgerId = model.AccountId;
+				cashPosting.Debit = model.Amount;
+				cashPosting.Credit = 0;
+				cashPosting.VoucherNo = currentInvoiceDetail.VoucherNo;
+				cashPosting.DetailsId = model.ReceiptMasterId;
+				cashPosting.YearId = model.FinancialYearId;
+				cashPosting.InvoiceNo = currentInvoiceDetail.VoucherNo;
+				cashPosting.VoucherTypeId = model.VoucherTypeId;
+				cashPosting.CompanyId = model.CompanyId;
+				cashPosting.LongReference = model.Narration;
+				cashPosting.ReferenceN = model.Narration;
+				cashPosting.ChequeNo = String.Empty;
+				cashPosting.ChequeDate = String.Empty;
+				cashPosting.AddedDate = DateTime.UtcNow;
+				cashPosting.Active = true;
+				_context.LedgerPosting.Add(cashPosting);
+				await _context.SaveChangesAsync();
+
+
+
+				////ReceiptDetails table
+				//foreach (var item in model.listOrder)
+    //            {
+    //                //AddReceiptDetails
+    //                ReceiptDetails details = new ReceiptDetails();
+    //                if (model.Amount > 0)
+    //                {
+    //                    details.ReceiptDetailsId = item.ReceiptDetailsId;
+    //                    details.ReceiptMasterId = model.ReceiptMasterId;
+    //                    details.LedgerId = item.LedgerId;
+    //                    details.SalesMasterId = item.SalesMasterId;
+    //                    details.TotalAmount = item.TotalAmount;
+    //                    details.ReceiveAmount = item.ReceiveAmount;
+    //                    details.DueAmount = item.DueAmount;
+    //                    _context.ReceiptDetails.Update(details);
+    //                    await _context.SaveChangesAsync();
+
+    //                    if (item.SalesMasterId > 0)
+    //                    {
+    //                        SalesMaster master = new SalesMaster();
+    //                        using (SqlConnection sqlcon = new SqlConnection(_conn.DbConn))
+    //                        {
+    //                            var para = new DynamicParameters();
+    //                            para.Add("@SalesMasterId", item.SalesMasterId);
+    //                            master = sqlcon.Query<SalesMaster>("SELECT *FROM SalesMaster where SalesMasterId=@SalesMasterId", para, null, true, 0, commandType: CommandType.Text).FirstOrDefault();
+    //                        }
+    //                        decimal decPay = master.PayAmount;
+    //                        master.PayAmount = item.ReceiveAmount + decPay;
+    //                        master.PreviousDue = (master.GrandTotal) - (item.ReceiveAmount + decPay);
+    //                        master.BalanceDue = (master.GrandTotal) - (item.ReceiveAmount + decPay);
+    //                        if (master.BalanceDue == 0)
+    //                        {
+    //                            master.Status = "Paid";
+    //                        }
+    //                        else
+    //                        {
+    //                            master.Status = "Partial";
+    //                        }
+    //                        _context.SalesMaster.Update(master);
+    //                        await _context.SaveChangesAsync();
+    //                    }
+    //                    //CashAndBank
+    //                    LedgerPosting cashPosting = new LedgerPosting();
+    //                    cashPosting.Date = model.Date;
+    //                    cashPosting.NepaliDate = String.Empty;
+    //                    cashPosting.LedgerId = item.LedgerId;
+    //                    cashPosting.Debit = model.Amount;
+    //                    cashPosting.Credit = 0;
+    //                    cashPosting.VoucherNo = model.VoucherNo;
+    //                    cashPosting.DetailsId = model.ReceiptMasterId;
+    //                    cashPosting.YearId = model.FinancialYearId;
+    //                    cashPosting.InvoiceNo = model.VoucherNo;
+    //                    cashPosting.VoucherTypeId = model.VoucherTypeId;
+    //                    cashPosting.CompanyId = model.CompanyId;
+    //                    cashPosting.LongReference = model.Narration;
+    //                    cashPosting.ReferenceN = model.Narration;
+    //                    cashPosting.ChequeNo = String.Empty;
+    //                    cashPosting.ChequeDate = String.Empty;
+    //                    cashPosting.AddedDate = DateTime.UtcNow;
+    //                    cashPosting.Active = true;
+				//		_context.LedgerPosting.Add(cashPosting);
+    //                    await _context.SaveChangesAsync();
+    //                }
+    //            }
+
                 //LedgerPosting
                 //Customer
                 LedgerPosting ledgerPosting = new LedgerPosting();
-                ledgerPosting.Date = model.Date;
+                //ledgerPosting.Date = model.Date;
+                ledgerPosting.Date = DateTime.Now;
                 ledgerPosting.NepaliDate = String.Empty;
                 ledgerPosting.LedgerId = model.LedgerId;
                 ledgerPosting.Debit = 0;
                 ledgerPosting.Credit = model.Amount;
-                ledgerPosting.VoucherNo = model.VoucherNo;
+                ledgerPosting.VoucherNo = currentInvoiceDetail.VoucherNo;
                 ledgerPosting.DetailsId = model.ReceiptMasterId;
                 ledgerPosting.YearId = model.FinancialYearId;
-                ledgerPosting.InvoiceNo = model.VoucherNo;
+                ledgerPosting.InvoiceNo = currentInvoiceDetail.VoucherNo;
                 ledgerPosting.VoucherTypeId = model.VoucherTypeId;
                 ledgerPosting.CompanyId = model.CompanyId;
                 ledgerPosting.LongReference = model.Narration;
