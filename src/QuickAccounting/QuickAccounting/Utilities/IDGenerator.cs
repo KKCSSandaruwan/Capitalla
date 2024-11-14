@@ -3,11 +3,20 @@
 namespace QuickAccounting.Utilities
 {
     /// <summary>
-    /// Utility class for generating unique transaction IDs based on transaction type and last counter value.
+    /// Utility class for generating unique IDs based on transaction type and last counter value.
     /// </summary>
     public class IDGenerator
     {
         #region Public Methods
+        /// <summary>
+        /// Generates a placeholder dummy transaction ID, typically used before generating a real transaction ID.
+        /// </summary>
+        /// <returns>A string representing a dummy transaction ID with a fixed placeholder format (e.g., "XXXXXXXX").</returns>
+        public static string GenerateDummyID()
+        {
+            return "XXXXXXXX";
+        }
+
         /// <summary>
         /// Generates a unique transaction ID based on the specified transaction type and the last counter value.
         /// The format of the generated ID is: <prefix> + <incremented counter> + <suffix>.
@@ -17,7 +26,7 @@ namespace QuickAccounting.Utilities
         /// <param name="lastCounter">The last generated counter value. The counter is incremented by 1 for the new ID.</param>
         /// <returns>A string representing the unique transaction ID in the format: <prefix><counter><suffix>.</returns>
         /// <exception cref="ArgumentException">Thrown when an invalid transaction type is provided.</exception>
-        public static string GenerateVoucherNo(TransactionType transactionType, int lastCounter)
+        public static string GenerateTransactionID(TransactionType transactionType, int lastCounter)
         {
             string prefix = string.Empty;
             string suffix = string.Empty;
@@ -42,7 +51,7 @@ namespace QuickAccounting.Utilities
                     suffix = "RET";
                     break;
 
-                case TransactionType.SupplierPayment:   // Supplier Payment for Order
+                case TransactionType.SupplierPayment:   // Supplier Payment for Invoice
                     prefix = "PUR";
                     suffix = "PAY";
                     break;
@@ -68,7 +77,7 @@ namespace QuickAccounting.Utilities
                     suffix = "RET";
                     break;
 
-                case TransactionType.CustomerPayment:   // Customer Payment for Sales
+                case TransactionType.CustomerPayment:   // Customer Payment for Invoice
                     prefix = "SAL";
                     suffix = "PAY";
                     break;
@@ -88,6 +97,7 @@ namespace QuickAccounting.Utilities
             // Return the generated ID in the format: <prefix><counter><suffix>
             return $"{prefix}{formattedCounter}{suffix}";
         }
+
         #endregion
     }
 }
