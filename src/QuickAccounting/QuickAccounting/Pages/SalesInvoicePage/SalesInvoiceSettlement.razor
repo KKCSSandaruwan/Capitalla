@@ -58,21 +58,26 @@
                                                     Disabled="CustomerId == 0 || !HasLoadedInvoices || (InvoiceList == null || !InvoiceList.Any())"
                                                     @bind-Value="@InvoiceNo" Data=@InvoiceList TextProperty="VoucherNo" ValueProperty="VoucherNo"
                                                     Change=@(args => OnInvoiceSelected((string)args, "DropDownDataGrid with virtualization using IQueryable"))>
-                               <Columns>
-                                    <RadzenDropDownDataGridColumn Property="VoucherNo" Title="Voucher Number" Width="25%" />
+                                <Columns>
+                                    <RadzenDropDownDataGridColumn Property="VoucherNo" Title="Invoice No" Width="25%" />
+                                    <RadzenDropDownDataGridColumn Title="Invoice Date" Width="20%">
+                                        <Template>
+                                            @DateFormatter.FormatDate(@context.Date)
+                                        </Template>
+                                    </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Title="Total Amount" Width="20%">
                                         <Template>
-                                            @NumberFormatter.FormatCurrency((decimal)@context.GrandTotal)
+                                            @CurrencyFormatter.FormatCurrency((decimal)@context.GrandTotal)
                                         </Template>
                                     </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Title="Paid Amount" Width="20%">
                                         <Template>
-                                            @NumberFormatter.FormatCurrency((decimal)@context.PayAmount)
+                                            @CurrencyFormatter.FormatCurrency((decimal)@context.PayAmount)
                                         </Template>
                                     </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Title="Due Amount" Width="20%">
                                         <Template>
-                                            @NumberFormatter.FormatCurrency((decimal)@context.BalanceDue)
+                                            @CurrencyFormatter.FormatCurrency((decimal)@context.BalanceDue)
                                         </Template>
                                     </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Property="Status" Title="Status" Width="15%" />
@@ -100,16 +105,16 @@
                         <tbody>
                             @foreach (var td in TodoList)
                             {
-                                    <tr>
-                                        <td> @DateFormatter.FormatDate(@td.Date)</td>
-                                        <td> @td.VoucherNo</td>
-                                        <td> @NumberFormatter.FormatCurrency(@td.GrandTotal)</td>
-                                        <td> @NumberFormatter.FormatCurrency(@td.PayAmount)</td>
-                                        <td> @NumberFormatter.FormatCurrency(@td.BalanceDue)</td>
-                                        <td class="text-end">
-                                            <a @onclick="() => OnDeleteFromTodoList(td.VoucherNo)"><img src="assets/img/icons/delete.svg" alt="svg"></a>
-                                        </td>
-                                    </tr>
+                                <tr>
+                                    <td> @DateFormatter.FormatDate(@td.Date)</td>
+                                    <td> @td.VoucherNo</td>
+                                    <td> @CurrencyFormatter.FormatCurrency(@td.GrandTotal)</td>
+                                    <td> @CurrencyFormatter.FormatCurrency(@td.PayAmount)</td>
+                                    <td> @CurrencyFormatter.FormatCurrency(@td.BalanceDue)</td>
+                                    <td class="text-end">
+                                        <a @onclick="() => OnDeleteFromTodoList(td.VoucherNo)"><img src="assets/img/icons/delete.svg" alt="svg"></a>
+                                    </td>
+                                </tr>
                             }
                         </tbody>
                     </table>
@@ -211,7 +216,7 @@
             CustomerId = selectedCustomerId;
 
             // Load the updated InvoiceList based on the new CustomerId
-            InvoiceList = await SalesInvoiceService.GetUnsettledInvoicesByCustomerAsync(CustomerId);
+            InvoiceList = await SalesInvoiceService.GetUnsettledInvoicesAsync(CustomerId);
             await Task.Delay(100);
             HasLoadedInvoices = InvoiceList.Any();
 
@@ -353,21 +358,22 @@
             }
 
             // Settlement for each invoice in the TodoList
-            double settlemtBalanceAmount = SettleAmount;
+            decimal settlemtBalanceAmount = (decimal)SettleAmount; 
             bool isSettlementSuccessful = false;
 
             foreach (var invoice in TodoList)
             {
-                double invoiceAmount = (double)invoice.GrandTotal;
-                double paidAmount = 0.00;
+                decimal invoiceAmount = invoice.GrandTotal;
+                decimal payableAmount = invoice.BalanceDue;
+                decimal paidAmount = 0.00m;
 
-                if (settlemtBalanceAmount >= invoiceAmount)
+                if (settlemtBalanceAmount >= payableAmount)
                 {
                     // Full Settlement
-                    paidAmount = invoiceAmount;
-                    settlemtBalanceAmount -= invoiceAmount;
+                    paidAmount = payableAmount;
+                    settlemtBalanceAmount -= payableAmount;
 
-                    invoice.Status = PaymentStatus.Paid.ToString();
+                    invoice.Status = invoice.PreviousDue == 0.00m ? PaymentStatus.Paid.ToString() : PaymentStatus.Partial.ToString();
                 }
                 else
                 {
@@ -379,8 +385,6 @@
                 }
 
                 invoice.PayAmount = (decimal)paidAmount;
-                invoice.BalanceDue = invoice.GrandTotal - (decimal)paidAmount;
-                invoice.PreviousDue = (decimal)paidAmount;
                 invoice.Reference = Remark;
             }
 
