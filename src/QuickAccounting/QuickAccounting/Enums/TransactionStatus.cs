@@ -38,6 +38,11 @@
         Refunded,
 
         /// <summary>
+        /// Transaction has been reversed and is no longer valid.
+        /// </summary>
+        Reversed,
+
+        /// <summary>
         /// Transaction has been cancelled and will not proceed.
         /// </summary>
         Cancelled
