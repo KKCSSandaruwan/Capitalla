@@ -41,5 +41,26 @@ namespace QuickAccounting.Repository.Repository
                 throw new Exception("An error occurred while fetching payment sources.", ex);
             }
         }
+
+        // Retrieves account ledger details for a specified account ledger ID.
+        public async Task<AccountLedger> GetAccountLedgersAsync(int accountLedgerId)
+        {
+            try
+            {
+                var result = await (from al in _context.AccountLedger
+                                    where al.LedgerId == accountLedgerId
+                                    select al).FirstOrDefaultAsync();
+
+                if (result == null)
+                    throw new KeyNotFoundException($"Account ledger with ID {accountLedgerId} not found.");
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving account ledger for ID {accountLedgerId}: {ex.Message}");
+                throw new Exception("An error occurred while fetching the account ledger. Please try again later.", ex);
+            }
+        }
     }
 }
