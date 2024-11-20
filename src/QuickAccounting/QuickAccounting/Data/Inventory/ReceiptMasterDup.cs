@@ -7,7 +7,6 @@ namespace QuickAccounting.Data.Inventory
     public class ReceiptMasterDup
     {
         [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ReceiptMasterId { get; set; }
 
         [Required]

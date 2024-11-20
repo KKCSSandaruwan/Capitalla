@@ -1,22 +1,44 @@
-﻿using System.Globalization;
-
-namespace QuickAccounting.Utilities
+﻿namespace QuickAccounting.Utilities
 {
+    /// <summary>
+    /// Provides utility methods for formatting decimal numbers into various formats.
+    /// The formats include percentage, thousands separator and optional decimal places, and scientific notation.
+    /// </summary>
     public static class NumberFormatter
     {
+        #region Public Methods
         /// <summary>
-        /// Formats a decimal number as currency with thousands separators and an optional currency symbol.
+        /// Formats a decimal number as a percentage.
         /// </summary>
-        /// <param name="amount">The decimal amount to format.</param>
-        /// <param name="currencySymbol">Optional currency symbol to prepend.</param>
-        /// <param name="decimalPlaces">Number of decimal places to display, defaulting to 2.</param>
-        /// <param name="culture">Culture for localization; defaults to current culture.</param>
-        /// <returns>A formatted string representing the amount in currency format.</returns>
-        public static string FormatCurrency(decimal amount, string? currencySymbol = "Rs", int decimalPlaces = 2, CultureInfo? culture = null)
+        /// <param name="number">The decimal number to format.</param>
+        /// <param name="decimalPlaces">The number of decimal places to include (optional, default is 2).</param>
+        /// <returns>A string representing the number as a percentage.</returns>
+        public static string FormatPercentage(decimal number, int? decimalPlaces = 2)
         {
-            culture ??= CultureInfo.CurrentCulture;
-            var formattedAmount = amount.ToString($"N{decimalPlaces}", culture);
-            return currencySymbol != null ? $"{currencySymbol} {formattedAmount}" : formattedAmount;
+            return string.Format("{0:P" + decimalPlaces + "}", number);
         }
+
+        /// <summary>
+        /// Formats a decimal number with a thousands separator and an optional number of decimal places.
+        /// </summary>
+        /// <param name="number">The decimal number to format.</param>
+        /// <param name="decimalPlaces">The number of decimal places to include (optional, default is 2).</param>
+        /// <returns>A string representing the number with thousands separators and the specified number of decimal places.</returns>
+        public static string FormatThousandsSeparator(decimal number, int? decimalPlaces = 2)
+        {
+            return string.Format("{0:N" + decimalPlaces + "}", number);
+        }
+
+        /// <summary>
+        /// Formats a decimal number in scientific notation.
+        /// </summary>
+        /// <param name="number">The decimal number to format.</param>
+        /// <returns>A string representing the number in scientific notation.</returns>
+        public static string FormatScientific(decimal number)
+        {
+            return number.ToString("E");
+        }
+
+        #endregion
     }
 }

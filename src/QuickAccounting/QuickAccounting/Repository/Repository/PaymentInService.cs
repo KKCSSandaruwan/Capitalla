@@ -5,6 +5,7 @@ using QuickAccounting.Data;
 using QuickAccounting.Data.Inventory;
 using QuickAccounting.Data.Setting;
 using QuickAccounting.Data.ViewModel;
+using QuickAccounting.Enums;
 using QuickAccounting.Repository.Interface;
 using System.Data;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -45,18 +46,18 @@ namespace QuickAccounting.Repository.Repository
                         }
                         if (purchase != null)
                         {
-							//// Approved --> Start
-							//decimal decPay = purchase.PayAmount;
-							//purchase.PayAmount = item.ReceiveAmount - decPay;
-							//purchase.PreviousDue = (purchase.GrandTotal) - (item.ReceiveAmount - decPay);
-							//purchase.BalanceDue = (purchase.GrandTotal) - (item.ReceiveAmount - decPay);
-							//// Approved --> End
+                            //// Approved --> Start
+                            //decimal decPay = purchase.PayAmount;
+                            //purchase.PayAmount = item.ReceiveAmount - decPay;
+                            //purchase.PreviousDue = (purchase.GrandTotal) - (item.ReceiveAmount - decPay);
+                            //purchase.BalanceDue = (purchase.GrandTotal) - (item.ReceiveAmount - decPay);
+                            //// Approved --> End
 
-							decimal decPay = purchase.PayAmount;
-							purchase.PreviousDue = (purchase.GrandTotal) - decPay;
-							purchase.BalanceDue = (purchase.GrandTotal) - decPay;
+                            decimal decPay = purchase.PayAmount;
+                            purchase.PreviousDue = (purchase.GrandTotal) - decPay;
+                            purchase.BalanceDue = (purchase.GrandTotal) - decPay;
 
-							if (purchase.BalanceDue == 0)
+                            if (purchase.BalanceDue == 0)
                             {
                                 purchase.Status = "Paid";
                             }
@@ -70,18 +71,18 @@ namespace QuickAccounting.Repository.Repository
                     }
                 }
                 SqlConnection sqlcon = new SqlConnection(_conn.DbConn);
-                    if (sqlcon.State == ConnectionState.Closed)
-                    {
-                        sqlcon.Open();
-                    }
-                    SqlCommand cmd = new SqlCommand("PaymentInDelete", sqlcon);
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    SqlParameter para = new SqlParameter();
-                    para = cmd.Parameters.Add("@ReceiptMasterId", SqlDbType.Int);
-                    para.Value = master.ReceiptMasterId;
-                    para = cmd.Parameters.Add("@VoucherTypeId", SqlDbType.Int);
-                    para.Value = master.VoucherTypeId;
-                    int rowAffacted = cmd.ExecuteNonQuery();
+                if (sqlcon.State == ConnectionState.Closed)
+                {
+                    sqlcon.Open();
+                }
+                SqlCommand cmd = new SqlCommand("PaymentInDelete", sqlcon);
+                cmd.CommandType = CommandType.StoredProcedure;
+                SqlParameter para = new SqlParameter();
+                para = cmd.Parameters.Add("@ReceiptMasterId", SqlDbType.Int);
+                para.Value = master.ReceiptMasterId;
+                para = cmd.Parameters.Add("@VoucherTypeId", SqlDbType.Int);
+                para.Value = master.VoucherTypeId;
+                int rowAffacted = cmd.ExecuteNonQuery();
                 return true;
             }
             catch (Exception)
@@ -274,7 +275,7 @@ namespace QuickAccounting.Repository.Repository
                         cashPosting.ChequeDate = String.Empty;
                         cashPosting.AddedDate = DateTime.UtcNow;
                         cashPosting.Active = true;
-						_context.LedgerPosting.Add(cashPosting);
+                        _context.LedgerPosting.Add(cashPosting);
                         await _context.SaveChangesAsync();
                     }
                 }
@@ -298,7 +299,7 @@ namespace QuickAccounting.Repository.Repository
                 ledgerPosting.ChequeDate = String.Empty;
                 ledgerPosting.AddedDate = DateTime.UtcNow;
                 ledgerPosting.Active = true;
-				_context.LedgerPosting.Add(ledgerPosting);
+                _context.LedgerPosting.Add(ledgerPosting);
                 await _context.SaveChangesAsync();
                 return true;
             }

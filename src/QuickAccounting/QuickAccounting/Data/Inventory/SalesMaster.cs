@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using QuickAccounting.Data.ViewModel;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QuickAccounting.Data.Inventory
@@ -19,7 +20,7 @@ namespace QuickAccounting.Data.Inventory
         public int AccountTypeId { get; set; }
         public bool IsCreditNotes { get; set; }
         public int OrderMasterId { get; set; }
-        public int QuotationMasterId {get;set;}
+        public int QuotationMasterId { get; set; }
         public string Narration { get; set; }
         public int TaxId { get; set; }
         public decimal TaxRate { get; set; }
@@ -42,7 +43,7 @@ namespace QuickAccounting.Data.Inventory
         public bool POS { get; set; }
         public int FinancialYearId { get; set; }
         public int CompanyId { get; set; }
-		public DateTime? AddedDate { get; set; }
+        public DateTime? AddedDate { get; set; }
         public DateTime? ModifyDate { get; set; }
         [NotMapped]
         public List<SalesDetails> listOrder { get; set; } = new List<SalesDetails>();

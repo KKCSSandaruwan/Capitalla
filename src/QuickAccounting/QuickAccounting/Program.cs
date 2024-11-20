@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using QuickAccounting.Data;
 using QuickAccounting.Data.Authentication;
-using QuickAccounting.Data.HrPayroll;
-using QuickAccounting.Data.Selectors;
 using QuickAccounting.Repository.Interface;
 using QuickAccounting.Repository.Repository;
 using QuickAccounting.Repository.Services;
@@ -81,7 +79,6 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
 }
-
 
 app.UseStaticFiles();
 

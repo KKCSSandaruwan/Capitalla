@@ -1,9 +1,14 @@
 ﻿body {
 }
 
+.print-btn-container {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
 
 .total-order {
-    max-width:none !important;
+    max-width: none !important;
     width: 100% !important;
     padding-right: 20px !important;
 }

@@ -1,0 +1,409 @@
+﻿@page "/app/sales/invoices/settled-list"
+
+@inject ISalesInvoiceSettlement SalesInvoiceSettlementService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Settled Sales Invoice</PageTitle>
+
+<div class="content">
+    <!-- Page Header: Title and Description -->
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Settled Sales Invoice</h3>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Form Row 1: Filters: From Date, To Date, and Customer -->
+            <div class="row ml-2 mr-2">
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <RadzenDatePicker Name="FromDate" ShowCalendarWeek Class="w-100"
+                                          @bind-Value="@FromDate" DateFormat="@DateFormatter.DefaultDateFormat" Max="@ToDate"
+                                          Change="@OnDateChangedAsync" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <RadzenDatePicker Name="ToDate" ShowCalendarWeek Class="w-100"
+                                          @bind-Value="@ToDate" DateFormat="@DateFormatter.DefaultDateFormat" Min="@FromDate"
+                                          Change="@OnDateChangedAsync" />
+                    </div>
+                </div>
+                <div class="col-lg-4 col-sm-6 col-12">
+                    <div class="form-group">
+                        <label>Customer</label>
+                        <RadzenDropDown Name="Customer" Class="w-100"
+                                        AllowFiltering="true" AllowClear="@(CustomerId != 0)"
+                                        Placeholder="@GetCustomerPlaceholder()"
+                                        Disabled="@(SettledCustomers == null || !SettledCustomers.Any())"
+                                        @bind-Value="@CustomerId" Data="@(SettledCustomers)" TextProperty="LedgerName" ValueProperty="LedgerId"
+                                        Change="@OnCustomerSelectedAsync" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Row 2: DataGrid: Settled sale invoices -->
+            <div class="table-responsive mt-4">
+                <!-- Header Table -->
+                <RadzenDataGrid Data="@SettledInvoices" TItem="SalesMasterView" IsLoading="@(!HasLoadedInvoices)"
+                                AllowAlternatingRows="false" AllowSorting="true"
+                                AllowPaging="true" PageSize="5" PageSizeOptions="@(new int[] { 5, 10, 20, 50 })"
+                                PagerAlwaysVisible="true" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                                AllowFiltering="true" LogicalFilterOperator="LogicalFilterOperator.Or"
+                                SelectionMode="DataGridSelectionMode.Single" ExpandMode="DataGridExpandMode.Single">
+
+                    <!-- Header Table Columns -->
+                    <Columns>
+                        <RadzenDataGridColumn TItem="SalesMasterView" Property="VoucherNo" Title="Invoice Number" Sortable="true" />
+                        <RadzenDataGridColumn TItem="SalesMasterView" Property="Date" Title="Invoice Date" Sortable="true">
+                            <Template Context="Invoice">
+                                @DateFormatter.FormatDate(Invoice.Date)
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="SalesMasterView" Property="LedgerName" Title="Customer" />
+                        <RadzenDataGridColumn TItem="SalesMasterView" Property="GrandTotal" Title="Total Amount">
+                            <Template Context="Invoice">
+                                @CurrencyFormatter.FormatCurrency(Invoice.GrandTotal)
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="SalesMasterView" Property="PayAmount" Title="Received Amount">
+                            <Template Context="Invoice">
+                                @CurrencyFormatter.FormatCurrency(Invoice.PayAmount)
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="SalesMasterView" Property="BalanceDue" Title="Due Amount" Sortable="true">
+                            <Template Context="Invoice">
+                                @CurrencyFormatter.FormatCurrency(Invoice.BalanceDue)
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="SalesMasterView" Property="Status" Title="Status">
+                            <Template Context="Invoice">
+                                <span class="@GetPaymentStatusClass(Invoice.Status)">@Invoice.Status</span>
+                            </Template>
+                        </RadzenDataGridColumn>
+                        <RadzenDataGridColumn TItem="SalesMasterView" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Title="Action" Width="100px">
+                            <Template Context="Invoice">
+                                <RadzenButton Icon="undo" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Title="Reverse All Receipts"
+                                              Click="@(()=> OnReverseClick(Invoice.ReceiptDetails))">
+                                </RadzenButton>
+                                <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Title="View Receipt"
+                                              Click="@(() => OnNavigateClick(Invoice.SalesMasterId))">
+                                </RadzenButton>
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+
+                    <!-- Header Table Empty State Message -->
+                    <EmptyTemplate>
+                        <div class="empty-template">
+                            No records available!
+                        </div>
+                    </EmptyTemplate>
+
+                    <!-- Detail Table -->
+                    <Template Context="Invoice">
+                        <RadzenDataGrid Data="@Invoice.ReceiptDetails" TItem="ReceiptDetailsViewDup" EmptyText="No Data Found!"
+                                        AllowAlternatingRows="false" AllowSorting="true"
+                                        PagerAlwaysVisible="false" AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[] { 10, 20, 50 })"
+                                        ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                                        AllowFiltering="true" LogicalFilterOperator="LogicalFilterOperator.Or"
+                                        Class="mt-2 mb-2">
+
+                            <!-- Detail Table Columns-->
+                            <Columns>
+                                <RadzenDataGridColumn TItem="ReceiptDetailsViewDup" Property="VoucherNo" Title="Voucher Number" />
+                                <RadzenDataGridColumn TItem="ReceiptDetailsViewDup" Property="AddedDate" Title="Payment Date & Time">
+                                    <Template Context="Receipt">
+                                        @DateFormatter.FormatDateTime(Receipt.AddedDate)
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="ReceiptDetailsViewDup" Property="AccountName" Title="Payment Source" />
+                                <RadzenDataGridColumn TItem="ReceiptDetailsViewDup" Property="ReceivedAmount" Title="Received Amount">
+                                    <Template Context="Receipt">
+                                        @CurrencyFormatter.FormatCurrency(Receipt.ReceivedAmount)
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="ReceiptDetailsViewDup" Property="DueAmount" Visible="false" Title="Due Amount">
+                                    <Template Context="Receipt">
+                                        @CurrencyFormatter.FormatCurrency(Receipt.DueAmount)
+                                    </Template>
+                                </RadzenDataGridColumn>
+                                <RadzenDataGridColumn TItem="ReceiptDetailsViewDup" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Title="Action" Width="100px">
+                                    <Template Context="Receipt">
+                                        <RadzenButton Icon="undo" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Title="Reverse Receipt"
+                                                      Click="@(()=> OnReverseClick(new List<ReceiptDetailsViewDup> { Receipt }))">
+                                        </RadzenButton>
+                                        <RadzenButton Icon="visibility" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Title="View Receipt"
+                                                      Click="@(() => OnNavigateClick(Invoice.SalesMasterId, Receipt.ReceiptDetailsId))">
+                                        </RadzenButton>
+                                    </Template>
+                                </RadzenDataGridColumn>
+                            </Columns>
+
+                            <!-- Detail Table Empty State Message -->
+                            <EmptyTemplate>
+                                <div class="empty-template">
+                                    No records available!
+                                </div>
+                            </EmptyTemplate>
+                        </RadzenDataGrid>
+                    </Template>
+                </RadzenDataGrid>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (IsConfirmationDialogVisible)
+{
+    <ConfirmDialog Title="Reverse Sales Invoice Payment"
+                   Message="Are you sure you want to reverse this invoice payments? This action cannot be undone."
+                   HasInputField="true" InputLabel="Reason for Reversal *" InputPlaceholder="Enter reason"
+                   InputValidationPattern="^(?!\s*$).+" InputValidationMessage="Required reversal reason"
+                   DialogType="ConfirmDialog.ConfirmDialogType.ConfirmCancel" IsActionInProgress="@IsReversingReceipts"
+                   OnConfirmCallback="@OnConfirmDialogResponse">
+    </ConfirmDialog>
+}
+
+@code {
+    #region Properties
+    private DateTime FromDate { get; set; }
+    private DateTime ToDate { get; set; }
+    private int CustomerId { get; set; }
+    private string ReversalReason { get; set; } = string.Empty;
+    private bool HasLoadedCustomers { get; set; } = false;
+    private bool HasLoadedInvoices { get; set; } = false;
+    private bool IsReversingReceipts { get; set; } = false;
+    private bool IsConfirmationDialogVisible { get; set; } = false;
+    public (bool IsConfirmed, string InputValue) DialogResponse { get; set; }
+
+    private IList<AccountLedgerView>? SettledCustomers { get; set; }
+    private IList<SalesMasterView>? SettledInvoices { get; set; }
+    private List<ReceiptDetailsViewDup>? ReceiptsToReverse { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Called when the component is initialized. Sets up default values and loads initial data for customers and invoices.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        InitializeDefaults();
+        await LoadCustomersAsync();
+        await LoadInvoicesAsync(FromDate, ToDate);
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Handles changes to the date range and reloads invoice data.
+    /// </summary>
+    private async Task OnDateChangedAsync()
+    {
+        await LoadInvoicesAsync(FromDate, ToDate, CustomerId);
+    }
+
+    /// <summary>
+    /// Handles changes to the selected customer and reloads invoice data.
+    /// </summary>
+    private async Task OnCustomerSelectedAsync()
+    {
+        await LoadInvoicesAsync(FromDate, ToDate, CustomerId);
+    }
+
+    /// <summary>
+    /// Handles navigates to the payment receipt view for a specific invoice and receipt details.
+    /// </summary>
+    /// <param name="invoiceId">The ID of the invoice to view.</param>
+    /// <param name="receiptDetailsId">The ID of the receipt details to view (optional).</param>
+    private void OnNavigateClick(int invoiceId, int? receiptDetailsId = 0)
+    {
+        Navigation.NavigateTo($"/app/sales/invoices/{invoiceId}/payment-receipt/{receiptDetailsId}");
+    }
+
+    /// <summary>
+    /// Handles initiating the reversal process for a list of receipts by displaying a confirmation dialog to the user.
+    /// </summary>
+    /// <param name="receiptsToReverse">A list of receipt details that are intended to be reversed.</param>
+    private void OnReverseClick(List<ReceiptDetailsViewDup> receiptsToReverse)
+    {
+        // Store receipts to reverse and show confirmation dialog
+        ReceiptsToReverse = receiptsToReverse;
+        IsConfirmationDialogVisible = true;
+    }
+
+    /// <summary>
+    /// Handles the user's response to the confirmation dialog. If the user confirms, it proceeds with reversing the receipts.
+    /// </summary>
+    /// <param name="result">A tuple containing the confirmation status and the reversal reason entered by the user.</param>
+    private async Task OnConfirmDialogResponse((bool IsConfirmed, string InputValue) response)
+    {
+        if (response.IsConfirmed)
+        {
+            ReversalReason = response.InputValue;
+
+            // Ensure the list is not null or empty before processing
+            if (ReceiptsToReverse == null && !ReceiptsToReverse.Any())
+            {
+                Snackbar.Add("No invoice receipts selected for reversal.", Severity.Warning);
+                return;
+            }
+
+            // Update the narration of each receipt with the reversal reason
+            foreach (var receiptToReverse in ReceiptsToReverse)
+            {
+                receiptToReverse.Narration = ReversalReason;
+            }
+
+            await ReverseReceiptsAsync(ReceiptsToReverse);
+        }
+
+        // Reset dialog visibility and reversal reason after processing
+        IsConfirmationDialogVisible = false;
+        ReversalReason = string.Empty;
+    }
+
+    #endregion
+
+    #region Data Loading Methods
+    /// <summary>
+    /// Initializes default values for date range and customer ID.
+    /// </summary>
+    private void InitializeDefaults()
+    {
+        try
+        {
+            FromDate = DateTime.Today.AddDays(-7);
+            ToDate = DateTime.Today;
+            CustomerId = 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing defaults: {ex.Message}");
+            Snackbar.Add("An error occurred while initializing defaults. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of settled customers.
+    /// </summary>
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedCustomers = false;
+
+            // Load the list of settled customers.
+            SettledCustomers = await SalesInvoiceSettlementService.GetSettledCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading customers: {ex.Message}");
+            Snackbar.Add("An error occurred while loading customers. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedCustomers = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of settled invoices based on the specified date range and customer ID.
+    /// </summary>
+    /// <param name="fromDate">Start date for the invoice search.</param>
+    /// <param name="toDate">End date for the invoice search.</param>
+    /// <param name="customerId">Optional customer ID for filtering.</param>
+    private async Task LoadInvoicesAsync(DateTime fromDate, DateTime toDate, int? customerId = 0)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedInvoices = false;
+
+            // Load the list of settled invoices within the specified date range.
+            SettledInvoices = await SalesInvoiceSettlementService.GetSettledInvoicesWithReceiptsAsync(fromDate, toDate, customerId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading invoices: {ex.Message}");
+            Snackbar.Add("An error occurred while loading invoices. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedInvoices = true;
+        }
+    }
+
+    #endregion
+
+    #region Processing Methods
+    /// <summary>
+    /// Reversal of a list of receipts by calling the reversal service and updating the UI.
+    /// </summary>
+    /// <param name="receiptsToReverse">The list of receipts that need to be reversed.</param>
+    private async Task ReverseReceiptsAsync(List<ReceiptDetailsViewDup> receiptsToReverse)
+    {
+        try
+        {
+            // Mark the start of the reversal process
+            IsReversingReceipts = true;
+
+            var result = await SalesInvoiceSettlementService.ReverseSettledInvoiceAsync(receiptsToReverse);
+
+            if (result)
+            {
+                await LoadCustomersAsync();
+                await LoadInvoicesAsync(FromDate, ToDate, CustomerId);
+                Snackbar.Add("Invoice receipts have been successfully reversed.", Severity.Success);
+            }
+            else
+                Snackbar.Add("Failed to reverse invoice receipts. Please try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reversing receipts: {ex.Message}");
+            Snackbar.Add("An error occurred while processing the reversal. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            // Update the end of the reversal process
+            IsReversingReceipts = false;
+        }
+    }
+
+    #endregion
+
+    #region Helper Methods
+    /// <summary>
+    /// Returns a placeholder message for the customer selection input.
+    /// </summary>
+    /// <returns>A string representing the placeholder message.</returns>
+    private string GetCustomerPlaceholder() =>
+    !HasLoadedCustomers ? "Loading customers..." :
+    (SettledCustomers == null || !SettledCustomers.Any() ? "No settled customers found!" : "Choose a customer");
+
+    /// <summary>
+    /// Returns a CSS class for styling the status badge based on the payment status.
+    /// </summary>
+    /// <param name="status">The payment status of the invoice.</param>
+    /// <returns>A string representing the CSS class for the status badge.</returns>
+    private string GetPaymentStatusClass(string status) =>
+    status switch
+    {
+        "Paid" => "badges bg-lightgreen statusbutton",
+        "Partial" => "badges bg-lightred statusbutton",
+        _ => "badges bg-default"
+    };
+
+    #endregion
+}
