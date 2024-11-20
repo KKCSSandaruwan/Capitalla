@@ -17,6 +17,14 @@ namespace QuickAccounting.Utilities
             return "XXXXXXXX";
         }
 
+        public static string GenerateSerialID(int lastCounter)
+        {
+            // Increment the counter by 1 for the new ID
+            int nextCounter = lastCounter++; 
+
+            return nextCounter.ToString("D8");
+        }
+
         /// <summary>
         /// Generates a unique transaction ID based on the specified transaction type and the last counter value.
         /// The format of the generated ID is: <prefix> + <incremented counter> + <suffix>.
@@ -26,7 +34,7 @@ namespace QuickAccounting.Utilities
         /// <param name="lastCounter">The last generated counter value. The counter is incremented by 1 for the new ID.</param>
         /// <returns>A string representing the unique transaction ID in the format: <prefix><counter><suffix>.</returns>
         /// <exception cref="ArgumentException">Thrown when an invalid transaction type is provided.</exception>
-        public static string GenerateTransactionID(TransactionType transactionType, int lastCounter)
+        public static string GenerateVoucherID(TransactionType transactionType, int lastCounter)
         {
             string prefix = string.Empty;
             string suffix = string.Empty;
@@ -97,6 +105,7 @@ namespace QuickAccounting.Utilities
             // Return the generated ID in the format: <prefix><counter><suffix>
             return $"{prefix}{formattedCounter}{suffix}";
         }
+
 
         #endregion
     }
