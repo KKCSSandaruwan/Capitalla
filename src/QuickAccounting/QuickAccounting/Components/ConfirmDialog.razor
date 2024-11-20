@@ -1,0 +1,91 @@
+﻿<div class="modal fade show" id="confirmationModal" style="display:block; background-color: rgba(10,10,10,.8);" aria-modal="true" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">@Title</h4>
+                <RadzenButton class="close" Click=@OnCancel Icon="cancel" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" />
+            </div>
+            <div class="modal-body">
+                <p>@Message</p>
+
+                @if (HasInputField)
+                {
+                    <div class="form-group">
+                        <label for="inputValue">@InputLabel</label>
+                        <input type="text" id="inputValue" class="form-control" @bind="InputFieldValue " placeholder="@InputPlaceholder" aria-describedby="inputError" />
+
+                        @if (IsInputInvalid)
+                        {
+                            <div id="inputError" class="text-danger">@InputValidationMessage </div>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                @switch (DialogType)
+                {
+                    case ConfirmDialogType.Confirm:
+                        <RadzenButton class="btn btn-primary" Click=@OnConfirm Text="Confirm" />
+                        break;
+                    case ConfirmDialogType.ConfirmCancel:
+                        <RadzenButton class="btn btn-cancel" Click=@OnCancel Text="CANCEL" />
+                        <RadzenButton class="btn btn-primary" IsBusy="@IsActionInProgress" Click=@OnConfirm Text="Confirm" />
+                        break;
+                    case ConfirmDialogType.DeleteCancel:
+                        <RadzenButton class="btn btn-cancel" Click=@OnCancel Text="CANCEL" />
+                        <RadzenButton class="btn btn-danger" IsBusy="@IsActionInProgress" Click=@OnConfirm Text="DELETE" />
+                        break;
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Parameters for the modal that can be set when using the component
+    [Parameter] public string Title { get; set; } = "Confirmation";
+    [Parameter] public string Message { get; set; } = "Are you sure?";
+    [Parameter] public bool HasInputField { get; set; } = false;
+    [Parameter] public string InputLabel { get; set; } = "Enter additional information";
+    [Parameter] public string InputFieldValue { get; set; } = string.Empty;
+    [Parameter] public string InputPlaceholder { get; set; } = "Optional input";
+    [Parameter] public string InputValidationPattern { get; set; } = ".*";
+    [Parameter] public string InputValidationMessage { get; set; } = "Input does not match the required pattern.";
+    [Parameter] public bool IsActionInProgress { get; set; } = false;
+    [Parameter] public ConfirmDialogType DialogType { get; set; } = ConfirmDialogType.Confirm;
+
+    // Event callback for confirming or canceling the dialog
+    [Parameter] public EventCallback<(bool IsConfirmed, string InputValue)> OnConfirmCallback { get; set; }
+
+    // Tracks whether the input is invalid based on the validation pattern
+    private bool IsInputInvalid { get; set; } = false;
+
+    // Enum for the dialog types
+    public enum ConfirmDialogType
+    {
+        Confirm,
+        ConfirmCancel,
+        DeleteCancel,
+    }
+
+    // Handler for the Cancel button click event
+    private Task OnCancel()
+    {
+        InputFieldValue = string.Empty;
+        return OnConfirmCallback.InvokeAsync((false, InputFieldValue));
+    }
+
+    // Handler for the Confirm button click event
+    private async Task OnConfirm()
+    {
+        // Validate input against the regex pattern
+        if (!System.Text.RegularExpressions.Regex.IsMatch(InputFieldValue, InputValidationPattern))
+        {
+            IsInputInvalid = true;
+            return;
+        }
+
+        await OnConfirmCallback.InvokeAsync((true, InputFieldValue.Trim()));
+        InputFieldValue = string.Empty;
+    }
+}
