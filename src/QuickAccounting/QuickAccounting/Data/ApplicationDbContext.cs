@@ -97,5 +97,7 @@ namespace QuickAccounting.Data
         //Receipt Master & Detail (Duplicate tables)
         public DbSet<ReceiptMasterDup> ReceiptMasterDup { get; set; }
         public DbSet<ReceiptDetailsDup> ReceiptDetailsDup { get; set; }
+
+        public DbSet<ReceiptReversal> ReceiptReversal { get; set; }
     }
 }
