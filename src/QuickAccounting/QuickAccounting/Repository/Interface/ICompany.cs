@@ -1,6 +1,4 @@
-﻿using QuickAccounting.Data.Inventory;
-using QuickAccounting.Data.Setting;
-using QuickAccounting.Data.ViewModel;
+﻿using QuickAccounting.Data.Setting;
 
 namespace QuickAccounting.Repository.Interface
 {
