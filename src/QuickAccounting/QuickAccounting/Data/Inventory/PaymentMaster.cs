@@ -11,6 +11,7 @@ namespace QuickAccounting.Data.Inventory
         public string VoucherNo { get; set; }
         public DateTime Date { get; set; }
         public int LedgerId { get; set; }
+        public int AccountId { get; set; }
         public decimal PaidAmount { get; set; }
         public decimal Amount { get; set; }
         public string SerialNo { get; set; }

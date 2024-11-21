@@ -18,7 +18,7 @@ namespace QuickAccounting.Data.Inventory
         public int SalesMasterId { get; set; }
 
         [StringLength(255)]
-        public string SerialNo { get; set; }
+        public string? SerialNo { get; set; }
 
         [StringLength(255)]
         public string VoucherNo { get; set; }
@@ -29,7 +29,7 @@ namespace QuickAccounting.Data.Inventory
 
         [Required]
         [Column(TypeName = "decimal(18, 2)")]
-        public decimal TotalAmount { get; set; }
+        public decimal ReceiveableAmount { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(18, 2)")]
@@ -43,8 +43,10 @@ namespace QuickAccounting.Data.Inventory
         [StringLength(255)]
         public string PaymentStatus { get; set; }
 
+        public string AddedBy { get; set; }
         public DateTime? AddedDate { get; set; }
 
-        public DateTime? ModifyDate { get; set; }
+        public string? ModifiedBy { get; set; }
+        public DateTime? ModifiedDate { get; set; }
     }
 }
