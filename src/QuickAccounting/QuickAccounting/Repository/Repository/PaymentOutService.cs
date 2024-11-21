@@ -109,9 +109,23 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<PaymentMaster> GetbyId(int id)
         {
-            PaymentMaster model = await _context.PaymentMaster.FindAsync(id);
-            return model;
-        }
+			//PaymentMaster model = await _context.PaymentMaster.FindAsync(id);
+			//return model;
+			
+
+			using (SqlConnection sqlcon = new SqlConnection(_conn.DbConn))
+			{
+				var para = new DynamicParameters();
+				para.Add("@PaymentMasterId", id);
+				var model =  sqlcon.Query<PaymentMaster>("GetbyPaymentMasterId", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
+                //pm.AddedDate = model.AddedDate;
+     //           PaymentMaster pm = new PaymentMaster
+     //           {
+					//PaymentMasterId = model.PaymentMasterId,
+     //           };
+				return model.First();
+			}
+		}
 
         public async Task<string> GetSerialNo()
         {
@@ -135,7 +149,7 @@ namespace QuickAccounting.Repository.Repository
                                     VoucherNo = pd.VoucherNo,
                                     Amount = pd.PaidAmount,
                                     Narration = pm.Narration,
-                                    PaymentType = pm.PaymentType,
+                                    PaymentType = pd.TransactionStatus,
                                     Type = pm.PaymentType,
                                     UserId = pm.UserId,
                                     AddedDate = pm.AddedDate,
@@ -186,6 +200,13 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<int> Save(PaymentMaster model)
         {
+            var currentInvoice = await (from pm in _context.PurchaseMaster
+                                        where pm.PurchaseMasterId == model.PurchaseMasterId
+                                        select pm).FirstOrDefaultAsync();
+
+            decimal decpay = currentInvoice.PayAmount;
+
+
             //_context.PaymentMaster.Add(model);
             //await _context.SaveChangesAsync();
             //int id = model.PaymentMasterId;
@@ -194,15 +215,15 @@ namespace QuickAccounting.Repository.Repository
             PaymentMasterDup paymentMaster = new PaymentMasterDup
             {
                 LedgerId = model.LedgerId,
-                AccountId = 0,
-                PaymentType = PaymentMethod.Supplier.ToString(),
-                SettlmentType = SettlmentType.Single.ToString(),
+                AccountId = model.AccountId,
+                PaymentType = TransactionType.SupplierPurchase.ToString(),
+                SettlmentType = ProcessType.Single.ToString(),
                 InvoiceType = InvoiceType.Purchase.ToString(),
                 FinancialYearId = model.FinancialYearId,
                 CompanyId = model.CompanyId,
                 UserId = model.UserId,
                 Narration = model.Narration,
-                AddedDate = DateTime.Now
+                AddedDate = DateTime.Now,
             };
 
             _context.PaymentMasterDup.Add(paymentMaster);
@@ -216,10 +237,11 @@ namespace QuickAccounting.Repository.Repository
             {
                 PaymentMasterId = generatedPaymentMasterId,
                 PurchaseMasterId = model.PurchaseMasterId,
-                TotalAmount = model.listOrder.First().TotalAmount,
+				TransactionStatus = TransactionStatus.Draft.ToString(),
+				TotalAmount = model.listOrder.First().TotalAmount,
                 PaidAmount = model.listOrder.First().ReceiveAmount,
                 //DueAmount = model.listOrder.First().DueAmount,
-                DueAmount = model.listOrder.First().TotalAmount - model.listOrder.First().ReceiveAmount,
+                DueAmount = (model.listOrder.First().TotalAmount) - (model.listOrder.First().ReceiveAmount + decpay),
                 PaymentStatus = PaymentStatus.Unpaid.ToString(),
                 AddedDate = DateTime.Now,
             };
@@ -270,6 +292,7 @@ namespace QuickAccounting.Repository.Repository
 				// After saving, use the generated PaymentDetailId to create SerialNo and VoucherNo
 				currentPaymentDetail.SerialNo = currentPaymentDetail.PaymentDetailId.ToString("D8");
 				currentPaymentDetail.VoucherNo = $"PAY{currentPaymentDetail.SerialNo}OUT";
+				currentPaymentDetail.TransactionStatus = TransactionStatus.Approved.ToString();
 				if (currentPaymentDetail.DueAmount == 0)
 				{
 					currentPaymentDetail.PaymentStatus = "Paid";
@@ -293,8 +316,9 @@ namespace QuickAccounting.Repository.Repository
                 if (currentInvoice == null)
                     throw new KeyNotFoundException($"Invoice with ID {currentPaymentDetail.PurchaseMasterId} not found.");
 
-                currentInvoice.PayAmount = currentPaymentDetail.PaidAmount;
-                currentInvoice.BalanceDue = currentPaymentDetail.DueAmount;
+				decimal decpay = currentInvoice.PayAmount;
+				currentInvoice.PayAmount = currentPaymentDetail.PaidAmount + decpay;
+                currentInvoice.BalanceDue = (currentPaymentDetail.TotalAmount) - (currentPaymentDetail.PaidAmount + decpay);
                 //currentInvoice.PreviousDue = invoiceToSettle.PreviousDue;
                 currentInvoice.Status = currentPaymentDetail.PaymentStatus;
                 //currentInvoice.Reference = invoiceToSettle.Reference;
@@ -307,22 +331,23 @@ namespace QuickAccounting.Repository.Repository
 
                 //CashAndBank
                 LedgerPosting cashPosting = new LedgerPosting();
-				cashPosting.Date = model.Date;
-				cashPosting.NepaliDate = String.Empty;
-				cashPosting.LedgerId = model.LedgerId;
+                //cashPosting.Date = model.Date;
+                cashPosting.Date = DateTime.Now;
+                cashPosting.NepaliDate = String.Empty;
+				cashPosting.LedgerId = model.AccountId;
 				cashPosting.Debit = 0;
 				cashPosting.Credit = model.Amount;
-				cashPosting.VoucherNo = model.VoucherNo;
+				cashPosting.VoucherNo = currentPaymentDetail.VoucherNo;
 				cashPosting.DetailsId = model.PaymentMasterId;
 				cashPosting.YearId = model.FinancialYearId;
-				cashPosting.InvoiceNo = model.VoucherNo;
+				cashPosting.InvoiceNo = currentPaymentDetail.VoucherNo;
 				cashPosting.VoucherTypeId = model.VoucherTypeId;
 				cashPosting.CompanyId = model.CompanyId;
 				cashPosting.LongReference = model.Narration;
 				cashPosting.ReferenceN = model.Narration;
 				cashPosting.ChequeNo = String.Empty;
 				cashPosting.ChequeDate = String.Empty;
-				cashPosting.AddedDate = DateTime.UtcNow;
+				cashPosting.AddedDate = DateTime.Now;
 				cashPosting.Active = true;
 				_context.LedgerPosting.Add(cashPosting);
 				await _context.SaveChangesAsync();
@@ -330,22 +355,23 @@ namespace QuickAccounting.Repository.Repository
 				//LedgerPosting
 				//Supplier
 				LedgerPosting ledgerPosting = new LedgerPosting();
-				ledgerPosting.Date = model.Date;
-				ledgerPosting.NepaliDate = String.Empty;
+                //ledgerPosting.Date = model.Date;
+                ledgerPosting.Date = DateTime.Now;
+                ledgerPosting.NepaliDate = String.Empty;
 				ledgerPosting.LedgerId = model.LedgerId;
 				ledgerPosting.Debit = model.Amount;
 				ledgerPosting.Credit = 0;
-				ledgerPosting.VoucherNo = model.VoucherNo;
+				ledgerPosting.VoucherNo = currentPaymentDetail.VoucherNo;
 				ledgerPosting.DetailsId = model.PaymentMasterId;
 				ledgerPosting.YearId = model.FinancialYearId;
-				ledgerPosting.InvoiceNo = model.VoucherNo;
+				ledgerPosting.InvoiceNo = currentPaymentDetail.VoucherNo;
 				ledgerPosting.VoucherTypeId = model.VoucherTypeId;
 				ledgerPosting.CompanyId = model.CompanyId;
 				ledgerPosting.LongReference = model.Narration;
 				ledgerPosting.ReferenceN = model.Narration;
 				ledgerPosting.ChequeNo = String.Empty;
 				ledgerPosting.ChequeDate = String.Empty;
-				ledgerPosting.AddedDate = DateTime.UtcNow;
+				ledgerPosting.AddedDate = DateTime.Now;
 				ledgerPosting.Active = true;
 				_context.LedgerPosting.Add(ledgerPosting);
 				await _context.SaveChangesAsync();
