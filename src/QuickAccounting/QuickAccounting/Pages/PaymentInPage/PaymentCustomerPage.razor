@@ -120,7 +120,8 @@
                                     <td>@td.Date</td>
                                     <td class="">@PublicVariables._Symbol@td.GrandTotal</td>
                                         <td class="">0</td>
-                                    <td><input type="number" class="form-control" @bind-value="td.ReceiveAmount" style="width: 100px" @onkeyup="@(e => editItem(td.SalesMasterId))" @onclick="@(e => editItem(td.SalesMasterId))" @bind-value:event="oninput" /></td>
+                                    @*<td><input type="number" class="form-control" @bind-value="td.ReceiveAmount" style="width: 100px" @onkeyup="@(e => editItem(td.SalesMasterId))" @onclick="@(e => editItem(td.SalesMasterId))" @bind-value:event="oninput" /></td>*@
+                                        <RadzenNumeric @bind-Value=@td.ReceiveAmount style="width: 100px" Max="@master.Amount" />
 
                                     <td>
                                         <a href="" style="color:#ff6b6b!important;">Clear</a>
@@ -237,6 +238,7 @@
             master.SalesMasterId = sales.SalesMasterId;
             master.Narration = master.Narration;
             master.AddedDate = DateTime.Now;
+            master.AccountId = intCashBank;
 
             foreach (var item in TodoList)
             {
@@ -244,7 +246,7 @@
                 if (item != null)
                 {
                     details.SalesMasterId = item.SalesMasterId;
-                    details.LedgerId = intCashBank;
+                    details.LedgerId = master.LedgerId;
                     details.TotalAmount = item.GrandTotal;
                     details.ReceiveAmount = item.ReceiveAmount;
                     details.DueAmount = 0;

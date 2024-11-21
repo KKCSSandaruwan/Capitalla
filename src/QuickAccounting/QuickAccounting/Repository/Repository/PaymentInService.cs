@@ -220,7 +220,7 @@ namespace QuickAccounting.Repository.Repository
 									ReceiptDetailsId = rd.ReceiptDetailsId,
 									ReceiptMasterId = rd.ReceiptMasterId,
 									LedgerId = rm.LedgerId,
-									Amount = rd.TotalAmount,
+									Amount = rd.ReceiveableAmount,
 									DueAmount = rd.DueAmount,
 									ReceiveAmount = rd.ReceivedAmount,
 									SalesMasterId = rd.SalesMasterId,
@@ -232,72 +232,91 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<int> Save(ReceiptMaster model)
         {
-			//_context.ReceiptMaster.Add(model);
-			//await _context.SaveChangesAsync();
-			//int id = model.ReceiptMasterId;
 
-			//Insert a new payment record for settling multiple invoices(ReceiptMasterDup Table)
-			ReceiptMasterDup receiptMaster = new ReceiptMasterDup
-			{
-				LedgerId = model.LedgerId,
-				AccountId = model.AccountId,
-				TransactionType = TransactionType.CustomerSales.ToString(),
-				InvoiceType = InvoiceType.Sales.ToString(),
-				ProcessType = ProcessType.Single.ToString(),
-				FinancialYearId = model.FinancialYearId,
-				CompanyId = model.CompanyId,
-				UserId = model.UserId,
-				Narration = model.Narration,
-				AddedDate = DateTime.Now
-			};
+            //var currentInvoiceDetail = await (from pm in _context.ReceiptDetailsDup
+            //                                  where pm.ReceiptMasterId == ReceiptMasterId
+            //                                  select pm).FirstOrDefaultAsync();
 
-			_context.ReceiptMasterDup.Add(receiptMaster);
-			await _context.SaveChangesAsync();
-			int generatedRreceiptMasterId = ReceiptMasterId = receiptMaster.ReceiptMasterId;
+            SalesMaster master = new SalesMaster();
+            using (SqlConnection sqlcon = new SqlConnection(_conn.DbConn))
+            {
+                var para = new DynamicParameters();
+                para.Add("@SalesMasterId", model.SalesMasterId);
+                master = sqlcon.Query<SalesMaster>("SELECT *FROM SalesMaster where SalesMasterId=@SalesMasterId", para, null, true, 0, commandType: CommandType.Text).FirstOrDefault();
+            }
 
-			// Insert payment details for the settled invoice (ReceiptDetailsDup Table)
-			ReceiptDetailsDup receiptDetail = new ReceiptDetailsDup
-			{
-				ReceiptMasterId = generatedRreceiptMasterId,
-				SalesMasterId = model.SalesMasterId,
-				TransactionStatus = TransactionStatus.Draft.ToString(),
-				TotalAmount = model.listOrder.First().TotalAmount,
-				ReceivedAmount = model.listOrder.First().ReceiveAmount,
-				DueAmount = model.listOrder.First().TotalAmount - model.listOrder.First().ReceiveAmount,
-				PaymentStatus = PaymentStatus.Unpaid.ToString(),
-				AddedDate = DateTime.Now,
-			};
+            decimal decPay = master.PayAmount;
 
-			_context.ReceiptDetailsDup.Add(receiptDetail);
-			await _context.SaveChangesAsync();
+            //_context.ReceiptMaster.Add(model);
+            //await _context.SaveChangesAsync();
+            //int id = model.ReceiptMasterId;
 
-			// After saving, use the generated RreceiptMasterId to create SerialNo and VoucherNo
-			receiptDetail.SerialNo = receiptDetail.ReceiptDetailsId.ToString("D8");
-			receiptDetail.VoucherNo = $"PAY{receiptDetail.SerialNo}IN";
+            //Insert a new payment record for settling multiple invoices(ReceiptMasterDup Table)
+            ReceiptMasterDup receiptMaster = new ReceiptMasterDup
+            {
+                LedgerId = model.LedgerId,
+                AccountId = model.AccountId,
+                TransactionType = TransactionType.CustomerSales.ToString(),
+                InvoiceType = InvoiceType.Sales.ToString(),
+                ProcessType = ProcessType.Single.ToString(),
+                FinancialYearId = model.FinancialYearId,
+                CompanyId = model.CompanyId,
+                UserId = model.UserId,
+                Narration = model.Narration,
+                AddedDate = DateTime.Now
+            };
 
-			// Update the record with the new SerialNo and VoucherNo
-			_context.ReceiptDetailsDup.Update(receiptDetail);
-			await _context.SaveChangesAsync();
+            _context.ReceiptMasterDup.Add(receiptMaster);
+            await _context.SaveChangesAsync();
+            int generatedRreceiptMasterId = ReceiptMasterId = receiptMaster.ReceiptMasterId;
 
-			////ReceiptDetails table
-			//foreach (var item in model.listOrder)
-			//         {
-			//             //AddReceiptDetails
-			//             ReceiptDetails details = new ReceiptDetails();
-			//             if (item.LedgerId > 0)
-			//             {
-			//                 details.ReceiptMasterId = id;
-			//                 details.LedgerId = item.LedgerId;
-			//                 details.SalesMasterId = item.SalesMasterId;
-			//                 details.TotalAmount = item.TotalAmount;
-			//                 details.ReceiveAmount = item.ReceiveAmount;
-			//                 details.DueAmount = item.DueAmount;
-			//                 _context.ReceiptDetails.Add(details);
-			//                 await _context.SaveChangesAsync();
-			//                 int intPurchaseDId = details.ReceiptDetailsId;
-			//             }
-			//         }
-			return generatedRreceiptMasterId;
+            // Insert payment details for the settled invoice (ReceiptDetailsDup Table)
+            ReceiptDetailsDup receiptDetail = new ReceiptDetailsDup
+            {
+                ReceiptMasterId = generatedRreceiptMasterId,
+                SalesMasterId = model.SalesMasterId,
+                TransactionStatus = TransactionStatus.Draft.ToString(),
+                ReceiveableAmount = model.listOrder.First().TotalAmount,
+                ReceivedAmount = model.listOrder.First().ReceiveAmount,
+                //DueAmount = model.listOrder.First().TotalAmount - model.listOrder.First().ReceiveAmount,
+                DueAmount = (master.GrandTotal) - (model.listOrder.First().ReceiveAmount + decPay),
+                PaymentStatus = PaymentStatus.Unpaid.ToString(),
+                AddedDate = DateTime.Now,
+                AddedBy = model.UserId,
+                SerialNo = "DRAFT",
+                VoucherNo = "DRAFT",
+            };
+
+            _context.ReceiptDetailsDup.Add(receiptDetail);
+            await _context.SaveChangesAsync();
+
+            // After saving, use the generated RreceiptMasterId to create SerialNo and VoucherNo
+            receiptDetail.SerialNo = receiptDetail.ReceiptDetailsId.ToString("D8");
+            receiptDetail.VoucherNo = $"PAY{receiptDetail.SerialNo}IN";
+
+            // Update the record with the new SerialNo and VoucherNo
+            _context.ReceiptDetailsDup.Update(receiptDetail);
+            await _context.SaveChangesAsync();
+
+            ////ReceiptDetails table
+            //foreach (var item in model.listOrder)
+            //         {
+            //             //AddReceiptDetails
+            //             ReceiptDetails details = new ReceiptDetails();
+            //             if (item.LedgerId > 0)
+            //             {
+            //                 details.ReceiptMasterId = id;
+            //                 details.LedgerId = item.LedgerId;
+            //                 details.SalesMasterId = item.SalesMasterId;
+            //                 details.TotalAmount = item.TotalAmount;
+            //                 details.ReceiveAmount = item.ReceiveAmount;
+            //                 details.DueAmount = item.DueAmount;
+            //                 _context.ReceiptDetails.Add(details);
+            //                 await _context.SaveChangesAsync();
+            //                 int intPurchaseDId = details.ReceiptDetailsId;
+            //             }
+            //         }
+            return generatedRreceiptMasterId;
         }
 
         public async Task<bool> ApprovedOk(ReceiptMaster model)
