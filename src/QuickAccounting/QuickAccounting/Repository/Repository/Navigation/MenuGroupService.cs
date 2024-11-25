@@ -38,7 +38,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             try
             {
                 var result = await (from mg in _context.MenuGroup
-                                    orderby mg.MenuGroupId ascending
+                                    orderby mg.MenuGroupName ascending
                                     select mg
                                     ).ToListAsync();
 
@@ -58,7 +58,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             {
                 var result = await (from mg in _context.MenuGroup
                                     where mg.Active == true
-                                    orderby mg.MenuGroupId ascending
+                                    orderby mg.MenuGroupName ascending
                                     select mg
                                     ).ToListAsync();
 
