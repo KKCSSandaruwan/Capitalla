@@ -5,6 +5,7 @@ using QuickAccounting.Data.BudgetModel;
 using QuickAccounting.Data.HrPayroll;
 using QuickAccounting.Data.Inventory;
 using QuickAccounting.Data.Setting;
+using QuickAccounting.Data.Setting.Navigation;
 
 namespace QuickAccounting.Data
 {
@@ -22,6 +23,10 @@ namespace QuickAccounting.Data
         public DbSet<Role> Role { get; set; }
         public DbSet<UserMaster> UserMaster { get; set; }
         public DbSet<Privilege> Privilege { get; set; }
+
+        // Navigation
+        public DbSet<MenuGroup> MenuGroup { get; set; }
+
         public DbSet<AccountGroup> AccountGroup { get; set; }
         public DbSet<ProductGroup> ProductGroup { get; set; }
         public DbSet<AccountLedger> AccountLedger { get; set; }
