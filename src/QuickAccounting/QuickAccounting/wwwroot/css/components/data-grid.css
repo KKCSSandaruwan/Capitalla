@@ -1,0 +1,39 @@
+﻿/* Reusable data-grid style for a consistent layout and scrollable content */
+
+.grid-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.grid-toolbar {
+    margin-bottom: 0.3rem;
+}
+
+.grid-scrollable {
+    height: 366px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.grid-style {
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.grid-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    color: #666;
+    font-size: 1rem;
+    font-weight: 500;
+}
