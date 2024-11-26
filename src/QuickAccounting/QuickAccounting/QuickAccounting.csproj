@@ -17,7 +17,7 @@
     </PackageReference>
     <PackageReference Include="MudBlazor" Version="6.0.17-dev.1" />
     <PackageReference Include="NPOI" Version="2.5.6" />
-    <PackageReference Include="Radzen.Blazor" Version="4.1.0" />
+    <PackageReference Include="Radzen.Blazor" Version="5.6.7" />
   </ItemGroup>
 
   <ItemGroup>

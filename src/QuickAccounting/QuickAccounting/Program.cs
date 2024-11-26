@@ -4,7 +4,9 @@ using MudBlazor.Services;
 using QuickAccounting.Data;
 using QuickAccounting.Data.Authentication;
 using QuickAccounting.Repository.Interface;
+using QuickAccounting.Repository.Interface.Navigation;
 using QuickAccounting.Repository.Repository;
+using QuickAccounting.Repository.Repository.Navigation;
 using QuickAccounting.Repository.Services;
 using Radzen;
 
@@ -22,6 +24,10 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStat
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(
     builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient);
+// Navigation
+builder.Services.AddTransient<IMenuGroup, MenuGroupService>();
+builder.Services.AddTransient<IMainMenu, MainMenuService>();
+
 builder.Services.AddTransient<IBrand, BrandService>();
 builder.Services.AddTransient<ITax, TaxService>();
 builder.Services.AddTransient<ICurrency, CurrencyService>();
