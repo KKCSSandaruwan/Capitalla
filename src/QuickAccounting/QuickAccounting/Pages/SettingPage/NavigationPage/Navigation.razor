@@ -1,0 +1,64 @@
+﻿@page "/app/configuration/navigation"
+
+@using System.ComponentModel.DataAnnotations
+
+@inject IMenuGroup MenuGroupService
+@inject ISnackbar Snackbar
+
+<div class="content">
+    <!-- Page Header: Title and Description -->
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Navigation</h3>
+            <h5>Manage Navigation Menus</h5>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Tab Component -->
+            <MudTabs Elevation="3" Rounded="true" ApplyEffectsToContainer="true" PanelClass=""
+                     @bind-ActivePanelIndex="ActiveTabIndex">
+
+                <!-- Tab Panel 01: Menu Groups -->
+                <MudTabPanel Text="Menu Groups">
+
+                    <!-- MenuGroupCrud component: Handles CRUD operations for Menu Groups -->
+                    <MenuGroupCrud></MenuGroupCrud>
+
+                </MudTabPanel>
+
+                <!-- Tab Panel 02: Main Menus -->
+                <MudTabPanel Text="Main Menus">
+
+                    <!-- MainMenuCrud component: Handles CRUD operations for Main Menus -->
+                    <MainMenuCrud></MainMenuCrud>
+
+                </MudTabPanel>
+
+                <!-- Tab Panel 03: Sub Menus -->
+                <MudTabPanel Text="Sub Menus">
+
+                    <MudText>Sub Menus</MudText>
+
+                </MudTabPanel>
+
+            </MudTabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    #region Properties
+    private int ActiveTabIndex = 0;
+
+    #endregion
+
+    #region Component Lifecycle
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    #endregion
+}
