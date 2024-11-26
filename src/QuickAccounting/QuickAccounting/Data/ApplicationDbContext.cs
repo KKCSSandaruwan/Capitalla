@@ -26,6 +26,7 @@ namespace QuickAccounting.Data
 
         // Navigation
         public DbSet<MenuGroup> MenuGroup { get; set; }
+        public DbSet<MainMenu> MainMenu { get; set; }
 
         public DbSet<AccountGroup> AccountGroup { get; set; }
         public DbSet<ProductGroup> ProductGroup { get; set; }
