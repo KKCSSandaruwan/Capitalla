@@ -24,7 +24,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error initializing Navigation Menu Service: {ex.Message}");
+                Console.WriteLine($"Error initializing Menu Group Service: {ex.Message}");
                 throw;
             }
         }
@@ -111,7 +111,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
 
                 // Trim and standardize inputs
                 menuGroup.MenuGroupName = menuGroup.MenuGroupName.Trim().ToUpper();
-                menuGroup.IconName = menuGroup.IconName.Trim().ToLower();
+                menuGroup.IconName = menuGroup.IconName?.Trim().ToLower();
                 menuGroup.CreatedBy = userName;
                 menuGroup.CreatedDate = menuGroup.CreatedDate == default ? DateTime.Now : menuGroup.CreatedDate;
                 menuGroup.Active = menuGroup.Active;
