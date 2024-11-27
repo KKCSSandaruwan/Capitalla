@@ -28,6 +28,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlSer
 builder.Services.AddTransient<IMenuGroup, MenuGroupService>();
 builder.Services.AddTransient<IMainMenu, MainMenuService>();
 builder.Services.AddTransient<ISubMenu, SubMenuService>();
+builder.Services.AddTransient<INavigationMenu, NavigationMenuService>();
 
 builder.Services.AddTransient<IBrand, BrandService>();
 builder.Services.AddTransient<ITax, TaxService>();
