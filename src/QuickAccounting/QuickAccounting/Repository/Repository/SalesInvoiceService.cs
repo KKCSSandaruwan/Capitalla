@@ -687,32 +687,40 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<List<ProductView>> SalesInvoiceDetailsView(int id)
         {
-            var varlist = (from a in _context.SalesDetails
-                           join b in _context.Product on a.ProductId equals b.ProductId
-                           join c in _context.Unit on a.UnitId equals c.UnitId
-                           where a.SalesMasterId == id
-                           select new ProductView
-                           {
-                               SalesDetailsId = a.SalesDetailsId,
-                               ProductId = a.ProductId,
-                               Qty = a.Qty,
-                               UnitId = a.UnitId,
-                               TaxId = a.TaxId,
-                               TaxAmount = a.TaxAmount,
-                               SCCSLAmount = a.SCCSLAmount,
-                               SalesRate = a.Rate,
-                               PurchaseRate = a.Rate,
-                               Amount = a.Amount,
-                               TotalAmount = a.NetAmount - a.DiscountAmount,
-                               Discount = a.Discount,
-                               DiscountAmount = a.DiscountAmount,
-                               NetAmount = a.NetAmount,
-                               ProductName = b.ProductName,
-                               ProductCode = b.ProductCode,
-                               UnitName = c.UnitName
-                           }).ToList();
+            //var varlist = (from a in _context.SalesDetails
+            //               join b in _context.Product on a.ProductId equals b.ProductId
+            //               join c in _context.Unit on a.UnitId equals c.UnitId
+            //               where a.SalesMasterId == id
+            //               select new ProductView
+            //               {
+            //                   SalesDetailsId = a.SalesDetailsId,
+            //                   ProductId = a.ProductId,
+            //                   Qty = a.Qty,
+            //                   UnitId = a.UnitId,
+            //                   TaxId = a.TaxId,
+            //                   TaxAmount = a.TaxAmount,
+            //                   SCCSLAmount = a.SCCSLAmount,
+            //                   SalesRate = a.Rate,
+            //                   PurchaseRate = a.Rate,
+            //                   Amount = a.Amount,
+            //                   TotalAmount = a.NetAmount - a.DiscountAmount,
+            //                   Discount = a.Discount,
+            //                   DiscountAmount = a.DiscountAmount,
+            //                   NetAmount = a.NetAmount,
+            //                   ProductName = b.ProductName,
+            //                   ProductCode = b.ProductCode,
+            //                   UnitName = c.UnitName
+            //               }).ToList();
 
-            return varlist;
+            //return varlist;
+
+            using (SqlConnection sqlcon = new SqlConnection(_conn.DbConn))
+            {
+                var para = new DynamicParameters();
+                para.Add("@SalesMasterId", id);
+                var varlist = sqlcon.Query<ProductView>("ProductViewdetail", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
+                return varlist;
+            }
         }
 
         public async Task<string> GetSerialNo()
@@ -730,7 +738,8 @@ namespace QuickAccounting.Repository.Repository
             {
                 var para = new DynamicParameters();
                 para.Add("@SalesMasterId", SalesMasterId);
-                var ListofPlan = sqlcon.Query<SalesMasterView>("PaymentInAllocations", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
+                //var ListofPlan = sqlcon.Query<SalesMasterView>("PaymentInAllocations", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
+                var ListofPlan = sqlcon.Query<SalesMasterView>("PaymentInAllocations_New", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
                 return ListofPlan;
             }
         }

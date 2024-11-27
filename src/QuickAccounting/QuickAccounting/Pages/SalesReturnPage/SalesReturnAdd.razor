@@ -331,7 +331,7 @@
             master.VoucherTypeId = decSalesReturnVoucherType;
             master.SerialNo = "0";
             master.Status = "Draft";
-            master.SalesMasterId = 0;
+            master.SalesMasterId = master.SalesMasterId;
             master.WarehouseId = 1;
             master.AddedDate = DateTime.Now;
             foreach (var item in TodoList)

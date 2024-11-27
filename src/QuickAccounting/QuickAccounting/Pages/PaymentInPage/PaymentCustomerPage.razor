@@ -100,6 +100,7 @@
                                 <th>Bill No</th>
                                 <th>Date</th>
                                 <th>Amount</th>
+                                <th>Credite Note</th>
                                 <th>Left to allocate</th>
                                 <th>this allocation</th>
                                 <th>Clear all</th>
@@ -119,7 +120,8 @@
                                     <td>@td.VoucherNo</td>
                                     <td>@td.Date</td>
                                     <td class="">@PublicVariables._Symbol@td.GrandTotal</td>
-                                        <td class="">0</td>
+                                    <td class="">@PublicVariables._Symbol@td.SalesReturnGrandTotal</td>
+                                    <td class="">0</td>
                                     @*<td><input type="number" class="form-control" @bind-value="td.ReceiveAmount" style="width: 100px" @onkeyup="@(e => editItem(td.SalesMasterId))" @onclick="@(e => editItem(td.SalesMasterId))" @bind-value:event="oninput" /></td>*@
                                         <RadzenNumeric @bind-Value=@td.ReceiveAmount style="width: 100px" Max="@master.Amount" />
 
