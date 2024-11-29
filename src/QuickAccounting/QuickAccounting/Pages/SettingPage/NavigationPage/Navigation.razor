@@ -1,10 +1,5 @@
 ﻿@page "/app/configuration/navigation"
 
-@using System.ComponentModel.DataAnnotations
-
-@inject IMenuGroup MenuGroupService
-@inject ISnackbar Snackbar
-
 <div class="content">
     <!-- Page Header: Title and Description -->
     <div class="page-header">
@@ -23,7 +18,7 @@
                 <!-- Tab Panel 01: Menu Groups -->
                 <MudTabPanel Text="Menu Groups">
 
-                    <!-- MenuGroupCrud component: Handles CRUD operations for Menu Groups -->
+                    <!-- MenuGroupCrud component: Manages CRUD operations for Menu Groups -->
                     <MenuGroupCrud></MenuGroupCrud>
 
                 </MudTabPanel>
@@ -31,7 +26,7 @@
                 <!-- Tab Panel 02: Main Menus -->
                 <MudTabPanel Text="Main Menus">
 
-                    <!-- MainMenuCrud component: Handles CRUD operations for Main Menus -->
+                    <!-- MainMenuCrud component: Manages CRUD operations for Main Menus -->
                     <MainMenuCrud></MainMenuCrud>
 
                 </MudTabPanel>
@@ -39,7 +34,16 @@
                 <!-- Tab Panel 03: Sub Menus -->
                 <MudTabPanel Text="Sub Menus">
 
-                    <MudText>Sub Menus</MudText>
+                    <!-- SubMenuCrud component: Manages CRUD operations for Sub Menus -->
+                    <SubMenuCrud></SubMenuCrud>
+
+                </MudTabPanel>
+
+                <!-- Tab Panel 04: Navigation Menus -->
+                <MudTabPanel Text="Navigation Menus">
+
+                    <!-- NavigationMenuCrud component: Manages CRUD operations and menu preview for Navigation Menus -->
+                    <NavigationMenuCrud></NavigationMenuCrud>
 
                 </MudTabPanel>
 
@@ -50,12 +54,12 @@
 
 @code {
     #region Properties
-    private int ActiveTabIndex = 0;
+    private int ActiveTabIndex { get; set; } = 0;
 
     #endregion
 
     #region Component Lifecycle
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
 
     }
