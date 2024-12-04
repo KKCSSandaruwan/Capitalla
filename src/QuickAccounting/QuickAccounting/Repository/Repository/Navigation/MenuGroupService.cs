@@ -66,7 +66,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving active menu groups: {ex.Message}");
+                Console.WriteLine($"Error fetching active menu groups: {ex.Message}");
                 throw;
             }
         }
@@ -88,7 +88,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error retrieving menu group with ID {menuGroupId}: {ex.Message}");
+                Console.WriteLine($"Error fetching menu group with ID {menuGroupId}: {ex.Message}");
                 throw;
             }
         }
