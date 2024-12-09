@@ -242,7 +242,7 @@ namespace QuickAccounting.Repository.Repository
             {
                 var para = new DynamicParameters();
                 para.Add("@SalesMasterId", model.SalesMasterId);
-                master = sqlcon.Query<SalesMaster>("SELECT *FROM SalesMaster where SalesMasterId=@SalesMasterId", para, null, true, 0, commandType: CommandType.Text).FirstOrDefault();
+                master = sqlcon.Query<SalesMaster>("SELECT * FROM SalesMaster where SalesMasterId=@SalesMasterId", para, null, true, 0, commandType: CommandType.Text).FirstOrDefault();
             }
 
             decimal decPay = master.PayAmount;

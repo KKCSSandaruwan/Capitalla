@@ -718,7 +718,7 @@ namespace QuickAccounting.Repository.Repository
             {
                 var para = new DynamicParameters();
                 para.Add("@SalesMasterId", id);
-                var varlist = sqlcon.Query<ProductView>("ProductViewdetail", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
+                var varlist = sqlcon.Query<ProductView>("ProductViewdetail_TEST", para, null, true, 0, commandType: CommandType.StoredProcedure).ToList();
                 return varlist;
             }
         }
