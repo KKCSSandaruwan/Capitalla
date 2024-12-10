@@ -253,11 +253,6 @@
             Console.WriteLine($"Validation error while saving MenuGroup ID {menuGroup?.MenuGroupId}: {ex.Message}");
             Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
         }
-        catch (InvalidOperationException ex)
-        {
-            Console.WriteLine($"Duplicate MenuGroup error: {ex.Message}");
-            Snackbar.Add($"Duplicate entry: {ex.Message}", Severity.Warning);
-        }
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred while saving MenuGroup ID {menuGroup?.MenuGroupId}: {ex.Message}");

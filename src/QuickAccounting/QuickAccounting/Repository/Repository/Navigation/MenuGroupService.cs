@@ -124,9 +124,8 @@ namespace QuickAccounting.Repository.Repository.Navigation
 
                 // Check if a menu group with the same name already exists
                 var duplicateMenuGroup = await _context.MenuGroup.FirstOrDefaultAsync(mg => mg.MenuGroupName.ToUpper() == menuGroup.MenuGroupName && mg.MenuGroupId != menuGroup.MenuGroupId);
-
                 if (duplicateMenuGroup != null)
-                    throw new InvalidOperationException($"A menu group with the name '{menuGroup.MenuGroupName}' already exists. Please use a unique menu group name.");
+                    throw new ValidationException($"A menu group with the name '{menuGroup.MenuGroupName}' already exists. Please use a unique menu group name.");
 
                 // Check if the menu group already exists
                 var existingMenuGroup = await _context.MenuGroup.FirstOrDefaultAsync(mg => mg.MenuGroupId == menuGroup.MenuGroupId);
