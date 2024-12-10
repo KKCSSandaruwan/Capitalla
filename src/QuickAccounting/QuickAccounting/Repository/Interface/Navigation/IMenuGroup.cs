@@ -6,14 +6,14 @@ namespace QuickAccounting.Repository.Interface.Navigation
     {
         #region Fetch Mathods
         /// <summary>
-        /// Fetches a list of all menu groups, ordered by MenuGroupId in ascending order.
+        /// Fetches a list of all menu groups, ordered by MenuGroupName in ascending order.
         /// </summary>
         /// <returns>A list of all menu groups.</returns>
         /// <exception cref="Exception">Thrown when there is an error fetching menu groups.</exception>
         Task<List<MenuGroup>> GetAllAsync();
 
         /// <summary>
-        /// Fetches a list of active menu groups, ordered by MenuGroupId in ascending order.
+        /// Fetches a list of active menu groups, ordered by MenuGroupName in ascending order.
         /// </summary>
         /// <returns>A list of active menu groups.</returns>
         /// <exception cref="Exception">Thrown when there is an error fetching active menu groups.</exception>

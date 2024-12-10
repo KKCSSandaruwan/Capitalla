@@ -32,7 +32,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
         #endregion
 
         #region Fetch Mathods
-        // Fetches a list of all menu groups.
+        // Fetches a list of all menu groups, ordered by MenuGroupName in ascending order.
         public async Task<List<MenuGroup>> GetAllAsync()
         {
             try
@@ -51,7 +51,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
         }
 
-        // Fetches a list of active menu groups.
+        // Fetches a list of active menu groups, ordered by MenuGroupName in ascending order.
         public async Task<List<MenuGroup>> GetActiveAsync()
         {
             try
@@ -121,6 +121,12 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 var context = new ValidationContext(menuGroup);
                 if (!Validator.TryValidateObject(menuGroup, context, validationResults, true))
                     throw new ValidationException($"{string.Join("; ", validationResults.Select(v => v.ErrorMessage))}");
+
+                // Check if a menu group with the same name already exists
+                var duplicateMenuGroup = await _context.MenuGroup.FirstOrDefaultAsync(mg => mg.MenuGroupName.ToUpper() == menuGroup.MenuGroupName && mg.MenuGroupId != menuGroup.MenuGroupId);
+
+                if (duplicateMenuGroup != null)
+                    throw new InvalidOperationException($"A menu group with the name '{menuGroup.MenuGroupName}' already exists. Please use a unique menu group name.");
 
                 // Check if the menu group already exists
                 var existingMenuGroup = await _context.MenuGroup.FirstOrDefaultAsync(mg => mg.MenuGroupId == menuGroup.MenuGroupId);
