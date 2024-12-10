@@ -8,6 +8,7 @@
         <!-- Grid Refresh Button: Refreshes the grid when clicked -->
         <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Text="Refresh"
                       Disabled="@(!HasLoadedMenuGroups)"
+                      IsBusy="@(!HasLoadedMenuGroups)" BusyText="Refrehing..."
                       Click="onGridRefresh" />
         <!-- Grid Add Button: Allows adding a new row -->
         <RadzenButton Icon="add" ButtonStyle="ButtonStyle.Light" Text="Add"
@@ -111,8 +112,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading menu groups: {ex.Message}");
-            Snackbar.Add("An error occurred while loading menu groups. Please try again later.", Severity.Error);
+            Console.WriteLine($"Error loading menu group data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
         }
     }
 
@@ -120,7 +121,7 @@
 
     #region Event Handlers
     /// <summary>
-    /// Refreshes the grid by reloading the menu groups data and handles errors.
+    /// Refreshes the grid by reloading the menu groups data.
     /// </summary>
     private async Task onGridRefresh()
     {
@@ -140,7 +141,7 @@
     }
 
     /// <summary>
-    /// Exports the grid data to an Excel file and handles potential errors.
+    /// Exports the grid data to an Excel file.
     /// </summary>
     private void OnGridExportToXLS()
     {
@@ -252,6 +253,11 @@
             Console.WriteLine($"Validation error while saving MenuGroup ID {menuGroup?.MenuGroupId}: {ex.Message}");
             Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
         }
+        catch (InvalidOperationException ex)
+        {
+            Console.WriteLine($"Duplicate MenuGroup error: {ex.Message}");
+            Snackbar.Add($"Duplicate entry: {ex.Message}", Severity.Warning);
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred while saving MenuGroup ID {menuGroup?.MenuGroupId}: {ex.Message}");
@@ -342,7 +348,8 @@
         }
         catch (Exception ex)
         {
-            throw ex;
+            Console.Error.WriteLine($"Error loading menu groups: {ex.Message}");
+            throw new Exception("Failed to load menu groups. Please try again later.", ex);
         }
         finally
         {
