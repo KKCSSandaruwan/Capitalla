@@ -32,7 +32,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
         #endregion
 
         #region Fetch Mathods
-        // Fetches a list of all main menus.
+        // Fetches a list of all main menus, ordered by MainMenuName in ascending order.
         public async Task<List<MainMenu>> GetAllAsync()
         {
             try
@@ -51,7 +51,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
         }
 
-        // Fetches a list of active main menus.
+        // Fetches a list of active main menus, ordered by MainMenuName in ascending order.
         public async Task<List<MainMenu>> GetActiveAsync()
         {
             try
@@ -112,7 +112,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 // Trim and standardize inputs
                 mainMenu.MainMenuName = mainMenu.MainMenuName.Trim();
                 mainMenu.Code = mainMenu.Code?.Trim().ToUpper();
-                mainMenu.Url = mainMenu.Url.Trim();
+                mainMenu.Url = mainMenu.Url?.Trim();
                 mainMenu.IconName = mainMenu.IconName?.Trim();
                 mainMenu.Description = mainMenu.Description?.Trim();
                 mainMenu.CreatedBy = userName;
@@ -124,6 +124,11 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 var context = new ValidationContext(mainMenu);
                 if (!Validator.TryValidateObject(mainMenu, context, validationResults, true))
                     throw new ValidationException($"{string.Join("; ", validationResults.Select(v => v.ErrorMessage))}");
+
+                // Check if a main menu with the same name already exists
+                var duplicateMainMenu = await _context.MainMenu.FirstOrDefaultAsync(mm => mm.MainMenuName.ToUpper() == mainMenu.MainMenuName && mm.MainMenuId != mainMenu.MainMenuId);
+                if (duplicateMainMenu != null)
+                    throw new ValidationException($"A main menu with the name '{mainMenu.MainMenuName}' already exists. Please use a unique main menu name.");
 
                 // Check if the main menu already exists
                 var existingMainMenu = await _context.MainMenu.FirstOrDefaultAsync(mm => mm.MainMenuId == mainMenu.MainMenuId);

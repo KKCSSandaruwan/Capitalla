@@ -18,10 +18,9 @@ namespace QuickAccounting.Data.Setting.Navigation
         [RegularExpression(@"^[A-Za-z0-9-]+$", ErrorMessage = "Code must only contain letters, numbers, and hyphens (no spaces).")]
         public string? Code { get; set; }
 
-        [Required(ErrorMessage = "URL is required.")]
         [StringLength(255, ErrorMessage = "URL cannot exceed 255 characters.")]
         [RegularExpression(@"^\/[a-zA-Z0-9\-\/]*$", ErrorMessage = "Router path must start with a (/) and only contain letters, numbers, hyphens, and slashes.")]
-        public string Url { get; set; }
+        public string? Url { get; set; }
 
         [StringLength(50, ErrorMessage = "Icon name cannot exceed 50 characters.")]
         public string? IconName { get; set; }

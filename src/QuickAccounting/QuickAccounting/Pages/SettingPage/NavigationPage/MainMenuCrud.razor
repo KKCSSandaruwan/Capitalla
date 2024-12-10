@@ -8,6 +8,7 @@
         <!-- Grid Refresh Button: Refreshes the grid when clicked -->
         <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Text="Refresh"
                       Disabled="@(!HasLoadedMainMenus)"
+                      IsBusy="@(!HasLoadedMainMenus)" BusyText="Refrehing..."
                       Click="onGridRefresh" />
         <!-- Grid Add Button: Allows adding a new row -->
         <RadzenButton Icon="add" ButtonStyle="ButtonStyle.Light" Text="Add"
@@ -123,8 +124,8 @@
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading main menus: {ex.Message}");
-            Snackbar.Add("An error occurred while loading main menus. Please try again later.", Severity.Error);
+            Console.WriteLine($"Error loading menu group data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
         }
     }
 
@@ -236,7 +237,7 @@
     }
 
     /// <summary>
-    /// Update or Insert the MainMenu data to the database, handles possible exceptions.
+    /// Update or Insert the MainMenu data to the database.
     /// </summary>
     /// <param name="mainMenu">The MainMenu object containing the data to be saved.</param>
     private async Task OnGridSaveRow(MainMenu mainMenu)
@@ -360,7 +361,8 @@
         }
         catch (Exception ex)
         {
-            throw ex;
+            Console.Error.WriteLine($"Error loading main menus: {ex.Message}");
+            throw new Exception("Failed to load main menus. Please try again later.", ex);
         }
         finally
         {
