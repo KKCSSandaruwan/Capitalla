@@ -126,7 +126,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
                     throw new ValidationException($"{string.Join("; ", validationResults.Select(v => v.ErrorMessage))}");
 
                 // Check if a main menu with the same name already exists
-                var duplicateMainMenu = await _context.MainMenu.FirstOrDefaultAsync(mm => mm.MainMenuName.ToUpper() == mainMenu.MainMenuName && mm.MainMenuId != mainMenu.MainMenuId);
+                var duplicateMainMenu = await _context.MainMenu.FirstOrDefaultAsync(mm => mm.MainMenuName.ToLower() == mainMenu.MainMenuName.ToLower() && mm.MainMenuId != mainMenu.MainMenuId);
                 if (duplicateMainMenu != null)
                     throw new ValidationException($"A main menu with the name '{mainMenu.MainMenuName}' already exists. Please use a unique main menu name.");
 
