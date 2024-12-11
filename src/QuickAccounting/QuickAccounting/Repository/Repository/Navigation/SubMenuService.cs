@@ -32,7 +32,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
         #endregion
 
         #region Fetch Methods
-        // Fetches a list of all sub menus.
+        // Fetches a list of all sub menus, ordered by SubMenuName in ascending order.
         public async Task<List<SubMenu>> GetAllAsync()
         {
             try
@@ -49,7 +49,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
         }
 
-        // Fetches a list of active sub menus.
+        // Fetches a list of active sub menus, ordered by SubMenuName in ascending order.
         public async Task<List<SubMenu>> GetActiveAsync()
         {
             try
@@ -67,7 +67,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
         }
 
-        // Fetches a list of SubMenus that are not assigned to any NavigationMenu.
+        // Fetches a list of SubMenus that are not assigned to any NavigationMenu, ordered by SubMenuName in ascending order.
         public async Task<List<SubMenu>> GetUnassignedAsync()
         {
             try
@@ -79,6 +79,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 // Fetches a list of unassigned SubMenus by checking for IDs not in the assigned SubMenuIds list.
                 var result = await (from sm in _context.SubMenu
                                     where !assignedSubMenuIds.Contains(sm.SubMenuId)
+                                    orderby sm.SubMenuName ascending
                                     select sm).ToListAsync();
 
                 return result;
@@ -119,12 +120,15 @@ namespace QuickAccounting.Repository.Repository.Navigation
         {
             try
             {
+                // Null check
                 if (subMenu == null)
                     throw new ArgumentNullException(nameof(subMenu), "Sub menu cannot be null.");
 
+                // Fetch authentication state
                 var authState = await _authState.GetAuthenticationStateAsync();
                 string userName = authState.User.FindFirst(ClaimTypes.Name)?.Value;
 
+                // Trim and standardize inputs
                 subMenu.SubMenuName = subMenu.SubMenuName.Trim();
                 subMenu.Code = subMenu.Code?.Trim().ToUpper();
                 subMenu.Url = subMenu.Url.Trim();
@@ -133,15 +137,23 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 subMenu.CreatedBy = userName;
                 subMenu.CreatedDate = subMenu.CreatedDate == default ? DateTime.Now : subMenu.CreatedDate;
 
+                // Validate the SubMenu object
                 var validationResults = new List<ValidationResult>();
                 var context = new ValidationContext(subMenu);
                 if (!Validator.TryValidateObject(subMenu, context, validationResults, true))
                     throw new ValidationException($"{string.Join("; ", validationResults.Select(v => v.ErrorMessage))}");
 
+                // Check if a sub menu with the same name already exists
+                var duplicateSubMenu = await _context.SubMenu.FirstOrDefaultAsync(sm => sm.SubMenuName.ToLower() == subMenu.SubMenuName.ToLower() && sm.SubMenuId != subMenu.SubMenuId);
+                if (duplicateSubMenu != null)
+                    throw new ValidationException($"A sub menu with the name '{subMenu.SubMenuName}' already exists. Please use a unique sub menu name.");
+
+                // Check if the sub menu already exists
                 var existingSubMenu = await _context.SubMenu.FirstOrDefaultAsync(sm => sm.SubMenuId == subMenu.SubMenuId);
 
                 if (existingSubMenu != null)
                 {
+                    // Update existing record
                     existingSubMenu.SubMenuName = subMenu.SubMenuName;
                     existingSubMenu.Code = subMenu.Code;
                     existingSubMenu.Url = subMenu.Url;
@@ -155,6 +167,7 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 }
                 else
                 {
+                    // Add new record
                     _context.SubMenu.Add(subMenu);
                 }
 
@@ -173,18 +186,23 @@ namespace QuickAccounting.Repository.Repository.Navigation
         {
             try
             {
+                // Fetch the sub menu by ID
                 var subMenu = await _context.SubMenu.FirstOrDefaultAsync(sm => sm.SubMenuId == subMenuId);
 
+                // Null check
                 if (subMenu == null)
                     throw new KeyNotFoundException($"Sub menu with ID {subMenuId} was not found.");
 
+                // Fetch authentication state
                 var authState = await _authState.GetAuthenticationStateAsync();
                 string userName = authState.User.FindFirst(ClaimTypes.Name)?.Value;
 
+                // Toggle the active status
                 subMenu.Active = !subMenu.Active;
                 subMenu.ModifiedBy = userName;
                 subMenu.ModifiedDate = DateTime.Now;
 
+                // Update the menu group in the database
                 _context.SubMenu.Update(subMenu);
                 await _context.SaveChangesAsync();
 
