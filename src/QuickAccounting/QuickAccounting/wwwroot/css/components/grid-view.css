@@ -12,6 +12,10 @@
     margin-bottom: 0.3rem;
 }
 
+    .grid-toolbar .rz-button {
+        width: 130px !important;
+    }
+
 .grid-scrollable {
     height: 366px;
     overflow-y: auto;

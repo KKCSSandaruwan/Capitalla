@@ -1,6 +1,18 @@
 ﻿body {
 }
 
+.menu-group {
+    color: white;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    background: #c6c6c621;
+    padding: 5px 5px 3px 10px;
+    border-top-left-radius: 20px;
+    border-bottom-left-radius: 20px;
+}
+
 .print-btn-container {
     display: flex;
     justify-content: flex-end;
