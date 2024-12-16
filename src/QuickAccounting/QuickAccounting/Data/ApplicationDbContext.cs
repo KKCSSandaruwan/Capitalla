@@ -24,6 +24,7 @@ namespace QuickAccounting.Data
 
         // System User
         public DbSet<UserRole> UserRole { get; set; }
+        public DbSet<UserProfile> UserProfile { get; set; }
         public DbSet<UserPrivilege> UserPrivilege { get; set; }
         public DbSet<Role> Role { get; set; }
         public DbSet<UserMaster> UserMaster { get; set; }
