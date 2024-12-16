@@ -6,6 +6,7 @@ using QuickAccounting.Data.HrPayroll;
 using QuickAccounting.Data.Inventory;
 using QuickAccounting.Data.Setting;
 using QuickAccounting.Data.Setting.Navigation;
+using QuickAccounting.Data.Setting.SystemUser;
 
 namespace QuickAccounting.Data
 {
@@ -20,6 +21,10 @@ namespace QuickAccounting.Data
             base.OnModelCreating(builder);
 
         }
+
+        // System User
+        public DbSet<UserRole> UserRole { get; set; }
+        public DbSet<UserPrivilege> UserPrivilege { get; set; }
         public DbSet<Role> Role { get; set; }
         public DbSet<UserMaster> UserMaster { get; set; }
         public DbSet<Privilege> Privilege { get; set; }
