@@ -7,6 +7,30 @@
     {
         #region Public Methods
         /// <summary>
+        /// Converts a string to uppercase.
+        /// </summary>
+        /// <param name="input">The string to convert.</param>
+        /// <returns>A string converted to uppercase.</returns>
+        public static string ToUpperCase(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+
+            return input.ToUpper();
+        }
+
+        /// <summary>
+        /// Converts a string to lowercase.
+        /// </summary>
+        /// <param name="input">The string to convert.</param>
+        /// <returns>A string converted to lowercase.</returns>
+        public static string ToLowerCase(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+
+            return input.ToLower();
+        }
+
+        /// <summary>
         /// Converts a string to title case (capitalizes the first letter of each word).
         /// </summary>
         /// <param name="input">The string to convert.</param>
@@ -80,14 +104,46 @@
         }
 
         /// <summary>
-        /// Converts a string to Sentence case (capitalizes the first letter of the sentence).
+        /// Converts a string to kebab-case (lowercase words joined by hyphens).
         /// </summary>
+        /// <param name="input">The string to convert.</param>
+        /// <returns>A string converted to kebab-case.</returns>
+        public static string ToKebabCase(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+
+            string result = input.Trim().Replace(" ", "-").Replace("_", "-").Replace("-", "-");
+
+            result = System.Text.RegularExpressions.Regex.Replace(result, @"(?<=[a-z0-9])([A-Z])", "-$1");
+
+            return result.ToLower();
+        }
+
+        /// <summary>
+        /// Converts a string to sentence case (capitalizes the first letter of the sentence).
+        /// </summary>
+        /// <param name="input">The string to convert.</param>
+        /// <returns>A string converted to sentence case.</returns>
         public static string ToSentenceCase(string input)
         {
             if (string.IsNullOrWhiteSpace(input)) return input;
 
             input = input.Trim();
             return char.ToUpper(input[0]) + input.Substring(1).ToLower();
+        }
+
+        /// <summary>
+        /// Reverses the characters in a string.
+        /// </summary>
+        /// <param name="input">The string to reverse.</param>
+        /// <returns>A string with characters reversed.</returns>
+        public static string Reverse(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return input;
+
+            char[] charArray = input.ToCharArray();
+            Array.Reverse(charArray);
+            return new string(charArray);
         }
 
         #endregion
