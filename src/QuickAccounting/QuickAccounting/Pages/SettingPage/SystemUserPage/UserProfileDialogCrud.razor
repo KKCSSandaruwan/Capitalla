@@ -1,0 +1,517 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject IUserProfile UserProfileService
+@inject IUserRole UserRoleService
+@inject ICompany CompanyService
+@inject ISnackbar Snackbar
+
+@if (!HasLoadedUserProfile || !HasLoadedUserRoles || !HasLoadedCompanies)
+{
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Dark"
+                               ShowValue="true"
+                               Mode="ProgressBarMode.Indeterminate"
+                               Size="ProgressBarCircularSize.Large">
+        <Template>Wait</Template>
+    </RadzenProgressBarCircular>
+}
+else
+{
+    <div class="dialog fade show" aria-modal="true" role="dialog">
+        <div class="popup-dialog popup-dialog-centered" style="max-width: 800px;" role="document">
+            <div class="dialog-content">
+                <!-- Dialog header with title and close button -->
+                <div class="dialog-header">
+                    <RadzenText Text="@Title"
+                                TextStyle="TextStyle.H6" />
+                    <RadzenButton ButtonType="Radzen.ButtonType.Button"
+                                  ButtonStyle="ButtonStyle.Light"
+                                  Size="ButtonSize.Small"
+                                  Icon="close"
+                                  Click=@OnCancel />
+                </div>
+
+                <!-- Dialog body for main content -->
+                <div class="dialog-body mb-2">
+                    <div class="row">
+                        <RadzenText Text="@Description"
+                                    TextStyle="TextStyle.Body2" />
+                    </div>
+
+                    <RadzenTemplateForm TItem="UserProfile" Data=@UserProfile>
+                        <div class="row mt-2 ml-2 mb-2 mr-2">
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.FirstName))" />
+                                <RadzenTextBox Name="txtFirstName"
+                                               @bind-Value="@UserProfile.FirstName"
+                                               Disabled="@IsFormFieldDisable"
+                                               style="display: block"
+                                               class="w-100" />
+                                <RadzenDataAnnotationValidator Component="txtFirstName"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.LastName))" />
+                                <RadzenTextBox Name="txtLastName"
+                                               @bind-Value="@UserProfile.LastName"
+                                               Disabled="@IsFormFieldDisable"
+                                               style="display: block"
+                                               class="w-100" />
+                                <RadzenDataAnnotationValidator Component="txtLastName"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+                        </div>
+
+                        <div class="row mt-2 ml-2 mb-2 mr-2">
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.UserRoleId))" />
+                                <RadzenDropDown Name="ddlUserRole"
+                                                @bind-Value=@UserProfile.UserRoleId
+                                                Data="@UserRoles"
+                                                TItem="UserRole"
+                                                ValueProperty="UserRoleId"
+                                                TextProperty="UserRoleName"
+                                                Disabled="@IsFormFieldDisable"
+                                                class="w-100" />
+                                <RadzenDataAnnotationValidator Component="ddlUserRole"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.CompanyId))" />
+                                <RadzenDropDown Name="ddlCompany"
+                                                @bind-Value=@UserProfile.CompanyId
+                                                Data="@Companies"
+                                                TItem="Company"
+                                                ValueProperty="CompanyId"
+                                                TextProperty="CompanyName"
+                                                Disabled="@IsFormFieldDisable"
+                                                class="w-100" />
+                                <RadzenDataAnnotationValidator Component="ddlCompany"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+                        </div>
+
+                        <div class="row mt-2 ml-2 mb-2 mr-2">
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.UserName))" />
+                                <RadzenTextBox Name="txtUserName"
+                                               @bind-Value="@UserProfile.UserName"
+                                               Disabled="true"
+                                               style="display: block"
+                                               class="w-100" />
+                                <RadzenDataAnnotationValidator Component="txtUserName"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.PlainPassword))" />
+                                <RadzenTextBox Name="txtPassword"
+                                               @bind-Value="@UserProfile.PlainPassword"
+                                               Disabled="@IsFormFieldDisable"
+                                               style="display: block"
+                                               class="w-100" />
+                                <RadzenDataAnnotationValidator Component="txtPassword"
+                                                               Popup="false"
+                                                               Style="position: relative" />
+                            </div>
+                        </div>
+
+                        <div class="row mt-2 ml-2 mb-2 mr-2">
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.PhoneNumber))" />
+                                <RadzenTextBox Name="txtPhoneNumber"
+                                               @bind-Value="@UserProfile.PhoneNumber"
+                                               MaxLength="12"
+                                               Disabled="@IsFormFieldDisable"
+                                               style="display: block"
+                                               class="w-100" />
+                                <RadzenDataAnnotationValidator Component="txtPhoneNumber"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+
+                            <div class="col-lg-6 col-sm-6 col-12">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.Email))" />
+                                <RadzenTextBox Name="txtEmail"
+                                               @bind-Value="@UserProfile.Email"
+                                               Disabled="@IsFormFieldDisable"
+                                               style="display: block"
+                                               class="w-100" />
+                                <RadzenDataAnnotationValidator Component="txtEmail"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+                        </div>
+
+                        <div class="row mt-3 ml-2 mr-2">
+                            <div class="col-lg-4 col-sm-6 col-12 text-start">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.Verified))" />
+                                <RadzenCheckBox Name="chkVerified"
+                                                @bind-Value="@UserProfile.Verified"
+                                                Disabled="@IsFormFieldDisable" />
+                                <RadzenDataAnnotationValidator Component="chkVerified"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+
+                            <div class="col-lg-4 col-sm-6 col-12 text-center">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.Blocked))" />
+                                <RadzenCheckBox Name="chkBlocked"
+                                                @bind-Value="@UserProfile.Blocked"
+                                                Disabled="@IsFormFieldDisable" />
+                                <RadzenDataAnnotationValidator Component="chkBlocked"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+
+                            <div class="col-lg-4 col-sm-6 col-12 text-end">
+                                <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(UserProfile), nameof(UserProfile.Active))" />
+                                <RadzenCheckBox Name="chkActive"
+                                                @bind-Value="@UserProfile.Active"
+                                                Disabled="@IsFormFieldDisable" />
+                                <RadzenDataAnnotationValidator Component="chkActive"
+                                                               Popup="false"
+                                                               Style="position: absolute" />
+                            </div>
+                        </div>
+                    </RadzenTemplateForm>
+                </div>
+
+                <!-- Dialog footer with buttons, aligned to the right -->
+                <div class="dialog-footer d-flex justify-content-end">
+                    <!-- Render a button base on dialog type -->
+                    @foreach (var button in Buttons)
+                    {
+                        <RadzenButton ButtonType="@button.ButtonType"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Size="ButtonSize.Medium"
+                                      Icon="@button.Icon"
+                                      Text="@button.Text"
+                                      IsBusy="@(button.HasBusyState ? IsActionInProgress : false)"
+                                      BusyText="@button.BusyText"
+                                      class="ml-2"
+                                      Click="@button.Action" />
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    #region Properties
+    [Parameter] public int EntityId { get; set; } = 0;
+    [Parameter] public string DialogTitle { get; set; } = "Title";
+    [Parameter] public CrudDialogType DialogType { get; set; } = CrudDialogType.View;
+    [Parameter] public EventCallback<bool> OnResponseReceived { get; set; }
+
+    private string Title { get; set; } = String.Empty;
+    private string Description { get; set; } = String.Empty;
+    private bool HasLoadedUserProfile { get; set; } = false;
+    private bool HasLoadedUserRoles { get; set; } = false;
+    private bool HasLoadedCompanies { get; set; } = false;
+    public bool IsActionInProgress { get; set; } = false;
+    public bool IsFormFieldDisable { get; set; } = false;
+
+    private UserProfile UserProfile { get; set; } = new UserProfile();
+
+    private IList<UserRole>? UserRoles { get; set; }
+    private IList<Company>? Companies { get; set; }
+    private IList<CrudDialogButton> Buttons { get; set; } = new List<CrudDialogButton>();
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads user profile data and related information when the component is initialized.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Configure the dialog based on the dialog type
+            ConfigureDialog(DialogType);
+
+            // Load user profile based on the provided userProfile ID
+            await LoadUserProfileAsync(EntityId);
+
+            // Load user roles
+            await LoadUserRolesAsync();
+
+            // Load companies
+            await LoadCompaniesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    // <summary>
+    /// Handles the submission of the user profile form.
+    /// This method performs insert or update operations on the user profile and provides feedback to the user.
+    /// </summary>
+    private async Task OnSubmitAsync()
+    {
+        try
+        {
+            // Mark the action is in progress
+            IsActionInProgress = true;
+
+            // Upsert the user profile (insert or update)
+            await UserProfileService.UpsertAsync(UserProfile);
+
+            // Update the action flag after the operation is complete
+            IsActionInProgress = false;
+
+            // Notify the user of success
+            Snackbar.Add("User profile saved successfully.", Severity.Success);
+
+            // Response callback the parent component that the operation was successful
+            await OnResponseReceived.InvokeAsync(true);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: User profile data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving User profile ID {UserProfile.UserId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving User profile ID {UserProfile.UserId}: {ex.Message}");
+            Snackbar.Add("Failed to save the user profile. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the cancellation of the user profile dialog.
+    /// Invokes the response callback with a negative result.
+    /// </summary>
+    private async Task OnCancel()
+    {
+        try
+        {
+            // Response callback the parent component that the operation was canceled
+            await OnResponseReceived.InvokeAsync(false);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while canceling the operation: {ex.Message}");
+            Snackbar.Add("An error occurred while canceling the operation. Please try again.", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Dialog Configuration
+    /// <summary>
+    /// Configures the dialog title, description, and buttons based on the dialog type.
+    /// </summary>
+    /// <param name="dialogType">The type of dialog (View, Add, Edit, Delete).</param>
+    private void ConfigureDialog(CrudDialogType dialogType)
+    {
+        // Clear any previously added buttons before reusing them
+        Buttons.Clear();
+
+        // Config dialog base on the dialog type
+        switch (dialogType)
+        {
+            case CrudDialogType.View:
+                Title = $"Overview {DialogTitle}";
+                Description = $"This section allows you to view the details of the selected {DialogTitle.ToLower()}.";
+                IsFormFieldDisable = true;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Close",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                break;
+
+            case CrudDialogType.Add:
+                Title = $"Add New {DialogTitle}";
+                Description = $"Fill in the required fields to add a new {DialogTitle.ToLower()}.";
+                IsFormFieldDisable = false;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Cancel",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Submit,
+                        Text = "Save",
+                        Icon = "check_circle",
+                        HasBusyState = true,
+                        BusyText = "Saving...",
+                        Action = EventCallback.Factory.Create(this, OnSubmitAsync)
+                    });
+                break;
+
+            case CrudDialogType.Edit:
+                Title = $"Edit {DialogTitle}";
+                Description = $"Modify the details of the selected {DialogTitle.ToLower()}.";
+                IsFormFieldDisable = false;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Reset,
+                        Text = "Cancel",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Submit,
+                        Text = "Save",
+                        Icon = "check_circle",
+                        HasBusyState = true,
+                        BusyText = "Saving...",
+                        Action = EventCallback.Factory.Create(this, OnSubmitAsync)
+                    });
+                break;
+
+            case CrudDialogType.Delete:
+                Title = $"Confirm Delete {DialogTitle}";
+                Description = $"Are you sure you want to delete this {DialogTitle.ToLower()}? This action cannot be undone.";
+                IsFormFieldDisable = true;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Cancel",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Submit,
+                        Text = "Delete",
+                        Icon = "delete",
+                        HasBusyState = true,
+                        BusyText = "Deleting...",
+                        Action = EventCallback.Factory.Create(this, OnSubmitAsync)
+                    });
+                break;
+
+            default:
+                Title = "Unknown Action";
+                Description = "The action type is not recognized. Please try again.";
+                IsFormFieldDisable = true;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Close",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel)
+                    });
+                break;
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the user profile based on the given user ID.
+    /// </summary>
+    /// <param name="userId">The ID of the user profile to be loaded.</param>
+    private async Task LoadUserProfileAsync(int userId)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedUserProfile = false;
+
+            // Load the user profile data by user ID
+            UserProfile = await UserProfileService.GetByIdAsync(userId);
+        }
+        catch (ArgumentException ex)
+        {
+            Console.Error.WriteLine($"Argument Format error: {ex.Message}");
+            throw ex;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine($"Cryptographic error: {ex.Message}");
+            throw ex;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading user profile: {ex.Message}");
+            throw new Exception("Failed to load user profile. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedUserProfile = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of user roles.
+    /// </summary>
+    private async Task LoadUserRolesAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedUserRoles = false;
+
+            // Load the list of active user roles
+            UserRoles = await UserRoleService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading all user roles: {ex.Message}");
+            throw new Exception("Failed to load user roles. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedUserRoles = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of companies.
+    /// </summary>
+    private async Task LoadCompaniesAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedCompanies = false;
+
+            // Load the list of all companies
+            Companies = await CompanyService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading all companies: {ex.Message}");
+            throw new Exception("Failed to load companies. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedCompanies = true;
+        }
+    }
+
+    #endregion
+}
