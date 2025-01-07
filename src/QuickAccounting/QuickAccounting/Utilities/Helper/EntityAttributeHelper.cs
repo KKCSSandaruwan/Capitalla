@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace QuickAccounting.Utilities.Helper
@@ -7,75 +6,74 @@ namespace QuickAccounting.Utilities.Helper
     public static class EntityAttributeHelper
     {
         /// <summary>
-        /// Gets the value of a specific attribute from a property in a model.
+        /// Gets a specific attribute of a property from a model.
         /// </summary>
-        /// <typeparam name="TModel">The model type.</typeparam>
-        /// <typeparam name="TAttribute">The attribute type.</typeparam>
-        /// <param name="propertyExpression">The property expression.</param>
+        /// <typeparam name="TAttribute">The type of the attribute to retrieve.</typeparam>
+        /// <param name="modelType">The type of the model containing the property.</param>
+        /// <param name="propertyName">The name of the property.</param>
         /// <returns>The attribute instance if found; otherwise, null.</returns>
-        public static TAttribute? GetAttribute<TModel, TAttribute>(Expression<Func<TModel, object>> propertyExpression)
+        public static TAttribute GetAttribute<TAttribute>(Type modelType, string propertyName)
             where TAttribute : Attribute
         {
-            // Unwrap the property from expression body
-            MemberExpression? memberExpression = propertyExpression.Body as MemberExpression;
+            if (modelType == null) throw new ArgumentNullException(nameof(modelType));
+            if (string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(propertyName));
 
-            // If body is UnaryExpression, extract the operand (MemberExpression)
-            if (memberExpression == null && propertyExpression.Body is UnaryExpression unaryExpression)
-            {
-                memberExpression = unaryExpression.Operand as MemberExpression;
-            }
+            var property = modelType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
 
-            // If we still don't have a MemberExpression, return null
-            if (memberExpression == null)
-                return null;
+            if (property == null)
+                return null; // Return null if the property is not found
 
-            var property = memberExpression.Member;
-            return property.GetCustomAttribute<TAttribute>();
+            // Retrieve the custom attribute of type TAttribute from the property
+            var attribute = property
+                .GetCustomAttributes(typeof(TAttribute), false)
+                .FirstOrDefault() as TAttribute;
+
+            return attribute; // Return the attribute, or null if not found
         }
 
         /// <summary>
-        /// Gets the display name or default name of a property using the DisplayAttribute.
+        /// Retrieves the display name of a property from a model using the DisplayAttribute.
         /// </summary>
-        /// <typeparam name="TModel">The model type.</typeparam>
-        /// <param name="propertyExpression">The property expression.</param>
-        /// <returns>The display name if specified; otherwise, the property name.</returns>
-        public static string GetDisplayName<TModel>(Expression<Func<TModel, object>> propertyExpression)
+        /// <param name="modelType">The type of the model containing the property.</param>
+        /// <param name="propertyName">The name of the property.</param>
+        /// <returns>The display name if available; otherwise, returns the property name.</returns>
+        public static string GetDisplayName(Type modelType, string propertyName)
         {
-            // Try to get DisplayAttribute first
-            var displayAttribute = GetAttribute<TModel, DisplayAttribute>(propertyExpression);
+            if (modelType == null) throw new ArgumentNullException(nameof(modelType));
+            if (string.IsNullOrEmpty(propertyName)) throw new ArgumentNullException(nameof(propertyName));
 
-            if (displayAttribute != null)
-            {
-                // If Name is set, use it; otherwise, use the property name
-                return string.IsNullOrEmpty(displayAttribute.Name) ? propertyExpression.GetMemberName() : displayAttribute.Name;
-            }
+            var property = modelType.GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
 
-            // Fall back to the property name if DisplayAttribute is not found
-            return propertyExpression.GetMemberName();
+            // If property is not found, return the property name
+            if (property == null)
+                return propertyName;
+
+            // Try to get the DisplayAttribute
+            var displayNameAttribute = property.GetCustomAttributes(typeof(DisplayAttribute), false)
+                                                 .FirstOrDefault() as DisplayAttribute;
+
+            // Return Display Name if it's available, otherwise fallback to property name
+            return displayNameAttribute?.Name ?? propertyName;
         }
 
-        /// <summary>
-        /// Extension method to get the member name from an expression.
-        /// </summary>
-        /// <typeparam name="TModel">The model type.</typeparam>
-        /// <param name="expression">The property expression.</param>
-        /// <returns>The name of the property.</returns>
-        private static string GetMemberName<TModel>(this Expression<Func<TModel, object>> expression)
+
+
+
+        // Method to get the display name from a model property using reflection
+        public static string GetDisplayName1<T>(string propertyName)
         {
-            // Ensure the expression is a MemberExpression (which it should be for properties)
-            if (expression.Body is MemberExpression memberExpression)
-            {
-                return memberExpression.Member.Name;
-            }
+            // Get the PropertyInfo object for the specified property
+            var property = typeof(T).GetProperty(propertyName);
 
-            // In case it's a UnaryExpression, extract the operand (which should be a MemberExpression)
-            if (expression.Body is UnaryExpression unaryExpression && unaryExpression.Operand is MemberExpression operand)
-            {
-                return operand.Member.Name;
-            }
+            if (property == null)
+                return propertyName;  // Return property name if no property is found
 
-            // Return an empty string if the expression type isn't expected
-            return string.Empty;
+            // Get the DisplayAttribute applied to the property
+            var displayAttribute = property.GetCustomAttributes(typeof(DisplayAttribute), false)
+                                          .FirstOrDefault() as DisplayAttribute;
+
+            // Return the DisplayName if found, otherwise fallback to the property name
+            return displayAttribute?.Name ?? propertyName;
         }
     }
 }
