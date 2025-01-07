@@ -56,15 +56,18 @@ namespace QuickAccounting.Data.Setting.Corporate
         public decimal? Longitude { get; set; }
 
         [Required(ErrorMessage = "Phone number is required.")]
-        [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters.")]
+        [StringLength(15, ErrorMessage = "Phone number cannot exceed 15 digits.")]
+        [RegularExpression(@"^(?:\+?[1-9]\d{1,14}|\d{7,15})$", ErrorMessage = "Invalid phone number format.")]
         [Display(Name = "Phone Number")]
         public string PhoneNo { get; set; }
 
-        [StringLength(20, ErrorMessage = "Mobile number cannot exceed 20 characters.")]
+        [StringLength(15, ErrorMessage = "Mobile number cannot exceed 15 digits.")]
+        [RegularExpression(@"^(?:\+?[1-9]\d{1,14}|\d{7,15})$", ErrorMessage = "Invalid mobile number format.")]
         [Display(Name = "Mobile Number")]
         public string? MobileNo { get; set; }
 
-        [StringLength(20, ErrorMessage = "Fax number cannot exceed 20 characters.")]
+        [StringLength(15, ErrorMessage = "Fax number cannot exceed 15 digits.")]
+        [RegularExpression(@"^(?:\+?[1-9]\d{1,14}|\d{7,15})$", ErrorMessage = "Invalid fax number format.")]
         [Display(Name = "Fax Number")]
         public string? FaxNo { get; set; }
 
