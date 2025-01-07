@@ -1,6 +1,13 @@
 ﻿body {
 }
 
+.rz-progressbar-circular-lg {
+    position: absolute;
+    z-index: 9999;
+    left: 40%;
+    top: 20%;
+}
+
 .menu-group {
     color: white;
     text-transform: uppercase;
@@ -29,12 +36,12 @@
     /*background-image: url('../img/login-v2.jpg');
     background-size:cover;
     background-repeat:no-repeat;*/
-    background:white;
+    background: white;
 }
 
-.login-background{
-    background-color:rgba(255,255,255,0.5);
-    filter:blur(1px);
+.login-background {
+    background-color: rgba(255,255,255,0.5);
+    filter: blur(1px);
 }
 
 .login-wrapper {
@@ -45,29 +52,30 @@
 }
 
 
-.login-wrapper .login-content {
-    /*width: 100%;*/
-    height: 100vh;
-    padding: 30px;
-    overflow: auto;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    align-items: center;
-    background: none;
-}
-
-    .login-wrapper .login-content .login-userset {
-        width: 100%;
-        padding: 2rem;
-        background: white;
-        border-radius: 1em;
+    .login-wrapper .login-content {
+        /*width: 100%;*/
+        height: 100vh;
+        padding: 30px;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        align-items: center;
+        background: none;
     }
-    /*----------------------------------------------------------------*/
+
+        .login-wrapper .login-content .login-userset {
+            width: 100%;
+            padding: 2rem;
+            background: white;
+            border-radius: 1em;
+        }
+/*----------------------------------------------------------------*/
 .login-logo {
     width: 200px;
     margin-top: 40px !important;
 }
+
 .login-content {
     margin-top: 13%;
 }
@@ -90,7 +98,7 @@
         border-bottom: 1.5px solid #013c88 !important;
         border-radius: 1px;
         font-size: 16px;
-        margin-bottom:1em;
+        margin-bottom: 1em;
     }
 
     .form-login label {
@@ -102,7 +110,7 @@
         font-size: 16px;
         pointer-events: none;
         transition: 0.3s ease;
-        margin:6px;
+        margin: 6px;
     }
 
     .form-login input:focus + label,
@@ -188,9 +196,9 @@
 .login-userset .login-logo {
     text-align: center;
     padding: 0px;
-/*    background-image: url(../img/logo.png);
+    /*    background-image: url(../img/logo.png);
     background-size: cover;
-*/    top: 0;
+*/ top: 0;
     height: 3em;
 }
 
@@ -198,8 +206,8 @@
     background: url(../img/login-v2.jpg);
     background-size: cover;
     background-repeat: no-repeat;
-  /*  border-radius: 0em 3em 3em 0em;*/
-    box-shadow:inset -10px 0px 15px 0px rgba(140, 140, 140, 0.5);
+    /*  border-radius: 0em 3em 3em 0em;*/
+    box-shadow: inset -10px 0px 15px 0px rgba(140, 140, 140, 0.5);
 }
 
 .circle1 {
@@ -213,6 +221,7 @@
     left: 10em;
     animation: fadeout 9s infinite;
 }
+
 .circle2 {
     background: #7ebef6;
     width: 0.75em;
@@ -224,6 +233,7 @@
     left: 6em;
     animation: fadeout 6s infinite;
 }
+
 .circle3 {
     background: #7ebef6;
     width: 1em;
@@ -233,8 +243,9 @@
     opacity: 0.4;
     top: 1.5em;
     left: 14em;
-    animation:fadeout 3s infinite;
+    animation: fadeout 3s infinite;
 }
+
 .circle4 {
     background: #7ebef6;
     width: 1em;
@@ -246,6 +257,7 @@
     left: 30em;
     animation: fadeout 12s infinite;
 }
+
 .circle5 {
     background: #7ebef6;
     width: 0.5em;
@@ -257,6 +269,7 @@
     left: 34em;
     animation: fadeout 9s infinite;
 }
+
 .circle6 {
     background: #7ebef6;
     width: 1em;
@@ -267,6 +280,7 @@
     top: 2em;
     left: 36em;
 }
+
 .circle7 {
     background: #7ebef6;
     width: 1em;
@@ -278,6 +292,7 @@
     left: 42em;
     animation: fadeout 9s infinite;
 }
+
 .circle8 {
     background: #7ebef6;
     width: 0.75em;
@@ -289,6 +304,7 @@
     left: 38em;
     animation: fadeout 3s infinite;
 }
+
 .circle9 {
     background: #7ebef6;
     width: 0.5em;
@@ -310,8 +326,9 @@
     opacity: 0.4;
     top: 28em;
     left: 10em;
-    animation:fadeout 9s infinite;
+    animation: fadeout 9s infinite;
 }
+
 .circle11 {
     background: #7ebef6;
     width: 0.5em;
@@ -323,6 +340,7 @@
     left: 4em;
     animation: fadeout 12s infinite;
 }
+
 .circle12 {
     background: #7ebef6;
     width: 1em;
@@ -343,6 +361,7 @@
     50% {
         opacity: 1;
     }
+
     100% {
         opacity: 0.1;
     }
@@ -360,7 +379,7 @@
     background: transparent;
     border: none;
     color: #5b5b5b;
-    left:0%;
+    left: 0%;
 }
 
     .footer a {
@@ -381,6 +400,7 @@
     padding-bottom: 1rem;
     padding-right: 0PX;
 }
+
     .sidebar .sidebar-menu > ul > li.active a {
         background: none;
         border-radius: 5px;
@@ -392,12 +412,12 @@
     text-decoration: none;
 }
 
-    .sidebar .sidebar-menu > ul > li > a:hover {
-        background: rgb(0, 20, 94);
-        color: #fff;
-        border-radius: 1.5em 0em 0em 1.5em;
-        text-decoration: none;
-    }
+.sidebar .sidebar-menu > ul > li > a:hover {
+    background: rgb(0, 20, 94);
+    color: #fff;
+    border-radius: 1.5em 0em 0em 1.5em;
+    text-decoration: none;
+}
 
 .brand-text h3 {
     color: #515151;
@@ -441,7 +461,7 @@
 .sidebar .sidebar-menu > ul > li.submenu ul li a:hover::after {
     background: #00145E;
     border: 1px solid #00145E;
-    text-decoration:none;
+    text-decoration: none;
 }
 
 .sidebar .sidebar-menu > ul > li.submenu ul li a.subdrop:active {
@@ -481,7 +501,7 @@
             /*padding: 8px 8px 8px 40px;*/
         }
 
-/*        .sidebar .sidebar-menu > ul > li.submenu ul li a.subdrop {
+        /*        .sidebar .sidebar-menu > ul > li.submenu ul li a.subdrop {
             background: #00145E;
             border: 1px solid #00145E;
             text-decoration: none;
@@ -501,7 +521,7 @@
 .card .card-header {
     border-bottom: 0;
     background: #00145e;
-     padding: 0px; 
+    padding: 0px;
     color: white;
 }
 
@@ -511,9 +531,11 @@
         color: #FFF;
         margin: 0.5rem;
     }
+
 .card .mb-0 {
     margin-bottom: 0 !important;
 }
+
 .card .card-body {
     padding: 0px;
 }
@@ -597,8 +619,8 @@
     font-weight: 700;
 }
 
-.invoice-details{
-    padding:1em;
+.invoice-details {
+    padding: 1em;
 }
 
 .search-button {
@@ -636,6 +658,7 @@
 .mud-toolbar {
     height: auto;
 }
+
     .mud-toolbar.mud-toolbar-gutters.mud-table-toolbar {
         margin-bottom: 1em;
     }
@@ -656,7 +679,7 @@
     }
 }
 
-@media (max-width:990px){
+@media (max-width:990px) {
     .invoice-details .form-group {
         margin-top: 0.75em;
     }
@@ -677,6 +700,7 @@
     background: #0428a3;
     border-radius: 5px;
 }
+
 .rz-button.rz-primary {
     background-color: #0428a3;
     color: var(--rz-text-contrast-color);
@@ -713,6 +737,7 @@
     color: #fff;
     text-decoration: none;
 }
+
 .btn-cancel {
     min-width: 100px;
     background: #637381;
@@ -738,10 +763,11 @@
     min-height: 40px;
 }
 
-    .AddNewCustomer > img {
-        width: 1.5em !important;
-        margin-left:0em !important  ;
-    }
+.AddNewCustomer > img {
+    width: 1.5em !important;
+    margin-left: 0em !important;
+}
+
 .ImportCustomer {
     background-color: transparent !important;
     border-color: #00145E !important;
@@ -753,16 +779,18 @@
     font-weight: 600;
     color: #6e6b7b;
 }
+
     .ImportCustomer > img {
         cursor: pointer;
         float: left;
         margin-right: 10px;
-/*        padding-right: 1em;
+        /*        padding-right: 1em;
         padding-left: 1em;
-*/    }
+*/
+    }
 
 .CustomerEdit {
-    padding:1em;
+    padding: 1em;
 }
 
 .mud-table-row > td {
@@ -787,12 +815,13 @@
     text-transform: none;
     margin-bottom: 1em;
 }
-.mud-dialog .mud-dialog-title{
-    padding:0px;
+
+.mud-dialog .mud-dialog-title {
+    padding: 0px;
 }
 
-.mud-dialog .mud-dialog-content{
-    padding:0px;
+.mud-dialog .mud-dialog-content {
+    padding: 0px;
 }
 
 .form-group > div {
@@ -804,20 +833,21 @@
     background-color: #00145e !important;
     border: 1px solid #00145e !important;
 }
-.btn.btn-primary.btn-sm.btn-block:hover {
-    background-color: rgb(4, 40, 163) !important;
-    border: 1px solid rgb(4, 40, 163) !important;
-}
 
-.CustomerAdd{
-    padding:1em;
+    .btn.btn-primary.btn-sm.btn-block:hover {
+        background-color: rgb(4, 40, 163) !important;
+        border: 1px solid rgb(4, 40, 163) !important;
+    }
+
+.CustomerAdd {
+    padding: 1em;
 }
 
 .CustomerAddDrop {
     /*bottom: 0;
     position: absolute;
     width: 100%;*/
-    top:40px;
+    top: 40px;
 }
 
 .form-group > label {
@@ -829,43 +859,47 @@
 .PurchaseBill {
     padding: 1em;
 }
-.PurchaseAdd{
-    padding:1em !important;
+
+.PurchaseAdd {
+    padding: 1em !important;
 }
 
-.PurchaseAdd.btn-submit {
-    margin-left:1em;
-}
+    .PurchaseAdd.btn-submit {
+        margin-left: 1em;
+    }
 
 .row.Button {
     margin-left: 1rem;
     margin-bottom: 1rem;
 }
 
-.NewExpenses{
-    padding:1em;
+.NewExpenses {
+    padding: 1em;
 }
+
 .col-lg-12.EndButtons {
     margin-top: 1em;
 }
-.AddNewEdit{
-    padding:1em;
+
+.AddNewEdit {
+    padding: 1em;
 }
 
-.savebutton{
-    margin-left:1em;
-    margin-bottom:1em;
-}
-.cancelbutton{
-    margin-bottom:1em;
+.savebutton {
+    margin-left: 1em;
+    margin-bottom: 1em;
 }
 
-.padding1{
-    padding:1em;
+.cancelbutton {
+    margin-bottom: 1em;
 }
 
-.PopupDialog{
-    padding:1em;
+.padding1 {
+    padding: 1em;
+}
+
+.PopupDialog {
+    padding: 1em;
 }
 
 .PopupSave {
@@ -912,30 +946,30 @@
         box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.19);
     }
 
-    .card-sales-split li a {
-        cursor: pointer;
-        align-content: center;
-        display: flex;
-        color: #637381;
+.card-sales-split li a {
+    cursor: pointer;
+    align-content: center;
+    display: flex;
+    color: #637381;
+}
+
+    .card-sales-split li a:hover {
+        color: #1235a8;
+        text-decoration: none;
     }
 
-        .card-sales-split li a:hover {
-            color: #1235a8;
-            text-decoration:none;
-        }
-
-        .viewtopbutton {
-            margin-right: 0.75em;
-            height: 1.25em;
-        }
+.viewtopbutton {
+    margin-right: 0.75em;
+    height: 1.25em;
+}
 
 .badges.statusbutton {
     color: white !important;
     font-weight: 600 !important;
 }
 
-.bg-lightgreen.statusbutton{
-    background-color:green;
+.bg-lightgreen.statusbutton {
+    background-color: green;
 }
 
 .statusbutton {
@@ -1012,12 +1046,14 @@ a:hover {
         background-color: #00145e !important;
         border-color: #00145e !important;
     }
+
 .PlusButton {
     background: transparent;
     border-radius: 12px;
 }
+
     .PlusButton > img {
-        height:1.75em;
+        height: 1.75em;
     }
 
 .mud-tabs-toolbar-content {
@@ -1029,6 +1065,7 @@ a:hover {
     overflow: hidden;
     margin-left: 1em;
 }
+
 .valid.modified:not([type="checkbox"]) {
     outline: 1px solid #0428a3;
 }
@@ -1039,8 +1076,8 @@ a:hover {
     font-size: 24px;
 }
 
-.w100{
-    width:100%;
+.w100 {
+    width: 100%;
 }
 
 #PrintDiv {
@@ -1049,6 +1086,7 @@ a:hover {
     box-shadow: 0px 0px 5px #d2d2d2;
     border-radius: 10px;
 }
+
 .form-group .btn-filters {
     background: #00145E;
     color: #fff;
@@ -1065,14 +1103,16 @@ a:hover {
     display: block;
     /*margin-left: 1em;*/
 }
+
 .image-uploads > img {
     width: 100px;
     /*height: 100px;*/
     margin: 1em;
     margin-bottom: 0em !important;
 }
-.text-center{
-    text-align:center;
+
+.text-center {
+    text-align: center;
 }
 
 .PermissionListTable > tr {
@@ -1091,12 +1131,14 @@ a:hover {
     border-color: #000e42;
     font-weight: 600;
 }
+
     .filter-btn:hover {
         color: white;
         background-color: #000e42;
         border-color: #000e42;
         font-weight: 600;
     }
+
     .filter-btn:active {
         color: white;
         background-color: #000e42;
@@ -1110,7 +1152,7 @@ a:hover {
     border-radius: 0.5em;
     /*padding-left: 0.5em !important;*/
     height: 100% !important;
-   /* margin: 0px !important;*/
+    /* margin: 0px !important;*/
     /*padding-right: 0.5em !important;*/
 }
 
@@ -1120,6 +1162,7 @@ a:hover {
         padding: 10px 30px;
     }
 }
+
 .sidecard .form-group .row > div > input {
     background: none;
     border: none;
@@ -1140,6 +1183,7 @@ a:hover {
     font-weight: 600;
     text-transform: uppercase;
 }
+
 .sidecard .text-xl-right > div > input[type="button"] {
     background-color: red;
     border: none;
@@ -1151,33 +1195,38 @@ a:hover {
     width: 100%;
     text-align: center !important;
 }
-    .sidecard .text-xl-right > div > input[type="button"]:hover{
-        box-shadow:0px 1px 5px gray;
+
+    .sidecard .text-xl-right > div > input[type="button"]:hover {
+        box-shadow: 0px 1px 5px gray;
     }
 
-    .product-grid[b-213qohn221] {
-        position: relative;
-        height: auto;
-    }
+.product-grid[b-213qohn221] {
+    position: relative;
+    height: auto;
+}
 
-@media only screen and (max-width:1094px){
+@media only screen and (max-width:1094px) {
     .sidecard {
         width: 100vw;
     }
+
     .mid-content {
         width: 100vw;
     }
 }
+
 .btn-success {
     color: #fff;
     background-color: #00145e;
     border-color: #00145e;
 }
+
     .btn-success:hover {
         color: #fff;
         background-color: #000e42;
         border-color: #000e42;
     }
+
 .modal .modal-footer .btn {
     min-width: 130px;
     padding: 6px 10px;
@@ -1187,6 +1236,7 @@ a:hover {
     margin-left: 0.5em;
     color: #6a7986;
 }
+
 .table-select {
     padding: 0.5em 1em;
     border-radius: 5px;
@@ -1222,5 +1272,4 @@ a:hover {
 
 .dropdown-toggle.nav-link.userset:hover {
     text-decoration: none;
-
 }
