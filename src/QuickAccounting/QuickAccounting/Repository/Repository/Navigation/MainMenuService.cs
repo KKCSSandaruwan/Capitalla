@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QuickAccounting.Data;
 using QuickAccounting.Data.Setting.Navigation;
 using QuickAccounting.Repository.Interface.Navigation;
+using QuickAccounting.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
@@ -110,11 +111,11 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 string userName = authState.User.FindFirst(ClaimTypes.Name)?.Value;
 
                 // Trim and standardize inputs
-                mainMenu.MainMenuName = mainMenu.MainMenuName.Trim();
-                mainMenu.Code = mainMenu.Code?.Trim().ToUpper();
-                mainMenu.Url = mainMenu.Url?.Trim();
-                mainMenu.IconName = mainMenu.IconName?.Trim();
-                mainMenu.Description = mainMenu.Description?.Trim();
+                mainMenu.MainMenuName = StringFormatter.ToTitleCase(mainMenu.MainMenuName.Trim());
+                mainMenu.Code = StringFormatter.ToUpperCase(mainMenu.Code?.Trim());
+                mainMenu.Url = StringFormatter.ToLowerCase(mainMenu.Url?.Trim());
+                mainMenu.IconName = StringFormatter.ToSnakeCase(mainMenu.IconName?.Trim());
+                mainMenu.Description = StringFormatter.ToSentenceCase(mainMenu.Description?.Trim());
                 mainMenu.CreatedBy = userName;
                 mainMenu.CreatedDate = mainMenu.CreatedDate == default ? DateTime.Now : mainMenu.CreatedDate;
                 mainMenu.Active = mainMenu.Active;

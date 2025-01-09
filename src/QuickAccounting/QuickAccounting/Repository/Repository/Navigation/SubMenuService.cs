@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using QuickAccounting.Data;
 using QuickAccounting.Data.Setting.Navigation;
 using QuickAccounting.Repository.Interface.Navigation;
+using QuickAccounting.Utilities;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
@@ -67,30 +68,6 @@ namespace QuickAccounting.Repository.Repository.Navigation
             }
         }
 
-        // Fetches a list of SubMenus that are not assigned to any NavigationMenu, ordered by SubMenuName in ascending order.
-        public async Task<List<SubMenu>> GetUnassignedAsync()
-        {
-            try
-            {
-                // Fetches a list of SubMenuIds that are already assigned to NavigationMenus.
-                var assignedSubMenuIds = await (from nm in _context.NavigationMenu
-                                                select nm.SubMenuId).Distinct().ToListAsync();
-
-                // Fetches a list of unassigned SubMenus by checking for IDs not in the assigned SubMenuIds list.
-                var result = await (from sm in _context.SubMenu
-                                    where !assignedSubMenuIds.Contains(sm.SubMenuId)
-                                    orderby sm.SubMenuName ascending
-                                    select sm).ToListAsync();
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching unassigned sub menus: {ex.Message}");
-                throw;
-            }
-        }
-
         // Fetches a object of sub menu for a specified sub menu id.
         public async Task<SubMenu> GetByIdAsync(int subMenuId)
         {
@@ -129,11 +106,11 @@ namespace QuickAccounting.Repository.Repository.Navigation
                 string userName = authState.User.FindFirst(ClaimTypes.Name)?.Value;
 
                 // Trim and standardize inputs
-                subMenu.SubMenuName = subMenu.SubMenuName.Trim();
-                subMenu.Code = subMenu.Code?.Trim().ToUpper();
-                subMenu.Url = subMenu.Url.Trim();
-                subMenu.IconName = subMenu.IconName?.Trim();
-                subMenu.Description = subMenu.Description?.Trim();
+                subMenu.SubMenuName = StringFormatter.ToTitleCase(subMenu.SubMenuName.Trim());
+                subMenu.Code = StringFormatter.ToUpperCase(subMenu.Code?.Trim());
+                subMenu.Url = StringFormatter.ToLowerCase(subMenu.Url?.Trim());
+                subMenu.IconName = StringFormatter.ToSnakeCase(subMenu.IconName?.Trim());
+                subMenu.Description = StringFormatter.ToSentenceCase(subMenu.Description?.Trim());
                 subMenu.CreatedBy = userName;
                 subMenu.CreatedDate = subMenu.CreatedDate == default ? DateTime.Now : subMenu.CreatedDate;
 
