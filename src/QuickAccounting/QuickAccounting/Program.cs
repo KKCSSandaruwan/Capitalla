@@ -34,16 +34,19 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStat
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(
     builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient);
 
-//Security
-builder.Services.AddTransient<IEncryption, EncryptionService>();
-
+#region Setting
 //Corporate
 builder.Services.AddTransient<ICompanyDup, CompanyDupService>();
 
-// System User
-builder.Services.AddTransient<IUserRole, UserRoleService>();
-builder.Services.AddTransient<IUserProfile, UserProfileService>();
-builder.Services.AddTransient<IUserPrivilege, UserPrivilegeService>();
+// Currency
+//builder.Services.AddTransient<ICurrency, CurrencyService>();
+//builder.Services.AddTransient<ICurrencyExchangeRate, CurrencyExchangeRateService>();
+
+// Format
+//builder.Services.AddTransient<IFormatSetting, FormatSettingService>();
+
+// Inventory
+//builder.Services.AddTransient<IInventorySetting, InventorySettingService>();
 
 // Navigation
 builder.Services.AddTransient<IMenuGroup, MenuGroupService>();
@@ -51,9 +54,19 @@ builder.Services.AddTransient<IMainMenu, MainMenuService>();
 builder.Services.AddTransient<ISubMenu, SubMenuService>();
 builder.Services.AddTransient<INavigationMenu, NavigationMenuService>();
 
+// System User
+builder.Services.AddTransient<IUserRole, UserRoleService>();
+builder.Services.AddTransient<IUserProfile, UserProfileService>();
+builder.Services.AddTransient<IUserPrivilege, UserPrivilegeService>();
+
+//Security
+builder.Services.AddTransient<IEncryption, EncryptionService>();
+
+#endregion
+
+
 builder.Services.AddTransient<IBrand, BrandService>();
 builder.Services.AddTransient<ITax, TaxService>();
-builder.Services.AddTransient<ICurrency, CurrencyService>();
 builder.Services.AddTransient<IEmailSetting, EmailSettingService>();
 builder.Services.AddTransient<ICompany, CompanyService>();
 builder.Services.AddTransient<IInvoiceSetting, InvoiceService>();
