@@ -1,7 +1,6 @@
 ﻿@page "/"
 @layout LoginLayout
 @inject UserAccountService userAccountService
-@inject ICurrency _currency
 @inject ICompany _company
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider authStateProvider
@@ -10,84 +9,95 @@
 
 <PageTitle>Login</PageTitle>
 <!-- Main Wrapper -->
+<PreLoader></PreLoader>
+
 <div class="account-page container-fluid">
     <div class="main-wrapper">
 
+
+
         <div class="row min-vh-100">
-            <div class="col-md-6 login-left-img">
-                <div class="circle1"></div>
-                <div class="circle2"></div>
-                <div class="circle3"></div>
-                <div class="circle4"></div>
-                <div class="circle5"></div>
-                <div class="circle6"></div>
-                <div class="circle7"></div>
-                <div class="circle8"></div>
-                <div class="circle9"></div>
-                <div class="circle10"></div>
-                <div class="circle11"></div>
-                <div class="circle12"></div>
-            </div>
-             <div class="col-md-6">
-                 <center>
-                  <div class="login-content">                
 
-                    <div class="login-userset">
-                        
-                        <div class="login-logo">
-                            <img src="img/logo.png" alt="img" min-height="3em">
-                        </div>
-                        
 
-                        <div class="login-userheading mt-5 mb-3">
-                            <h4>ABC Company (Private) Limited</h4>
-                            <h6>Please login to your account</h6>
-                        </div>
-                        <div class="form-login">
-                            
-                            <input type="text" placeholder="" @bind="model.Email">
-                            
-                            <label>Email</label>
-                        </div>
 
-                        <div class="form-login">
-                            
-                             <input type="password" @bind="model.Password" placeholder="">
+            <div class="col-md-6">
+                <center>
+                    <div class="login-content">
 
-                             <label>Password</label>
-                        </div>
+                        <div class="login-userset">
 
-                        @*<div class="form-login">
-                            <div class="alreadyuser">
-                                <h4><a href="/" class="hover-a">Forgot Password?</a></h4>
+                            <div class="login-logo">
+                                <img class="login-logo" src="img/logo.png" alt="img" min-height="3em">
+
                             </div>
-                        </div>*@
-                        <div class="form-login">
-                            <a class="btn btn-login" @onclick="Authenticate">Sign In</a>
-                        </div>
-                        <footer class="footer col-md-12">        
-        <p>Copyright © 2024 <a href="http://pms.prima.com.lk " target="_blank">PMS</a>. All rights reserved. Version 2.24</p>
-    </footer>
-            </div>
-        </div>
-        </center>
+                            <label class="by-pms">by Prima Management Services (Private) Limited</label>
 
-      @*  <div class="account-content row">
-            <div class="col-6 col-md-6 m-1 login-left-img"></div>
-            <div class="login-wrapper col-6 col-md-6">
-                <div class="login-img">
-                    <img src="img/login-v2.jpg" alt="img">
-                </div>
-       
+                            <div class="login-userheading mt-4 mb-4">
+
+                                <h4 class="login-to-acc">Please login to your account</h4>
+                            </div>
+                            <div class="form-login">
+
+                                <input type="text" placeholder="" @bind="model.Email">
+
+                                <label class="logincred-labels">Email</label>
+                            </div>
+
+                            <div class="form-login">
+
+                                <input type="password" @bind="model.Password" placeholder="">
+
+                                <label class="logincred-labels">Password</label>
+                            </div>
+
+                            @*<div class="form-login">
+                            <div class="alreadyuser">
+                            <h4><a href="/" class="hover-a">Forgot Password?</a></h4>
+                            </div>
+                            </div>*@
+                            <div class="form-login">
+                                <a class="btn btn-login" @onclick="Authenticate">Sign In</a>
+                            </div>
+                            <footer class="footer">
+                                <p>Copyright © 2025 <a href="http://pms.prima.com.lk " target="_blank">PMS</a>. All rights reserved. Version 1.0</p>
+                            </footer>
+                        </div>
                     </div>
+                </center>
+
+                @*  <div class="account-content row">
+                <div class="col-6 col-md-6 m-1 login-left-img"></div>
+                <div class="login-wrapper col-6 col-md-6">
+                <div class="login-img">
+                <img src="img/login-v2.jpg" alt="img">
+                </div>
+
+                </div>
 
                 </div>*@
             </div>
+
+            <div class="col-md-6">
+
+                <img src="img/blue-dots.png" class="blue-dots-login animate_animated animate_bounce" />
+                <img src="img/blue-dots.png" class="blue-dots-login1 animate_animated animate_bounce" />
+                <img src="img/white-dots.png" class="white-dots-login animate_animated animate_bounce" />
+                <img src="img/white-dots.png" class="white-dots-login1 animate_animated animate_bounce" />
+
+
+            </div>
+
+
+
+
+
+
+
             @*<div class="col-md-4"></div>*@
         </div>
     </div>
 
-    
+
 </div>
 @code {
     UserMaster master = new UserMaster();
@@ -122,8 +132,8 @@
                     Email = userAccount.Email,
                     RoleName = userAccount.RoleName
                 });
-                var varCurrency = await _currency.GetCurrencyView(1);
-            PublicVariables._Symbol = varCurrency.CurrencySymbol;
+            // var varCurrency = await _currency.GetCurrencyView(1);
+            // PublicVariables._Symbol = varCurrency.CurrencySymbol;
             navManager.NavigateTo("/app/dashboard", true);
         }
     }
