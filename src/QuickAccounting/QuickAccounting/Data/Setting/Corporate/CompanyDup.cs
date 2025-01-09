@@ -85,14 +85,17 @@ namespace QuickAccounting.Data.Setting.Corporate
         [Display(Name = "Logo")]
         public string? LogoPath { get; set; }
 
+        [Display(Name = "Mother Company")]
+        public bool IsMotherCompany { get; set; } = false;
+
         [Required(ErrorMessage = "Created by is required.")]
         [StringLength(50, ErrorMessage = "Created by name cannot exceed 50 characters.")]
         [Display(Name = "Created By")]
-        public string CreatedBy { get; set; } = "System";
+        public string CreatedBy { get; set; }
 
         [Required(ErrorMessage = "Created date is required.")]
         [Display(Name = "Created Date")]
-        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public DateTime CreatedDate { get; set; }
 
         [StringLength(50, ErrorMessage = "Modified by name cannot exceed 50 characters.")]
         [Display(Name = "Modified By")]
