@@ -5,6 +5,7 @@ using QuickAccounting.Data.BudgetModel;
 using QuickAccounting.Data.HrPayroll;
 using QuickAccounting.Data.Inventory;
 using QuickAccounting.Data.Setting;
+using QuickAccounting.Data.Setting.Corporate;
 using QuickAccounting.Data.Setting.Navigation;
 using QuickAccounting.Data.Setting.SystemUser;
 
@@ -30,6 +31,9 @@ namespace QuickAccounting.Data
         public DbSet<UserMaster> UserMaster { get; set; }
         public DbSet<Privilege> Privilege { get; set; }
 
+        // Corporate
+        public DbSet<CompanyDup> CompanyDup { get; set; }
+
         // Navigation
         public DbSet<MenuGroup> MenuGroup { get; set; }
         public DbSet<MainMenu> MainMenu { get; set; }
@@ -39,7 +43,6 @@ namespace QuickAccounting.Data
         public DbSet<AccountGroup> AccountGroup { get; set; }
         public DbSet<ProductGroup> ProductGroup { get; set; }
         public DbSet<AccountLedger> AccountLedger { get; set; }
-        public DbSet<Currency> Currency { get; set; }
         public DbSet<ExpenseMaster> ExpenseMaster { get; set; }
         public DbSet<ExpensesDetails> ExpensesDetails { get; set; }
         public DbSet<FinancialYear> FinancialYear { get; set; }
