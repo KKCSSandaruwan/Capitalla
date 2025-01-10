@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using QuickAccounting.Data.Setting.Corporate;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace QuickAccounting.Data.Setting.SystemUser
@@ -11,11 +12,13 @@ namespace QuickAccounting.Data.Setting.SystemUser
         public int UserId { get; set; }
 
         [Required(ErrorMessage = "User Role is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "The selected user role ID is invalid.")]
         [ForeignKey("UserRole")]
         [Display(Name = "User Role")]
         public int UserRoleId { get; set; }
 
         [Required(ErrorMessage = "Company is required.")]
+        [Range(1, int.MaxValue, ErrorMessage = "The selected company ID is invalid.")]
         [ForeignKey("Company")]
         [Display(Name = "Company")]
         public int CompanyId { get; set; }
@@ -34,12 +37,17 @@ namespace QuickAccounting.Data.Setting.SystemUser
         [Display(Name = "Username")]
         public string UserName { get; set; }
 
+        [NotMapped]
         [Required(ErrorMessage = "Password is required.")]
         [StringLength(255, ErrorMessage = "Password cannot exceed 255 characters.")]
-        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Password must be at least 8 characters long, and contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
         [Display(Name = "Password")]
-        public string Password { get; set; }
+        public string PlainPassword { get; set; }
 
+        [Display(Name = "Encrypted Password")]
+        public string EncryptedPassword { get; set; }
+
+        [Required(ErrorMessage = "Email address is required.")]
         [StringLength(150, ErrorMessage = "Email cannot exceed 150 characters.")]
         [EmailAddress(ErrorMessage = "Invalid email address format.")]
         [Display(Name = "Email Address")]
@@ -54,11 +62,11 @@ namespace QuickAccounting.Data.Setting.SystemUser
         [Display(Name = "Avatar")]
         public string? AvatarPath { get; set; }
 
-        [Required(ErrorMessage = "Verified status is required.")]
+        [Required(ErrorMessage = "Please confirm the verified status.")]
         [Display(Name = "Verified")]
         public bool Verified { get; set; }
 
-        [Required(ErrorMessage = "Blocked status is required.")]
+        [Required(ErrorMessage = "Please indicate if the user is blocked.")]
         [Display(Name = "Blocked")]
         public bool Blocked { get; set; }
 
@@ -83,6 +91,7 @@ namespace QuickAccounting.Data.Setting.SystemUser
         [Required(ErrorMessage = "Active status is required.")]
         [Display(Name = "Active")]
         public bool Active { get; set; } = true;
+
 
         // Navigation properties
         public virtual UserRole? UserRole { get; set; }
