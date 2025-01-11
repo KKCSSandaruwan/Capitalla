@@ -21,13 +21,6 @@ namespace QuickAccounting.Repository.Interface.Navigation
         Task<List<SubMenu>> GetActiveAsync();
 
         /// <summary>
-        /// Fetches a list of sub menus that are not currently assigned to any navigation menu.
-        /// </summary>
-        /// <returns>A list of unassigned sub menus.</returns>
-        /// <exception cref="Exception">Thrown when there is an error fetching the unassigned sub menus.</exception>
-        Task<List<SubMenu>> GetUnassignedAsync();
-
-        /// <summary>
         /// Fetches a sub menu object for the specified sub menu ID.
         /// </summary>
         /// <param name="subMenuId">The ID of the sub menu to retrieve.</param>
