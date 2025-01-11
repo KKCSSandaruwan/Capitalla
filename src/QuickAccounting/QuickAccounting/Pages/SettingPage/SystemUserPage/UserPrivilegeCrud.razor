@@ -1,0 +1,681 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject IUserRole UserRoleService
+@inject INavigationMenu NavigationMenuService
+@inject IUserPrivilege UserPrivilegeService
+@inject ISnackbar Snackbar
+
+<!-- Form Row 1: User Role -->
+<div class="row ml-2 mr-2">
+    <div class="col-lg-4 col-sm-6 col-12">
+        <RadzenLabel Text="User Role *" Component="ddlUserRole" />
+        <RadzenDropDown Name="ddlUserRole" Class="w-100" AllowFiltering="true" AllowVirtualization="true" AllowClear="@(UserRoleId != 0)"
+                        Data="@UserRoles" TItem="UserRole" @bind-Value="@UserRoleId" ValueProperty="UserRoleId" TextProperty="UserRoleName"
+                        Disabled="@(!HasLoadedUserRoles || UserRoles == null || !UserRoles.Any())"
+                        Placeholder="@(!HasLoadedUserRoles ? "Loading user roles..." : (UserRoles == null || !UserRoles.Any()) ? "No user roles available!" : "Choose a user role")"
+                        Change="@((args) => OnUserRoleSelectedAsync((int)args))" />
+    </div>
+</div>
+
+<!-- Form Row 2: Menu Group, Main Menu, Sub Menu -->
+<div class="row mt-2 ml-2 mb-2 mr-2">
+    <div class="col-lg-4 col-sm-6 col-12">
+        <RadzenLabel Text="Menu Group" Component="ddlMenuGroup" />
+        <RadzenDropDown Name="ddlMenuGroup" Class="w-100" AllowFiltering="true" AllowVirtualization="true" AllowClear="@(MenuGroupId != 0)"
+                        Data="@MenuGroups" TItem="MenuGroup" @bind-Value="@MenuGroupId" ValueProperty="MenuGroupId" TextProperty="MenuGroupName"
+                        Disabled="@(!HasLoadedMenuGroups || MenuGroups == null || !MenuGroups.Any())"
+                        Placeholder="@(!HasLoadedMenuGroups ? "Loading menu groups..." : (MenuGroups == null || !MenuGroups.Any()) ? "No menu groups available!" : "Choose a menu group")"
+                        Change="@((args) => OnMenuGroupSelectedAsync((int)args))" />
+    </div>
+
+    <div class="col-lg-4 col-sm-6 col-12">
+        <RadzenLabel Text="Main Menu" Component="ddlMainMenu" />
+        <RadzenDropDown Name="ddlMainMenu" Class="w-100" AllowFiltering="true" AllowVirtualization="true" AllowClear="@(MainMenuId != 0)"
+                        Data="@MainMenus" TItem="MainMenu" @bind-Value="@MainMenuId" ValueProperty="MainMenuId" TextProperty="MainMenuName"
+                        Disabled="@(!HasLoadedMainMenus || MainMenus == null || !MainMenus.Any())"
+                        Placeholder="@(!HasLoadedMainMenus ? "Loading main menus..." : (MainMenus == null || !MainMenus.Any()) ? "No main menus available!" : "Choose a main menu")"
+                        Change="@((args) => OnMainMenuSelectedAsync((int)args))" />
+    </div>
+
+    <div class="col-lg-4 col-sm-6 col-12">
+        <RadzenLabel Text="Sub Menu" Component="ddlSubMenu" />
+        <RadzenDropDown Name="ddlSubMenu" Class="w-100" AllowFiltering="true" AllowVirtualization="true" AllowClear="@(SubMenuId != 0)"
+                        Data="@SubMenus" TItem="SubMenu" @bind-Value="@SubMenuId" ValueProperty="SubMenuId" TextProperty="SubMenuName"
+                        Disabled="@(!HasLoadedSubMenus || SubMenus == null || !SubMenus.Any())"
+                        Placeholder="@(!HasLoadedSubMenus ? "Loading sub menus..." : (SubMenus == null || !SubMenus.Any()) ? "No sub menus available!" : "Choose a sub menu")"
+                        Change="@((args) => OnSubMenuSelectedAsync((int)args))" />
+    </div>
+</div>
+
+<!-- Form Row 3: Grid View User Privileges -->
+<div class="row mt-3">
+    <div class="grid-container">
+        <div class="grid-toolbar">
+            <!-- Grid Refresh Button: Refreshes the grid data -->
+            <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Text="Refresh"
+                          Disabled="@(!HasLoadedUserPrivileges)"
+                          IsBusy="@(!HasLoadedUserPrivileges)" BusyText="Refrehing..."
+                          Click="onGridRefresh" />
+            <!-- Grid Expand Button: Expands all group rows in the grid -->
+            <RadzenButton Icon="expand_all" ButtonStyle="ButtonStyle.Light" Text="Expand"
+                          Disabled="@(AllGroupsExpanded == true)"
+                          Click="@(args=> AllGroupsExpanded = true)" />
+            <!-- Grid Collapse Button: Collapses all group rows in the grid -->
+            <RadzenButton Icon="collapse_all" ButtonStyle="ButtonStyle.Light" Text="Collapse"
+                          Disabled="@(AllGroupsExpanded == false)"
+                          Click="@(args=> AllGroupsExpanded = false)" />
+            <!-- Grid Export Button: Exports grid data to an XLS file -->
+            <RadzenButton Icon="table_view" ButtonStyle="ButtonStyle.Light" Text="Export XLS"
+                          Disabled="true"
+                          Click="OnGridExportToXLS" />
+        </div>
+
+        <!-- Data Grid Component: Displays the user privileges data in a table format -->
+        <RadzenDataGrid @ref="GridUserPrivileges" Render="@OnRender" Data="@UserPrivileges" TItem="UserPrivilegeView" IsLoading="@(!HasLoadedUserPrivileges)"
+                        @bind-AllGroupsExpanded="@AllGroupsExpanded" AllowGrouping="true" HideGroupedColumn="true" AllowSorting="true" AllowAlternatingRows="false"
+                        AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[] {10, 20, 50, 100})"
+                        PagerAlwaysVisible="true" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                        AllowFiltering="true" FilterMode="FilterMode.SimpleWithMenu" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                        LogicalFilterOperator="LogicalFilterOperator.And" SelectionMode="DataGridSelectionMode.Single" EditMode="Radzen.DataGridEditMode.Single"
+                        class="grid-scrollable grid-centered-header" style="height: 560px;">
+
+            <!-- Column Definitions -->
+            <Columns>
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="UserPrivilegeId" Title="User Privilege ID" Sortable="true" Visible="false" />
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="MenuGroupName" Title="Menu Group" Width="20%" Visible="false" />
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="MainMenuName" Title="Main Menu" Width="20%" Visible="false" />
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="SubMenuName" Title="Sub Menu" Groupable="false" Width="20%" />
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="CanView" Title="Can View" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px">
+                    <Template Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanView" Disabled="true" />
+                    </Template>
+                    <EditTemplate Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanView" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="CanAdd" Title="Can Add" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px">
+                    <Template Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanAdd" Disabled="true" />
+                    </Template>
+                    <EditTemplate Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanAdd" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="CanEdit" Title="Can Edit" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px">
+                    <Template Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanEdit" Disabled="true" />
+                    </Template>
+                    <EditTemplate Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanEdit" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="CanDelete" Title="Can Delete" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px">
+                    <Template Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanDelete" Disabled="true" />
+                    </Template>
+                    <EditTemplate Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.CanDelete" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Property="Active" Title="Active" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px">
+                    <Template Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.Active" Disabled="true" />
+                    </Template>
+                    <EditTemplate Context="userPrivilege">
+                        <RadzenCheckBox @bind-Value="userPrivilege.Active" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+                <RadzenDataGridColumn TItem="UserPrivilegeView" Filterable="false" Sortable="false" Groupable="false" TextAlign="TextAlign.Center" Title="Action" Width="80px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                    <Template Context="userPrivilege">
+                        <!-- Grid Edit Button: Triggers edit mode -->
+                        <RadzenButton Icon="edit" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Edit"
+                                      Click="@(args => OnGridEditRow(userPrivilege))" @onclick:stopPropagation="true" />
+                        <!-- Grid Status Toggle Button: Toggles active/inactive status -->
+                        <RadzenButton Icon="sync_alt" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Status Toggle"
+                                      Click="@(args => OnGridToggleStatus(userPrivilege))" @onclick:stopPropagation="true" />
+                    </Template>
+                    <EditTemplate Context="userPrivilege">
+                        <!-- Grid Save Button: Saves the edited row -->
+                        <RadzenButton Icon="check" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Save"
+                                      Click="@(args => OnGridSaveRow(userPrivilege))" />
+                        <!-- Grid Cancel Button: Cancels the editing of the row -->
+                        <RadzenButton Icon="close" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Cancel"
+                                      Click="@(args => OnGridCancelEdit(userPrivilege))" />
+                    </EditTemplate>
+                </RadzenDataGridColumn>
+            </Columns>
+
+            <!-- Empty Template: Displays when no data is available -->
+            <EmptyTemplate>
+                <div class="grid-empty">
+                    No records available!
+                </div>
+            </EmptyTemplate>
+        </RadzenDataGrid>
+    </div>
+</div>
+
+@code {
+    #region Properties
+    private bool HasLoadedUserRoles { get; set; } = false;
+    private bool HasLoadedMenuGroups { get; set; } = false;
+    private bool HasLoadedMainMenus { get; set; } = false;
+    private bool HasLoadedSubMenus { get; set; } = false;
+    private bool HasLoadedUserPrivileges { get; set; } = false;
+    private bool? AllGroupsExpanded { get; set; } = true;
+    private int UserRoleId { get; set; } = 0;
+    private int MenuGroupId { get; set; } = 0;
+    private int MainMenuId { get; set; } = 0;
+    private int SubMenuId { get; set; } = 0;
+
+    private RadzenDataGrid<UserPrivilegeView>? GridUserPrivileges { get; set; }
+    private UserPrivilegeView? InitialUserPrivilege { get; set; }
+
+    private IList<UserRole>? UserRoles { get; set; }
+    private IList<MenuGroup>? MenuGroups { get; set; }
+    private IList<MainMenu>? MainMenus { get; set; }
+    private IList<SubMenu>? SubMenus { get; set; }
+    private IList<UserPrivilegeView>? UserPrivileges { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads all necessary data for component initialization.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load user roles data
+            await LoadUserRolesAsync();
+
+            // Load menu groups data
+            await LoadMenuGroupsAsync();
+
+            // Load main menus data
+            await LoadMainMenusAsync();
+
+            // Load sub menus data
+            await LoadSubMenusAsync();
+
+            // Load user privileges data
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Handles the selection of a user role, updates the UserRoleId, and retrieves the corresponding user privileges.
+    /// </summary>
+    /// <param name="selectedUserRoleId">The ID of the selected user role.</param>
+    private async Task OnUserRoleSelectedAsync(int selectedUserRoleId)
+    {
+        try
+        {
+            // Update the selected UserRoleId
+            UserRoleId = selectedUserRoleId;
+
+            // Load user privileges for the selected role and specified menu group, main menu and sub menu
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while fetching user privileges for role ID {selectedUserRoleId}: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while loading user privileges. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the selection of a menu group, updates the MenuGroupId, loads the corresponding main menus, and retrieves the user privileges.
+    /// </summary>
+    /// <param name="selectedMenuGroupId">The ID of the selected menu group.</param>
+    private async Task OnMenuGroupSelectedAsync(int selectedMenuGroupId)
+    {
+        try
+        {
+            // Update the selected MenuGroupId
+            MenuGroupId = selectedMenuGroupId;
+
+            // Load the main menus for the selected menu group
+            await LoadMainMenusAsync(MenuGroupId);
+
+            // Load user privileges for the selected role and specified menu group, main menu and sub menu
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while fetching user privileges for menu group ID {selectedMenuGroupId}: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while loading user privileges. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the selection of a main menu, updates the MainMenuId, loads the corresponding sub menus, and retrieves the user privileges.
+    /// </summary>
+    /// <param name="selectedMainMenuId">The ID of the selected main menu.</param>
+    private async Task OnMainMenuSelectedAsync(int selectedMainMenuId)
+    {
+        try
+        {
+            // Update the selected MainMenuId
+            MainMenuId = selectedMainMenuId;
+
+            // Load the sub menus for the selected main menu
+            await LoadSubMenusAsync(MainMenuId);
+
+            // Load user privileges for the selected role and specified menu group, main menu and sub menu
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while fetching user privileges for main menu ID {selectedMainMenuId}: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while loading user privileges. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the selection of a sub menu, updates the SubMenuId, and retrieves the user privileges.
+    /// </summary>
+    /// <param name="selectedSubMenuId">The ID of the selected sub menu.</param>
+    private async Task OnSubMenuSelectedAsync(int selectedSubMenuId)
+    {
+        try
+        {
+            // Update the selected SubMenuId
+            SubMenuId = selectedSubMenuId;
+
+            // Load user privileges for the selected role and specified menu group, main menu and sub menu
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while fetching user privileges for sub menu ID {selectedSubMenuId}: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while loading user privileges. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the rendering event of the DataGrid. Adds default grouping, when the grid is rendered for the first time.
+    /// </summary>
+    /// <param name="args">The rendering event arguments for the DataGrid.</param>
+    void OnRender(DataGridRenderEventArgs<UserPrivilegeView> args)
+    {
+        try
+        {
+            if (args.FirstRender)
+            {
+                // Add default grouping
+                args.Grid.Groups.Add(new GroupDescriptor { Property = "MenuGroupName", SortOrder = SortOrder.Ascending, Title = "MENU GROUP" });
+                args.Grid.Groups.Add(new GroupDescriptor { Property = "MainMenuName", SortOrder = SortOrder.Ascending, Title = "MAIN MENU" });
+
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred during grid rendering: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred during grid rendering. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Refreshes the grid by reloading the user privileges data.
+    /// </summary>
+    private async Task onGridRefresh()
+    {
+        try
+        {
+            // Load user privileges data
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user privileges: {ex.Message}");
+            Snackbar.Add("An error occurred while loading user privileges. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Exports the grid data to an Excel file.
+    /// </summary>
+    private void OnGridExportToXLS()
+    {
+        try
+        {
+            // Pending Task: Logic to export the grid data to an Excel file.
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine($"Unauthorized Access Exception: {ex.Message}");
+            Snackbar.Add("You do not have permission to write the export file. Please check your access rights.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred during the export process. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Edits an existing row in the grid by populating it with the selected user privilege's details.
+    /// </summary>
+    /// <param name="userPrivilegeView">The UserPrivilegeView object containing the data to be edited.</param>
+    private async Task OnGridEditRow(UserPrivilegeView userPrivilegeView)
+    {
+        try
+        {
+            // Store the original user privilege data to revert changes if the user cancels the edit
+            InitialUserPrivilege = new UserPrivilegeView
+                {
+                    UserPrivilegeId = userPrivilegeView.UserPrivilegeId,
+                    UserRoleId = userPrivilegeView.UserRoleId,
+                    NavigationMenuId = userPrivilegeView.NavigationMenuId,
+                    MenuGroupName = userPrivilegeView.MenuGroupName,
+                    MainMenuName = userPrivilegeView.MainMenuName,
+                    SubMenuName = userPrivilegeView.SubMenuName,
+                    CanView = userPrivilegeView.CanView,
+                    CanAdd = userPrivilegeView.CanAdd,
+                    CanEdit = userPrivilegeView.CanEdit,
+                    CanDelete = userPrivilegeView.CanDelete,
+                    CreatedBy = userPrivilegeView.CreatedBy,
+                    CreatedDate = userPrivilegeView.CreatedDate,
+                    ModifiedBy = userPrivilegeView.ModifiedBy,
+                    ModifiedDate = userPrivilegeView.ModifiedDate,
+                    Active = userPrivilegeView.Active,
+                };
+
+            // Open the selected row in the RadzenDataGrid for editing
+            await GridUserPrivileges.EditRow(userPrivilegeView);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while editing a row: {ex.Message}");
+            Snackbar.Add("Failed to edit a row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Updates or inserts the user privilege data to the database and handles possible exceptions.
+    /// </summary>
+    /// <param name="userPrivilegeView">The UserPrivilegeView object containing the data to be saved.</param>
+    private async Task OnGridSaveRow(UserPrivilegeView userPrivilegeView)
+    {
+        try
+        {
+            // Map the UserPrivilegeView to the UserPrivilege model
+            UserPrivilege userPrivilege = new UserPrivilege
+                {
+                    UserPrivilegeId = userPrivilegeView.UserPrivilegeId,
+                    UserRoleId = userPrivilegeView.UserRoleId,
+                    NavigationMenuId = userPrivilegeView.NavigationMenuId,
+                    CanView = userPrivilegeView.CanView ?? false,
+                    CanAdd = userPrivilegeView.CanAdd ?? false,
+                    CanEdit = userPrivilegeView.CanEdit ?? false,
+                    CanDelete = userPrivilegeView.CanDelete ?? false,
+                    Active = userPrivilegeView.Active ?? false
+                };
+
+            // Insert or update the UserPrivilege data in the database(handles validations and throws exceptions)
+            await UserPrivilegeService.UpsertAsync(userPrivilege);
+
+            // Exit the edit mode and update the grid with the saved data
+            await GridUserPrivileges.UpdateRow(userPrivilegeView);
+
+            // reload the user privileges
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+
+            // Notify the user of success
+            Snackbar.Add("User privilege menu saved successfully.", Severity.Success);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: User Privilege data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving UserPrivilege ID {userPrivilegeView?.UserPrivilegeId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.WriteLine($"Invalid operation while saving UserPrivilege ID {userPrivilegeView?.UserPrivilegeId}: {ex.Message}");
+            Snackbar.Add($"Operation error: {ex.Message}. Please review your input and try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving UserPrivilege ID {userPrivilegeView?.UserPrivilegeId}: {ex.Message}");
+            Snackbar.Add("Failed to save the user privilege. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Toggles the active status of the user privilege, updates the status in the database, and reloads the user privileges.
+    /// </summary>
+    /// <param name="userPrivilegeView"> object whose active status is to be toggled.</param>
+    private async Task OnGridToggleStatus(UserPrivilegeView userPrivilegeView)
+    {
+        try
+        {
+            // Map the UserPrivilegeView to the UserPrivilege model
+            UserPrivilege userPrivilege = new UserPrivilege
+                {
+                    UserPrivilegeId = userPrivilegeView.UserPrivilegeId,
+                    UserRoleId = userPrivilegeView.UserRoleId,
+                    NavigationMenuId = userPrivilegeView.NavigationMenuId,
+                    CanView = userPrivilegeView.CanView ?? false,
+                    CanAdd = userPrivilegeView.CanAdd ?? false,
+                    CanEdit = userPrivilegeView.CanEdit ?? false,
+                    CanDelete = userPrivilegeView.CanDelete ?? false,
+                    Active = userPrivilegeView.Active ?? false
+                };
+
+            // Toggle the active status data in the database(handles validations and throws exceptions)
+            await UserPrivilegeService.ToggleActiveAsync(userPrivilege);
+
+            // reload the user privileges
+            await LoadUserPrivilegesAsync(UserRoleId, MenuGroupId, MainMenuId, SubMenuId);
+
+            // Notify the user of success
+            Snackbar.Add("Active status updated successfully.", Severity.Success);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: User privilege data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving UserPrivilege ID {userPrivilegeView?.UserPrivilegeId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while toggling active status for UserPrivilege ID {userPrivilegeView?.UserPrivilegeId}: {ex.Message}");
+            Snackbar.Add("Failed to update the active status of the user privilege. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Cancels the edit operation on the user privilege and reverts any changes made to the object.
+    /// </summary>
+    /// <param name="userPrivilegeView">The UserPrivilegeView object that was being edited.</param>
+    private void OnGridCancelEdit(UserPrivilegeView userPrivilegeView)
+    {
+        try
+        {
+            // Check if there is an initial state to revert to
+            if (InitialUserPrivilege != null)
+            {
+                // Revert the edited object properties to their original state from UserPrivilegeView
+                userPrivilegeView.UserPrivilegeId = InitialUserPrivilege.UserPrivilegeId;
+                userPrivilegeView.UserRoleId = InitialUserPrivilege.UserRoleId;
+                userPrivilegeView.NavigationMenuId = InitialUserPrivilege.NavigationMenuId;
+                userPrivilegeView.MenuGroupName = InitialUserPrivilege.MenuGroupName;
+                userPrivilegeView.MainMenuName = InitialUserPrivilege.MainMenuName;
+                userPrivilegeView.SubMenuName = InitialUserPrivilege.SubMenuName;
+                userPrivilegeView.CanView = InitialUserPrivilege.CanView;
+                userPrivilegeView.CanAdd = InitialUserPrivilege.CanAdd;
+                userPrivilegeView.CanEdit = InitialUserPrivilege.CanEdit;
+                userPrivilegeView.CanDelete = InitialUserPrivilege.CanDelete;
+                userPrivilegeView.CreatedBy = InitialUserPrivilege.CreatedBy;
+                userPrivilegeView.CreatedDate = InitialUserPrivilege.CreatedDate;
+                userPrivilegeView.ModifiedBy = InitialUserPrivilege.ModifiedBy;
+                userPrivilegeView.ModifiedDate = InitialUserPrivilege.ModifiedDate;
+                userPrivilegeView.Active = InitialUserPrivilege.Active;
+            }
+
+            // Cancel the edit mode for the grid row
+            GridUserPrivileges.CancelEditRow(userPrivilegeView);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred while canceling the edit: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while canceling the edit. Please try again.", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the list of active user roles.
+    /// </summary>
+    private async Task LoadUserRolesAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedUserRoles = false;
+
+            // Load the list of active user roles
+            UserRoles = await UserRoleService.GetActiveAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading active user roles: {ex.Message}");
+            throw new Exception("Failed to load active user roles. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedUserRoles = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of active menu groups.
+    /// </summary>
+    private async Task LoadMenuGroupsAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedMenuGroups = false;
+
+            // Load the list of active menu groups
+            MenuGroups = await NavigationMenuService.GetActiveMenuGroupsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading active menu groups: {ex.Message}");
+            throw new Exception("Failed to load active menu groups. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedMenuGroups = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of active main menus. associated with the specified menu group.
+    /// </summary>
+    /// <param name="menuGroupId">The ID of the menu group to load main menus for. Defaults to 0 if not provided.</param>
+    private async Task LoadMainMenusAsync(int menuGroupId = 0)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedMainMenus = false;
+
+            // Load the list of active main menus
+            MainMenus = await NavigationMenuService.GetActiveMainMenusAsync(menuGroupId);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading active main menus: {ex.Message}");
+            throw new Exception("Failed to load active main menus. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedMainMenus = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of active sub menus associated with the specified main menu.
+    /// </summary>
+    /// <param name="mainMenuId">The ID of the main menu to load sub menus for. Defaults to 0 if not provided.</param>
+    private async Task LoadSubMenusAsync(int mainMenuId = 0)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedSubMenus = false;
+
+            // Load the list of active main menus
+            SubMenus = await NavigationMenuService.GetActiveSubMenusAsync(mainMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading active sub menus: {ex.Message}");
+            throw new Exception("Failed to load active sub menus. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedSubMenus = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of user privileges based on the specified user role and menu filters.
+    /// </summary>
+    /// <param name="userRoleId">The ID of the user role to load privileges for. Defaults to 0 if not provided.</param>
+    /// <param name="menuGroupId">The ID of the menu group to filter by. Defaults to 0 if not provided.</param>
+    /// <param name="mainMenuId">The ID of the main menu to filter by. Defaults to 0 if not provided.</param>
+    /// <param name="subMenuId">The ID of the sub menu to filter by. Defaults to 0 if not provided.</param>
+    private async Task LoadUserPrivilegesAsync(int userRoleId = 0, int menuGroupId = 0, int mainMenuId = 0, int subMenuId = 0)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedUserPrivileges = false;
+
+            // Load the list of user privileges based on the specified parameters
+            UserPrivileges = await UserPrivilegeService.GetRoleMappedNavigationAsync(userRoleId, menuGroupId, mainMenuId, subMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading user privileges: {ex.Message}");
+            throw new Exception("Failed to load user privileges. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedUserPrivileges = true;
+        }
+    }
+
+    #endregion
+}
