@@ -2,7 +2,7 @@
 
 @inject IUserProfile UserProfileService
 @inject IUserRole UserRoleService
-@inject ICompany CompanyService
+@inject ICompanyDup CompanyService
 @inject ISnackbar Snackbar
 
 @if (!HasLoadedUserProfile || !HasLoadedUserRoles || !HasLoadedCompanies)
@@ -222,7 +222,7 @@ else
     private UserProfile UserProfile { get; set; } = new UserProfile();
 
     private IList<UserRole>? UserRoles { get; set; }
-    private IList<Company>? Companies { get; set; }
+    private IList<CompanyDup>? Companies { get; set; }
     private IList<CrudDialogButton> Buttons { get; set; } = new List<CrudDialogButton>();
 
     #endregion
@@ -271,9 +271,6 @@ else
             // Upsert the user profile (insert or update)
             await UserProfileService.UpsertAsync(UserProfile);
 
-            // Update the action flag after the operation is complete
-            IsActionInProgress = false;
-
             // Notify the user of success
             Snackbar.Add("User profile saved successfully.", Severity.Success);
 
@@ -294,6 +291,11 @@ else
         {
             Console.WriteLine($"An error occurred while saving User profile ID {UserProfile.UserId}: {ex.Message}");
             Snackbar.Add("Failed to save the user profile. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            // Update the action flag after the operation is complete
+            IsActionInProgress = false;
         }
     }
 
