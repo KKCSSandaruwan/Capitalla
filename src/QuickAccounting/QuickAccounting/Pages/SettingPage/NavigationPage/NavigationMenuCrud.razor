@@ -1,0 +1,611 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject INavigationMenu NavigationMenuService
+@inject IMenuGroup MenuGroupService
+@inject ISnackbar Snackbar
+
+<div class="row">
+    <!-- Data Grid Component -->
+    <div class="col-12 col-md-8">
+        <div class="grid-container">
+            <div class="grid-toolbar">
+                <!-- Grid Refresh Button: Refreshes the grid when clicked -->
+                <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Text="Refresh"
+                              Disabled="@(!HasLoadedNavigationMenus)"
+                              IsBusy="@(!HasLoadedNavigationMenus)" BusyText="Refrehing..."
+                              Click="onGridRefresh" />
+                <!-- Grid Add Button: Allows adding a new row -->
+                <RadzenButton Icon="add" ButtonStyle="ButtonStyle.Light" Text="Add"
+                              Disabled="@(NewNavigationMenu != null)"
+                              Click="onGridAddRow" />
+                <!-- Grid Export Button: Exports grid data to an XLS file -->
+                <RadzenButton Icon="table_view" ButtonStyle="ButtonStyle.Light" Text="Export XLS"
+                              Disabled="true"
+                              Click="OnGridExportToXLS" />
+            </div>
+
+            <!-- Data Grid Component: Displays the Navigation Menus data in a table format -->
+            <RadzenDataGrid @ref="GridNavigationMenus" Data="@NavigationMenus" TItem="NavigationMenu" IsLoading="@(!HasLoadedNavigationMenus)"
+                            AllowAlternatingRows="false" AllowSorting="true" AllowGrouping="true" HideGroupedColumn="true"
+                            AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[] {10, 20, 50, 100})"
+                            PagerAlwaysVisible="true" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                            AllowFiltering="true" FilterMode="FilterMode.SimpleWithMenu" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                            LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" EditMode="Radzen.DataGridEditMode.Single"
+                            class="grid-scrollable grid-centered-header">
+
+                <!-- Column Definitions -->
+                <Columns>
+                    <RadzenDataGridColumn TItem="NavigationMenu" Property="NavigationMenuId" Title="Navigation Menu ID" Sortable="true" Visible="false" />
+                    <RadzenDataGridColumn TItem="NavigationMenu" Property="MenuGroup.MenuGroupName" Title="Menu Group" Width="30%">
+                        <EditTemplate Context="navMenu">
+                            <RadzenDropDown Name="ddlMenuGroup" Class="w-100" AllowFiltering="true" AllowVirtualization="true" AllowClear="@(navMenu.MenuGroupId != 0)"
+                                            @bind-Value="navMenu.MenuGroupId" Data="@MenuGroups" TItem="MenuGroup" ValueProperty="MenuGroupId" TextProperty="MenuGroupName"
+                                            Disabled="@(!HasLoadedMenuGroups || MenuGroups == null || !MenuGroups.Any())"
+                                            Placeholder="@(!HasLoadedMenuGroups ? "Loading..." : (MenuGroups == null || !MenuGroups.Any()) ? "No menu groups available!" : "Choose a menu group")"
+                                            Change="@((args) => OnMenuGroupSelectedAsync((int)args))" />
+                            <RadzenDataAnnotationValidator Component="ddlMenuGroup" Popup=true />
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="NavigationMenu" Property="MainMenu.MainMenuName" Title="Main Menu" Width="35%">
+                        <EditTemplate Context="navMenu">
+                            <RadzenDropDown Name="ddlMainMenu" Class="w-100" AllowFiltering="true" AllowVirtualization="true" AllowClear="@(navMenu.MainMenuId != 0)"
+                                            @bind-Value="navMenu.MainMenuId" Data="@MainMenus" TItem="MainMenu" ValueProperty="MainMenuId" TextProperty="MainMenuName"
+                                            Disabled="@(navMenu.MenuGroupId == 0 || !HasLoadedMainMenus || MainMenus == null || !MainMenus.Any())"
+                                            Placeholder="@(navMenu.MenuGroupId == 0 ? "First select menu group" : (!HasLoadedMainMenus ? "Loading..." : (MainMenus == null || !MainMenus.Any()) ? "No main menus available!" : "Choose a main menu"))" />
+                            <RadzenDataAnnotationValidator Component="ddlMainMenu" Popup=true />
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="NavigationMenu" Property="SubMenu.SubMenuName" Groupable="false" Title="Sub Menu" Width="35%">
+                        <EditTemplate Context="navMenu">
+                            <RadzenDropDown Name="ddlSubMenu" Class="w-100" AllowFiltering="true" AllowVirtualization="true" AllowClear="@(navMenu.SubMenuId != 0)"
+                                            @bind-Value="navMenu.SubMenuId" Data="@SubMenus" TItem="SubMenu" ValueProperty="SubMenuId" TextProperty="SubMenuName"
+                                            Disabled="@(navMenu.MainMenuId == 0 || !HasLoadedSubMenus || SubMenus == null || !SubMenus.Any())"
+                                            Placeholder="@(navMenu.MainMenuId == 0 ? "First select main menu" : (!HasLoadedSubMenus ? "Loading..." : (SubMenus == null || !SubMenus.Any()) ? "No sub menus available!" : "Choose a sub menu"))" />
+                            <RadzenDataAnnotationValidator Component="ddlSubMenu" Popup=true />
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="NavigationMenu" Property="Active" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Title="Active" Width="100px">
+                        <Template Context="navMenu">
+                            <RadzenCheckBox @bind-Value="navMenu.Active" Disabled="true" />
+                        </Template>
+                        <EditTemplate Context="navMenu">
+                            <RadzenCheckBox @bind-Value="navMenu.Active" />
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                    <RadzenDataGridColumn TItem="NavigationMenu" Filterable="false" Groupable="false" Sortable="false" TextAlign="TextAlign.Center" Title="Action" Width="80px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                        <Template Context="navMenu">
+                            <!-- Grid Edit Button: Triggers edit mode -->
+                            <RadzenButton Icon="edit" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Edit"
+                                          Click="@(args => OnGridEditRow(navMenu))" @onclick:stopPropagation="true" />
+                            <!-- Grid Status Toggle Button: Toggles active/inactive status -->
+                            <RadzenButton Icon="sync_alt" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Status Toggle"
+                                          Click="@(args => OnGridToggleStatus(navMenu))" @onclick:stopPropagation="true" />
+                        </Template>
+                        <EditTemplate Context="navMenu">
+                            <!-- Grid Save Button: Saves the edited row -->
+                            <RadzenButton Icon="check" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Save"
+                                          Click="@(args => OnGridSaveRow(navMenu))" />
+                            <!-- Grid Cancel Button: Cancels the editing of the row -->
+                            <RadzenButton Icon="close" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Cancel"
+                                          Click="@(args => OnGridCancelEdit(navMenu))" />
+                        </EditTemplate>
+                    </RadzenDataGridColumn>
+                </Columns>
+
+                <!-- Empty Template: Displays when no data is available -->
+                <EmptyTemplate>
+                    <div class="grid-empty">
+                        No records available!
+                    </div>
+                </EmptyTemplate>
+            </RadzenDataGrid>
+        </div>
+    </div>
+
+    <!-- Tree View Component -->
+    <div class="col-12 col-md-4">
+        <div class="tree-container">
+            <RadzenText TextAlign="TextAlign.Center">Navigation Menu Preview</RadzenText>
+
+            <!-- Show a loading indicator while data is being loaded -->
+            @if (!HasLoadedNavigationHierarchy)
+            {
+                <RadzenProgressBarCircular ShowValue="true" Mode="ProgressBarMode.Indeterminate" Size="ProgressBarCircularSize.Medium">
+                    <Template>Loading...</Template>
+                </RadzenProgressBarCircular>
+            }
+            else
+            {
+                <!-- Tree View: Renders the tree structure if data is loaded -->
+                <RadzenTree class="tree-scrollable">
+                    <!-- Check if the NavigationMenuNodes list is populated and has data -->
+                    @if (NavigationMenuNodes != null && NavigationMenuNodes.Any())
+                    {
+                        <!-- Menu Group Level -->
+                        @foreach (var menuGroup in NavigationMenuNodes)
+                        {
+                            <RadzenTreeItem Text="@menuGroup.MenuGroupName"
+                                            Expanded="true"
+                                            HasChildren="@(menuGroup.MainMenus.Count > 0)">
+                                <Template>
+                                    <i class="material-icons">@menuGroup.IconName </i>
+                                    <b>@context.Text</b>
+                                </Template>
+
+                                <!-- Main Menu Level -->
+                                <ChildContent>
+                                    @foreach (var mainMenu in menuGroup.MainMenus)
+                                    {
+                                        <RadzenTreeItem Text="@mainMenu.MainMenuName"
+                                                        Expanded="true"
+                                                        HasChildren="@(mainMenu.SubMenus.Count > 0)">
+                                            <Template>
+                                                <i class="material-icons">@mainMenu.IconName </i>
+                                                <b>@context.Text</b>
+                                            </Template>
+
+                                            <!-- Sub Menu Level -->
+                                            <ChildContent>
+                                                @foreach (var subMenu in mainMenu.SubMenus)
+                                                {
+                                                    <RadzenTreeItem Text="@subMenu.SubMenuName"
+                                                                    Expanded="false"
+                                                                    HasChildren="false">
+                                                        <Template>
+                                                            <i class="material-icons">@subMenu.IconName </i>
+                                                            <b>@context.Text</b>
+                                                        </Template>
+                                                    </RadzenTreeItem>
+                                                }
+                                            </ChildContent>
+                                        </RadzenTreeItem>
+                                    }
+                                </ChildContent>
+                            </RadzenTreeItem>
+                        }
+                    }
+                    else
+                    {
+                        <!-- If no NavigationMenuNodes data is available, display a placeholder message -->
+                        <RadzenTreeItem Text="No records available"
+                                        HasChildren="true"
+                                        Disabled="true">
+                            <Template>
+                                <i class="material-icons">priority_high </i>
+                                <b>@context.Text</b>
+                            </Template>
+                        </RadzenTreeItem>
+                    }
+                </RadzenTree>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    #region Properties
+    private bool HasLoadedNavigationMenus { get; set; } = false;
+    private bool HasLoadedNavigationHierarchy { get; set; } = false;
+    private bool HasLoadedMenuGroups { get; set; } = false;
+    private bool HasLoadedMainMenus { get; set; } = false;
+    private bool HasLoadedSubMenus { get; set; } = false;
+
+    private RadzenDataGrid<NavigationMenu>? GridNavigationMenus { get; set; }
+    private NavigationMenu? InitialNavigationMenu { get; set; }
+    private NavigationMenu? NewNavigationMenu { get; set; }
+
+    private IList<NavigationMenu>? NavigationMenus { get; set; }
+    private IList<MenuGroup>? MenuGroups { get; set; }
+    private IList<MainMenu>? MainMenus { get; set; }
+    private IList<SubMenu>? SubMenus { get; set; }
+    private IList<NavigationMenuNode.MenuGroupNode>? NavigationMenuNodes { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads navigation menus, menu groups, and menu hierarchy on component initialization.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load navigation menus data
+            await LoadNavigationMenusAsync();
+
+            // Load menu groups data
+            await LoadMenuGroupsAsync();
+
+            // Load navigation menu hierarchy
+            await LoadNavigationHierarchyAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Refreshes the grid by reloading the navigation menus data.
+    /// </summary>
+    private async Task onGridRefresh()
+    {
+        try
+        {
+            // Load navigation menus data
+            await LoadNavigationMenusAsync();
+
+            // Reset the NewNavigationMenu object
+            NewNavigationMenu = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading navigation menus: {ex.Message}");
+            Snackbar.Add("An error occurred while loading navigation menus. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Exports the grid data to an Excel file.
+    /// </summary>
+    private void OnGridExportToXLS()
+    {
+        try
+        {
+            // Pending Task: Logic to export the grid data to an Excel file.
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine($"Unauthorized Access Exception: {ex.Message}");
+            Snackbar.Add("You do not have permission to write the export file. Please check your access rights.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred during the export process. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Adds a new row to the grid for creating a NavigationMenu entry.
+    /// </summary>
+    private async Task onGridAddRow()
+    {
+        try
+        {
+            // Create a new NavigationMenu object
+            NewNavigationMenu = new NavigationMenu
+                {
+                    NavigationMenuId = 0,
+                    MenuGroupId = 0,
+                    MainMenuId = 0,
+                    SubMenuId = 0,
+                    Active = true
+                };
+
+            // Open the new row in the RadzenDataGrid for editing
+            await GridNavigationMenus.InsertRow(NewNavigationMenu);
+
+            // Refresh to load the list of sub menus that are not currently assigned to any navigation menu.
+            await LoadSubMenusAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while adding a new row: {ex.Message}");
+            Snackbar.Add("Failed to add a new row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Edits an existing row in the grid by populating it with the selected NavigationMenu's details.
+    /// </summary>
+    /// <param name="navMenu">The NavigationMenu object containing the data to be edited.</param>
+    private async Task OnGridEditRow(NavigationMenu navMenu)
+    {
+        try
+        {
+            // Store the original NavigationMenu data to revert changes if the user cancels the edit
+            InitialNavigationMenu = new NavigationMenu
+                {
+                    NavigationMenuId = navMenu.NavigationMenuId,
+                    MenuGroupId = navMenu.MenuGroupId,
+                    MainMenuId = navMenu.MainMenuId,
+                    SubMenuId = navMenu.SubMenuId,
+                    CreatedBy = navMenu.CreatedBy,
+                    CreatedDate = navMenu.CreatedDate,
+                    ModifiedBy = navMenu.ModifiedBy,
+                    ModifiedDate = navMenu.ModifiedDate,
+                    Active = navMenu.Active
+                };
+
+            // Open the selected row in the RadzenDataGrid for editing
+            await GridNavigationMenus.EditRow(navMenu);
+
+            // Load the list of main menus for the selected menu group
+            await LoadMainMenusAsync(navMenu.MenuGroupId);
+
+            // Load the list of sub menus that are not currently assigned to any navigation menu.
+            await LoadSubMenusAsync(navMenu.SubMenuId ?? 0);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while editing a row: {ex.Message}");
+            Snackbar.Add("Failed to edit a row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Update or Insert the NavigationMenu data to the database, handles possible exceptions.
+    /// </summary>
+    /// <param name="navMenu">The NavigationMenu object containing the data to be saved.</param>
+    private async Task OnGridSaveRow(NavigationMenu navMenu)
+    {
+        try
+        {
+            // Insert or update the NavigationMenu data in the database(handles validations and throws exceptions)
+            await NavigationMenuService.UpsertAsync(navMenu);
+
+            // Exit the edit mode and update the grid with the saved data
+            await GridNavigationMenus.UpdateRow(navMenu);
+
+            // Reload the navigation menus
+            await LoadNavigationMenusAsync();
+
+            // Reload the navigation menu hierarchy
+            await LoadNavigationHierarchyAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Navigation menu saved successfully.", Severity.Success);
+
+            // Reset the NewNavigationMenu object
+            NewNavigationMenu = null;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: Navigation menu data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving NavigationMenu ID {navMenu?.NavigationMenuId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving NavigationMenu ID {navMenu?.NavigationMenuId}: {ex.Message}");
+            Snackbar.Add("Failed to save the navigation menu. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Toggles the active status of the NavigationMenu, updates the status in the database, and reloads the navigation menus.
+    /// </summary>
+    /// <param name="navMenu">The NavigationMenu object whose active status is to be toggled.</param>
+    private async Task OnGridToggleStatus(NavigationMenu navMenu)
+    {
+        try
+        {
+            // Toggle the active status data in the database(handles validations and throws exceptions)
+            await NavigationMenuService.ToggleActiveAsync(navMenu.NavigationMenuId);
+
+            // Reload the navigation menus
+            await LoadNavigationMenusAsync();
+
+            // Reload the navigation menu hierarchy
+            await LoadNavigationHierarchyAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Active status updated successfully.", Severity.Success);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: Navigation menu data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while toggling active status in NavigationMenu ID {navMenu?.NavigationMenuId}: {ex.Message}");
+            Snackbar.Add("Failed to update the active status of the navigation menu. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Cancels the edit operation on the NavigationMenu and reverts any changes made to the object.
+    /// </summary>
+    /// <param name="navMenu">The NavigationMenu object that was being edited.</param>
+    private void OnGridCancelEdit(NavigationMenu navMenu)
+    {
+        try
+        {
+            // Check if there is an initial state to revert to
+            if (InitialNavigationMenu != null)
+            {
+                // Revert the edited object properties to their original state from InitialNavigationMenu
+                navMenu.NavigationMenuId = InitialNavigationMenu.NavigationMenuId;
+                navMenu.MenuGroupId = InitialNavigationMenu.MenuGroupId;
+                navMenu.MainMenuId = InitialNavigationMenu.MainMenuId;
+                navMenu.SubMenuId = InitialNavigationMenu.SubMenuId;
+                navMenu.CreatedBy = InitialNavigationMenu.CreatedBy;
+                navMenu.CreatedDate = InitialNavigationMenu.CreatedDate;
+                navMenu.ModifiedBy = InitialNavigationMenu.ModifiedBy;
+                navMenu.ModifiedDate = InitialNavigationMenu.ModifiedDate;
+                navMenu.Active = InitialNavigationMenu.Active;
+            }
+
+            // Cancel the edit mode for the grid row
+            GridNavigationMenus.CancelEditRow(navMenu);
+
+            // Clear the temporary object used for adding new navigation menus
+            NewNavigationMenu = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred while canceling the edit: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while canceling the edit. Please try again.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the selection of a menu group, updates the MenuGroupId, loads the corresponding main menus, and retrieves the user privileges.
+    /// </summary>
+    /// <param name="selectedMenuGroupId">The ID of the selected menu group.</param>
+    private async Task OnMenuGroupSelectedAsync(int selectedMenuGroupId)
+    {
+        try
+        {
+            // Load the main menus for the selected menu group
+            await LoadMainMenusAsync(selectedMenuGroupId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error while fetching user privileges for menu group ID {selectedMenuGroupId}: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while loading user privileges. Please try again later.", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the list of navigation menus.
+    /// </summary>
+    private async Task LoadNavigationMenusAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedNavigationMenus = false;
+
+            // Load the list of navigation menus
+            NavigationMenus = await NavigationMenuService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading navigation menu: {ex.Message}");
+            throw new Exception($"Failed to load navigation menu. Please try again later: {ex.Message}");
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedNavigationMenus = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of menu groups.
+    /// </summary>
+    private async Task LoadMenuGroupsAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedMenuGroups = false;
+
+            // Load the list of menu groups
+            MenuGroups = await MenuGroupService.GetActiveAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading menu groups: {ex.Message}");
+            throw new Exception($"Failed to load menu groups. Please try again later: {ex.Message}");
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedMenuGroups = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of main menus.
+    /// </summary>
+    private async Task LoadMainMenusAsync(int menuGroupId)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedMainMenus = false;
+
+            // Load the list of main menus.
+            MainMenus = await NavigationMenuService.GetUnassignedMainMenusAsync(menuGroupId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading main menus: {ex.Message}");
+            throw new Exception($"Failed to load main menus. Please try again later: {ex.Message}");
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedMainMenus = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of sub menus.
+    /// </summary>
+    private async Task LoadSubMenusAsync(int subMenuId = 0)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedSubMenus = false;
+
+            // Load the list of sub menus that are not currently assigned to any navigation menu.
+            SubMenus = await NavigationMenuService.GetUnassignedSubMenusAsync(subMenuId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sub menus: {ex.Message}");
+            throw new Exception($"Failed to load sub menus. Please try again later: {ex.Message}");
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedSubMenus = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Loads the list of navigation menu hierarchy.
+    /// </summary>
+    private async Task LoadNavigationHierarchyAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedNavigationHierarchy = false;
+
+            // Load the list of navigation menu hierarchy
+            NavigationMenuNodes = await NavigationMenuService.GetHierarchyAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading navigation menu hierarchy: {ex.Message}");
+            throw new Exception($"Failed to load navigation menu hierarchy. Please try again later: {ex.Message}");
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedNavigationHierarchy = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+}
