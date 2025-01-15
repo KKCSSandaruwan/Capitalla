@@ -256,7 +256,7 @@ namespace QuickAccounting.Repository.Repository
             {
                 LedgerId = model.LedgerId,
                 AccountId = model.AccountId,
-                TransactionType = TransactionType.CustomerSales.ToString(),
+                TransactionType = TransactionType.CustomerSale.ToString(),
                 InvoiceType = InvoiceType.Sales.ToString(),
                 ProcessType = ProcessType.Single.ToString(),
                 FinancialYearId = model.FinancialYearId,

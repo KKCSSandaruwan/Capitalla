@@ -1,5 +1,7 @@
-﻿using QuickAccounting.Data;
-using QuickAccounting.Data.Setting;
+﻿using Microsoft.EntityFrameworkCore;
+using QuickAccounting.Data;
+using QuickAccounting.Data.Setting.Corporate;
+using QuickAccounting.Data.Setting.Navigation;
 using QuickAccounting.Repository.Interface;
 
 namespace QuickAccounting.Repository.Repository
@@ -11,6 +13,23 @@ namespace QuickAccounting.Repository.Repository
         {
             _context = context;
         }
+
+        public async Task<List<Company>> GetAllAsync()
+        {
+            try
+            {
+                var result = await (from c in _context.Company
+                                    orderby c.CompanyName ascending
+                                    select c).ToListAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching companies: {ex.Message}");
+                throw;
+            }
+        }
+
         public async Task<Company> GetbyId(int id)
         {
             Company model = await _context.Company.FindAsync(id);

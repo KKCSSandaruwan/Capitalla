@@ -1,0 +1,66 @@
+﻿@page "/app/configuration/system-user"
+
+@inject ISnackbar Snackbar
+
+<div class="content">
+    <!-- Page Header: Title and Description -->
+    <div class="page-header">
+        <div class="page-title">
+            <h3>System User</h3>
+            <h5>Manage System Users</h5>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Tab Component -->
+            <RadzenTabs @bind-SelectedIndex="SelactedTabIndex">
+                <Tabs>
+                    <!-- Tab Item 01: User Roles -->
+                    <RadzenTabsItem Text="User Roles">
+                        <!-- UserRoleCrud component: Manages CRUD operations for User Roles -->
+                        <UserRoleCrud></UserRoleCrud>
+                    </RadzenTabsItem>
+
+                    <!-- Tab Item 02: User Profiles -->
+                    <RadzenTabsItem Text="User Profile">
+                        <!-- UserProfileCrud component: Manages CRUD operations for User Profiles -->
+                        <UserProfileList></UserProfileList>
+                    </RadzenTabsItem>
+
+                    <!-- Tab Item 03: User Privileges -->
+                    <RadzenTabsItem Text="User Privilege">
+                        <!-- UserPrivilegeCrud component: Manages CRUD operations for User Privileges -->
+                        <UserPrivilegeCrud></UserPrivilegeCrud>
+                    </RadzenTabsItem>
+                </Tabs>
+            </RadzenTabs>
+        </div>
+    </div>
+</div>
+
+@code {
+    #region Properties
+    private int SelactedTabIndex { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Sets the default data for component initialization.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        try
+        {
+            SelactedTabIndex = 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during component initialization: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+}

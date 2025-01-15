@@ -3,88 +3,53 @@
     public enum TransactionType
     {
         /// <summary>
-        /// Represents purchases made from suppliers.
+        /// Represents a purchase order issued to a supplier for the procurement of goods or services.
         /// </summary>
-        SupplierPurchase,
+        SupplierPurchase = 1,
 
         /// <summary>
-        /// Represents returns made to suppliers.
+        /// Represents a purchase invoice issued by a supplier for the goods or services provided under a purchase order.
         /// </summary>
-        SupplierReturn,
+        SupplierInvoice = 2,
 
         /// <summary>
-        /// Represents sales made to customers.
+        /// Represents a return of goods purchased from a supplier back to the supplier, typically due to defects or other issues.
         /// </summary>
-        CustomerSales,
+        SupplierReturn = 3,
 
         /// <summary>
-        /// Represents returns received from customers.
+        /// Represents a payment made to a supplier in settlement of a purchase invoice.
         /// </summary>
-        CustomerReturn,
+        SupplierPayment = 4,
 
         /// <summary>
-        /// Represents general expenses.
+        /// Represents a reversal of a previously made payment to a supplier, often due to errors or disputes.
         /// </summary>
-        Expense,
+        SupplierReversal = 5,
 
         /// <summary>
-        /// Represents revenue generated from sales or services.
+        /// Represents a sales order issued to a customer for the sale of goods or services.
         /// </summary>
-        Revenue,
+        CustomerSale = 6,
 
         /// <summary>
-        /// Represents income earned from interest.
+        /// Represents a sales invoice issued to a customer for goods or services provided under a sales order.
         /// </summary>
-        InterestIncome,
+        CustomerInvoice = 7,
 
         /// <summary>
-        /// Represents interest paid on debts.
+        /// Represents a return of goods sold to a customer, typically due to defects or other issues.
         /// </summary>
-        InterestExpense,
+        CustomerReturn = 8,
 
         /// <summary>
-        /// Represents disbursements of loans.
+        /// Represents a payment received from a customer in settlement of a sales invoice.
         /// </summary>
-        LoanDisbursement,
+        CustomerPayment = 9,
 
         /// <summary>
-        /// Represents repayments made towards a loan.
+        /// Represents a reversal of a previously received payment from a customer, often due to errors or disputes.
         /// </summary>
-        LoanRepayment,
-
-        /// <summary>
-        /// Represents purchases of investments.
-        /// </summary>
-        InvestmentPurchase,
-
-        /// <summary>
-        /// Represents sales of investments.
-        /// </summary>
-        InvestmentSale,
-
-        /// <summary>
-        /// Represents income received from dividends.
-        /// </summary>
-        DividendIncome,
-
-        /// <summary>
-        /// Represents contributions made by owners or shareholders.
-        /// </summary>
-        CapitalContribution,
-
-        /// <summary>
-        /// Represents incoming transfers between accounts.
-        /// </summary>
-        TransferIn,
-
-        /// <summary>
-        /// Represents outgoing transfers between accounts.
-        /// </summary>
-        TransferOut,
-
-        /// <summary>
-        /// Represents adjustments made to accounts.
-        /// </summary>
-        Adjustment
+        CustomerReversal = 10,
     }
 }

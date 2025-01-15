@@ -5,6 +5,9 @@ using QuickAccounting.Data.BudgetModel;
 using QuickAccounting.Data.HrPayroll;
 using QuickAccounting.Data.Inventory;
 using QuickAccounting.Data.Setting;
+using QuickAccounting.Data.Setting.Corporate;
+using QuickAccounting.Data.Setting.Navigation;
+using QuickAccounting.Data.Setting.SystemUser;
 
 namespace QuickAccounting.Data
 {
@@ -19,13 +22,27 @@ namespace QuickAccounting.Data
             base.OnModelCreating(builder);
 
         }
+
+        // System User
+        public DbSet<UserRole> UserRole { get; set; }
+        public DbSet<UserProfile> UserProfile { get; set; }
+        public DbSet<UserPrivilege> UserPrivilege { get; set; }
         public DbSet<Role> Role { get; set; }
         public DbSet<UserMaster> UserMaster { get; set; }
         public DbSet<Privilege> Privilege { get; set; }
+
+        // Corporate
+        public DbSet<CompanyDup> CompanyDup { get; set; }
+
+        // Navigation
+        public DbSet<MenuGroup> MenuGroup { get; set; }
+        public DbSet<MainMenu> MainMenu { get; set; }
+        public DbSet<SubMenu> SubMenu { get; set; }
+        public DbSet<NavigationMenu> NavigationMenu { get; set; }
+
         public DbSet<AccountGroup> AccountGroup { get; set; }
         public DbSet<ProductGroup> ProductGroup { get; set; }
         public DbSet<AccountLedger> AccountLedger { get; set; }
-        public DbSet<Currency> Currency { get; set; }
         public DbSet<ExpenseMaster> ExpenseMaster { get; set; }
         public DbSet<ExpensesDetails> ExpensesDetails { get; set; }
         public DbSet<FinancialYear> FinancialYear { get; set; }
@@ -97,5 +114,7 @@ namespace QuickAccounting.Data
         //Receipt Master & Detail (Duplicate tables)
         public DbSet<ReceiptMasterDup> ReceiptMasterDup { get; set; }
         public DbSet<ReceiptDetailsDup> ReceiptDetailsDup { get; set; }
+
+        public DbSet<ReceiptReversal> ReceiptReversal { get; set; }
     }
 }

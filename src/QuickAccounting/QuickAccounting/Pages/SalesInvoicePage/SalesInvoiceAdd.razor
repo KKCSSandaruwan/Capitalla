@@ -679,13 +679,27 @@
                     {
                         foreach(var item in tax.Where(x=>x.IsActive == true))
                         {
-                            if(item.TaxNameId == 1)
+                            //if(item.TaxNameId == 1)
+                            //{
+                            //    //sscl
+                            //    _decTaxAmountSscl = decNetValue * item.Rate / 100;
+                            //    myTodos.SCCSLAmount = Math.Round(_decTaxAmountSscl, 2);
+                            //}
+                            //else if(item.TaxNameId == 2)
+                            //{
+                            //    //vat
+                            //    _decTaxAmountVat = (decNetValue + _decTaxAmountSscl) * item.Rate / 100;
+                            //    myTodos.VatAmount = Math.Round(_decTaxAmountVat, 2);
+                            //}
+
+
+                            if (item.TaxNameId == 1)
                             {
                                 //sscl
                                 _decTaxAmountSscl = decNetValue * item.Rate / 100;
                                 myTodos.SCCSLAmount = Math.Round(_decTaxAmountSscl, 2);
                             }
-                            else if(item.TaxNameId == 2)
+                            else if (item.TaxNameId == 2)
                             {
                                 //vat
                                 _decTaxAmountVat = (decNetValue + _decTaxAmountSscl) * item.Rate / 100;

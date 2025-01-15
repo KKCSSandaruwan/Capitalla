@@ -14,21 +14,23 @@ namespace QuickAccounting.Repository.Repository
         }
         public async Task<int> CheckNameId(string name)
         {
-            var checkResult = (from progm in _context.Currency
-                               where progm.CurrencyName == name
-                               select progm.CurrencyId).Count();
-            if (checkResult > 0)
-            {
+            //var checkResult = (from progm in _context.Currency
+            //                   where progm.CurrencyName == name
+            //                   select progm.CurrencyId).Count();
+            //if (checkResult > 0)
+            //{
 
-                var checkAccount = (from progm in _context.Currency
-                                    where progm.CurrencyName == name
-                                    select progm.CurrencyId).FirstOrDefault();
-                return checkAccount;
-            }
-            else
-            {
-                return 0;
-            }
+            //    var checkAccount = (from progm in _context.Currency
+            //                        where progm.CurrencyName == name
+            //                        select progm.CurrencyId).FirstOrDefault();
+            //    return checkAccount;
+            //}
+            //else
+            //{
+            //    return 0;
+            //}
+
+            return 0;
         }
 
         public async Task<bool> Delete(int id)

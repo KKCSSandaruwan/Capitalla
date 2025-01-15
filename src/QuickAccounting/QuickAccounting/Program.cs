@@ -1,12 +1,21 @@
+using crypto;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using NPOI.POIFS.Crypt;
 using QuickAccounting.Data;
 using QuickAccounting.Data.Authentication;
-using QuickAccounting.Data.HrPayroll;
-using QuickAccounting.Data.Selectors;
+using QuickAccounting.Data.Setting.Corporate;
 using QuickAccounting.Repository.Interface;
+using QuickAccounting.Repository.Interface.Corporate;
+using QuickAccounting.Repository.Interface.Navigation;
+using QuickAccounting.Repository.Interface.Security;
+using QuickAccounting.Repository.Interface.SystemUser;
 using QuickAccounting.Repository.Repository;
+using QuickAccounting.Repository.Repository.Corporate;
+using QuickAccounting.Repository.Repository.Navigation;
+using QuickAccounting.Repository.Repository.Security;
+using QuickAccounting.Repository.Repository.SystemUser;
 using QuickAccounting.Repository.Services;
 using Radzen;
 
@@ -24,9 +33,40 @@ builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStat
 
 builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(
     builder.Configuration.GetConnectionString("DefaultConnection")), ServiceLifetime.Transient);
+
+#region Setting
+//Corporate
+builder.Services.AddTransient<ICompanyDup, CompanyDupService>();
+
+// Currency
+//builder.Services.AddTransient<ICurrency, CurrencyService>();
+//builder.Services.AddTransient<ICurrencyExchangeRate, CurrencyExchangeRateService>();
+
+// Format
+//builder.Services.AddTransient<IFormatSetting, FormatSettingService>();
+
+// Inventory
+//builder.Services.AddTransient<IInventorySetting, InventorySettingService>();
+
+// Navigation
+builder.Services.AddTransient<IMenuGroup, MenuGroupService>();
+builder.Services.AddTransient<IMainMenu, MainMenuService>();
+builder.Services.AddTransient<ISubMenu, SubMenuService>();
+builder.Services.AddTransient<INavigationMenu, NavigationMenuService>();
+
+// System User
+builder.Services.AddTransient<IUserRole, UserRoleService>();
+builder.Services.AddTransient<IUserProfile, UserProfileService>();
+builder.Services.AddTransient<IUserPrivilege, UserPrivilegeService>();
+
+//Security
+builder.Services.AddTransient<IEncryption, EncryptionService>();
+
+#endregion
+
+
 builder.Services.AddTransient<IBrand, BrandService>();
 builder.Services.AddTransient<ITax, TaxService>();
-builder.Services.AddTransient<ICurrency, CurrencyService>();
 builder.Services.AddTransient<IEmailSetting, EmailSettingService>();
 builder.Services.AddTransient<ICompany, CompanyService>();
 builder.Services.AddTransient<IInvoiceSetting, InvoiceService>();
@@ -81,7 +121,6 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
 }
-
 
 app.UseStaticFiles();
 

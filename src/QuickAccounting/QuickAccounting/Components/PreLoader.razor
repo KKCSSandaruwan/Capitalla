@@ -1,0 +1,24 @@
+﻿<div class="preloader-div" id="preloader">
+	<svg class="pl" viewBox="0 0 64 64" width="64px" height="64px" role="img" aria-label="5-point star slowly rotating clockwise and formed by moving, expanding, and shrinking encircling lines, which are white, red, red orange, light green, and green">
+		<g class="pl__star" fill="none" stroke="currentcolor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="0.1 190.88" stroke-dashoffset="0">
+			<path class="pl__worm" stroke="#37AFE1" d="M 31.94 3.191 L 40.388 20.309 L 59.279 23.054 L 45.61 36.379 L 48.836 55.193 L 31.94 46.31 L 15.044 55.193 L 18.27 36.379 L 4.601 23.054 L 23.492 20.309 Z" transform="rotate(0,32,32)" />
+			<path class="pl__worm" stroke="#F5F4B3" d="M 31.94 3.191 L 40.388 20.309 L 59.279 23.054 L 45.61 36.379 L 48.836 55.193 L 31.94 46.31 L 15.044 55.193 L 18.27 36.379 L 4.601 23.054 L 23.492 20.309 Z" transform="rotate(72,32,32)" />
+			<path class="pl__worm" stroke="#f0cb43" d="M 31.94 3.191 L 40.388 20.309 L 59.279 23.054 L 45.61 36.379 L 48.836 55.193 L 31.94 46.31 L 15.044 55.193 L 18.27 36.379 L 4.601 23.054 L 23.492 20.309 Z" transform="rotate(144,32,32)" />
+			<path class="pl__worm" stroke="#2a84bf" d="M 31.94 3.191 L 40.388 20.309 L 59.279 23.054 L 45.61 36.379 L 48.836 55.193 L 31.94 46.31 L 15.044 55.193 L 18.27 36.379 L 4.601 23.054 L 23.492 20.309 Z" transform="rotate(216,32,32)" />
+			<path class="pl__worm" stroke="#cfa915" d="M 31.94 3.191 L 40.388 20.309 L 59.279 23.054 L 45.61 36.379 L 48.836 55.193 L 31.94 46.31 L 15.044 55.193 L 18.27 36.379 L 4.601 23.054 L 23.492 20.309 Z" transform="rotate(288,32,32)" />
+		</g>
+	</svg>
+</div>
+@code {
+	// Import JSInterop
+	[Inject] IJSRuntime JSRuntime { get; set; }
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender)
+		{
+			// Call the JavaScript function to hide the preloader
+			await JSRuntime.InvokeVoidAsync("hidePreloader");
+		}
+	}
+}

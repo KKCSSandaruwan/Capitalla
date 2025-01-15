@@ -1,0 +1,545 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject ICompanyDup CompanyService
+@inject ISnackbar Snackbar
+
+@if (!HasLoadedCompany)  // Check if the company data has been loaded
+{
+    // Display a loading progress bar while waiting for the company data to load
+    <RadzenProgressBarCircular ProgressBarStyle="ProgressBarStyle.Dark"
+                               ShowValue="true"
+                               Mode="ProgressBarMode.Indeterminate"
+                               Size="ProgressBarCircularSize.Large">
+        <Template>Wait</Template>
+    </RadzenProgressBarCircular>
+}
+// Check if the company data is loaded successfully
+else
+{
+    // Check if the company object is null (not available)
+    @if (Company == null)
+    {
+        // Invoke a response indicating failure if the company data is not available
+        OnResponseReceived.InvokeAsync(false);
+    }
+    <!-- If the company data is successfully loaded and the company object is not null, display a popup dialog for CRUD operations. -->
+    else
+    {
+        <!-- Popup Dialog: CRUD Company-->
+        <div class="dialog fade show" aria-modal="true" role="dialog">
+            <div class="popup-dialog popup-dialog-centered" style="max-width: 800px;" role="document">
+                <div class="dialog-content">
+                    <!-- Dialog Header: Title and close button -->
+                    <div class="dialog-header">
+                        <RadzenText Text="@Title"
+                                    TextStyle="TextStyle.H6" />
+                        <RadzenButton ButtonType="Radzen.ButtonType.Button"
+                                      ButtonStyle="ButtonStyle.Light"
+                                      Size="ButtonSize.Small"
+                                      Icon="close"
+                                      Click=@OnCancel />
+                    </div>
+
+                    <!-- Dialog Main Container -->
+                    <div class="dialog-main">
+                        <div class="dialog-main description">
+                            <RadzenText Text="@Description" />
+                        </div>
+
+                        <RadzenTemplateForm TItem="CompanyDup" Data=@Company>
+                            <!-- Dialog Body: Edit form contents -->
+                            <div class="dialog-body">
+                                <div class="row ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.CompanyName))" />
+                                        <RadzenTextBox Name="txtCompanyName"
+                                                       @bind-Value="@Company.CompanyName"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtCompanyName"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.RegistrationNo))" />
+                                        <RadzenTextBox Name="txtRegistrationNo"
+                                                       @bind-Value="@Company.RegistrationNo"
+                                                       MaxLength="25"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtRegistrationNo"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2 ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.VATNo))" />
+                                        <RadzenTextBox Name="txtVATNo"
+                                                       @bind-Value="@Company.VATNo"
+                                                       MaxLength="25"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtVATNo"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.Address))" />
+                                        <RadzenTextBox Name="txtAddress"
+                                                       @bind-Value="@Company.Address"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtAddress"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2 ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.City))" />
+                                        <RadzenTextBox Name="txtCity"
+                                                       @bind-Value="@Company.City"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtCity"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.State))" />
+                                        <RadzenTextBox Name="txtState"
+                                                       @bind-Value="@Company.State"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtState"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2 ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.PostalCode))" />
+                                        <RadzenTextBox Name="txtPostalCode"
+                                                       @bind-Value="@Company.PostalCode"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtPostalCode"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.Country))" />
+                                        <RadzenTextBox Name="txtCountry"
+                                                       @bind-Value="@Company.Country"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtCountry"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2 ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.Latitude))" />
+                                        <RadzenNumeric Name="NumLatitude"
+                                                       @bind-Value="@Company.Latitude"
+                                                       Min="-90"
+                                                       Max="90"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="NumLatitude"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.Longitude))" />
+                                        <RadzenNumeric Name="NumLongitude"
+                                                       @bind-Value="@Company.Longitude"
+                                                       Min="-180"
+                                                       Max="180"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="NumLongitude"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2 ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.PhoneNo))" />
+                                        <RadzenTextBox Name="txtPhoneNo"
+                                                       @bind-Value="@Company.PhoneNo"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtPhoneNo"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.MobileNo))" />
+                                        <RadzenTextBox Name="txtMobileNo"
+                                                       @bind-Value="@Company.MobileNo"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtMobileNo"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2 ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.FaxNo))" />
+                                        <RadzenTextBox Name="txtFaxNo"
+                                                       @bind-Value="@Company.FaxNo"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtFaxNo"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.Email))" />
+                                        <RadzenTextBox Name="txtEmail"
+                                                       @bind-Value="@Company.Email"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtEmail"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+
+                                <div class="row mt-2 ml-2 mb-2 mr-2">
+                                    <div class="col-lg-6 col-sm-6 col-12">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.Website))" />
+                                        <RadzenTextBox Name="txtWebsite"
+                                                       @bind-Value="@Company.Website"
+                                                       Disabled="@IsFormFieldDisable"
+                                                       style="display: block"
+                                                       class="w-100" />
+                                        <RadzenDataAnnotationValidator Component="txtWebsite"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-3 col-sm-3 col-6 text-start">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.IsMotherCompany))" />
+                                        <RadzenCheckBox Name="chkMotherCompany"
+                                                        @bind-Value="@Company.IsMotherCompany"
+                                                        Disabled="@IsFormFieldDisable" />
+                                        <RadzenDataAnnotationValidator Component="chkMotherCompany"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+
+                                    <div class="col-lg-3 col-sm-3 col-6 text-start">
+                                        <RadzenLabel Text="@EntityAttributeHelper.GetDisplayName(typeof(CompanyDup), nameof(CompanyDup.Active))" />
+                                        <RadzenCheckBox Name="chkActive"
+                                                        @bind-Value="@Company.Active"
+                                                        Disabled="@IsFormFieldDisable" />
+                                        <RadzenDataAnnotationValidator Component="chkActive"
+                                                                       Popup="false"
+                                                                       Style="position: static" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dialog Footer: Action buttons -->
+                            <div class="dialog-footer d-flex justify-content-end">
+                                <!-- Render a button base on dialog type -->
+                                @foreach (var button in Buttons)
+                                {
+                                    <RadzenButton ButtonType="@button.ButtonType"
+                                                  ButtonStyle="ButtonStyle.Light"
+                                                  Size="ButtonSize.Medium"
+                                                  Icon="@button.Icon"
+                                                  Text="@button.Text"
+                                                  IsBusy="@(button.HasBusyState ? IsActionInProgress : false)"
+                                                  BusyText="@button.BusyText"
+                                                  class="ml-2"
+                                                  Click="@button.Action" />
+                                }
+                            </div>
+                        </RadzenTemplateForm>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    #region Properties
+    [Parameter] public int EntityId { get; set; } = 0;
+    [Parameter] public string DialogTitle { get; set; } = "Title";
+    [Parameter] public CrudDialogType DialogType { get; set; } = CrudDialogType.View;
+    [Parameter] public EventCallback<bool> OnResponseReceived { get; set; }
+
+    private string Title { get; set; } = String.Empty;
+    private string Description { get; set; } = String.Empty;
+    private bool HasLoadedCompany { get; set; } = false;
+    public bool IsActionInProgress { get; set; } = false;
+    public bool IsFormFieldDisable { get; set; } = false;
+
+    private CompanyDup Company { get; set; } = new CompanyDup();
+
+    private IList<CrudDialogButton> Buttons { get; set; } = new List<CrudDialogButton>();
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads company data when the component is initialized.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Configure the dialog based on the dialog type
+            ConfigureDialog(DialogType);
+
+            // If the dialog type is not "Add", load the company data base on its ID
+            if (!DialogType.Equals(CrudDialogType.Add))
+                await LoadCompanyAsync(EntityId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading company data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    // <summary>
+    /// Handles the submission of the company form.
+    /// This method performs insert or update operations on the company and provides feedback to the user.
+    /// </summary>
+    private async Task OnSubmitAsync()
+    {
+        try
+        {
+            // Mark the action is in progress
+            IsActionInProgress = true;
+
+            // Upsert the company (insert or update)
+            await CompanyService.UpsertAsync(Company);
+
+            // Notify the user of success
+            Snackbar.Add("company saved successfully.", Severity.Success);
+
+            // Response callback the parent component that the operation was successful
+            await OnResponseReceived.InvokeAsync(true);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: company data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving company ID {Company.CompanyId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving company ID {Company.CompanyId}: {ex.Message}");
+            Snackbar.Add("Failed to save the company. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            // Update the action flag after the operation is complete
+            IsActionInProgress = false;
+        }
+    }
+
+    /// <summary>
+    /// Handles the cancellation of the company dialog.
+    /// Invokes the response callback with a negative result.
+    /// </summary>
+    private async Task OnCancel()
+    {
+        try
+        {
+            // Response callback the parent component that the operation was canceled
+            await OnResponseReceived.InvokeAsync(false);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while canceling the operation: {ex.Message}");
+            Snackbar.Add("An error occurred while canceling the operation. Please try again.", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Dialog Configuration
+    /// <summary>
+    /// Configures the dialog title, description, and buttons based on the dialog type.
+    /// </summary>
+    /// <param name="dialogType">The type of dialog (View, Add, Edit, Delete).</param>
+    private void ConfigureDialog(CrudDialogType dialogType)
+    {
+        // Clear any previously added buttons before reusing them
+        Buttons.Clear();
+
+        // Config dialog base on the dialog type
+        switch (dialogType)
+        {
+            case CrudDialogType.View:
+                Title = $"Overview {DialogTitle}";
+                Description = $"This section allows you to view the details of the selected {DialogTitle.ToLower()}.";
+                IsFormFieldDisable = true;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Close",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                break;
+
+            case CrudDialogType.Add:
+                Title = $"Add New {DialogTitle}";
+                Description = $"Fill in the required fields to add a new {DialogTitle.ToLower()}.";
+                IsFormFieldDisable = false;
+                HasLoadedCompany = true;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Cancel",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Submit,
+                        Text = "Save",
+                        Icon = "check_circle",
+                        HasBusyState = true,
+                        BusyText = "Saving...",
+                        Action = EventCallback.Factory.Create(this, OnSubmitAsync)
+                    });
+                break;
+
+            case CrudDialogType.Edit:
+                Title = $"Edit {DialogTitle}";
+                Description = $"Modify the details of the selected {DialogTitle.ToLower()}.";
+                IsFormFieldDisable = false;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Reset,
+                        Text = "Cancel",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Submit,
+                        Text = "Save",
+                        Icon = "check_circle",
+                        HasBusyState = true,
+                        BusyText = "Saving...",
+                        Action = EventCallback.Factory.Create(this, OnSubmitAsync)
+                    });
+                break;
+
+            case CrudDialogType.Delete:
+                Title = $"Confirm Delete {DialogTitle}";
+                Description = $"Are you sure you want to delete this {DialogTitle.ToLower()}? This action cannot be undone.";
+                IsFormFieldDisable = true;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Cancel",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel),
+                    });
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Submit,
+                        Text = "Delete",
+                        Icon = "delete",
+                        HasBusyState = true,
+                        BusyText = "Deleting...",
+                        Action = EventCallback.Factory.Create(this, OnSubmitAsync)
+                    });
+                break;
+
+            default:
+                Title = "Unknown Action";
+                Description = "The action type is not recognized. Please try again.";
+                IsFormFieldDisable = true;
+                Buttons.Add(new CrudDialogButton
+                    {
+                        ButtonType = Radzen.ButtonType.Button,
+                        Text = "Close",
+                        Icon = "cancel",
+                        Action = EventCallback.Factory.Create(this, OnCancel)
+                    });
+                break;
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the company based on the given company ID.
+    /// </summary>
+    /// <param name="companyId">The ID of the company to be loaded.</param>
+    private async Task LoadCompanyAsync(int companyId)
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedCompany = false;
+
+            // Load the company data by company ID
+            Company = await CompanyService.GetByIdAsync(companyId);
+
+            // Check if the company was found; throw exception if not
+            if (Company == null)
+                throw new KeyNotFoundException($"Company with ID {companyId} was not found.");
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading company: {ex.Message}");
+            throw new Exception("Failed to load company. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedCompany = true;
+        }
+    }
+
+    #endregion
+}

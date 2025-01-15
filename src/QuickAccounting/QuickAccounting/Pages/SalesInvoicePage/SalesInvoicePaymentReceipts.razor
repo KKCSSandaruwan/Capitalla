@@ -1,0 +1,601 @@
+﻿@page "/app/sales/invoices/{invoiceId:int}/payment-receipt/{receiptId:int}"
+
+@inject ISalesInvoiceSettlement SalesInvoiceService
+@inject IAccountLedger AccountLedgerService
+@inject ICompany CompanyService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<PageTitle>Sales Invoice Receipt</PageTitle>
+
+<div class="content">
+    <!-- Page Header: Title and Description -->
+    <div class="page-header">
+        <div class="page-title">
+            <h3>Payment Receipt</h3>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Form Row 1: ToolBar: Reverse Receipt and Print Receipt -->
+            <div class="row mt-2 mr-2 ml-2">
+                <div class="print-btn-container">
+                    <RadzenButton Icon="arrow_back" Text="Back" title="Go to the Previous Page" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" class="mt-2 mr-2"
+                                  Click="OnNavigateBackClick" />
+
+                    <RadzenButton Icon="undo" Text="Reverse" title="@(ReceiptId == 0 ? "Reverse All Receipts" : "Reverse Receipts")" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" class="mt-2 mr-2"
+                                  Visible="IsVisibleReverseButton"
+                                  Disabled="@(!HasLoadedInvoice)"
+                                  Click="@(() => OnReverseClick(Invoice.ReceiptDetails))" />
+
+                    <RadzenButton Icon="print" Text="Print" title="Print Receipt" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Medium" class="mt-2"
+                                  Disabled="@(!HasLoadedInvoice && !HasLoadedCompany && !HasLoadedCustomer)"
+                                  Click="OnPrintClick" />
+                </div>
+            </div>
+
+            <hr />
+
+            <!-- Form Row 2: Receipt: Settled invoice payment receipt -->
+            @if (!HasLoadedInvoice || !HasLoadedCustomer || !HasLoadedCompany)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+            }
+            else
+            {
+                <div class="row ml-1 mr-6">
+                    <div id="printableDiv">
+                        <!-- Invoice Box Table: Main Structure for Receipt -->
+                        <div class="invoice-box table-height" style="max-width: 1600px;width:100%;overflow: auto;margin:15px auto;padding: 0;font-size: 14px;line-height: 24px;color: #555;">
+
+                            <!-- Header Section -->
+                            <table cellpadding="0" cellspacing="0" style="width: 100%;line-height: inherit;text-align: left;">
+                                <tbody>
+                                    <tr class="top">
+                                        <td colspan="6" style="padding: 5px;vertical-align: top;">
+
+                                            <!-- Company and Invoice Header Information -->
+                                            <table style="width: 100%;line-height: inherit;text-align: left;">
+                                                <tr>
+                                                    <!-- Company Logo Placeholder -->
+                                                    <td style="width:0%;padding: 0px;vertical-align: top;text-align: left;">
+                                                        <svg version="1.1" viewBox="0 0 1532 988" width="150" height="60" xmlns="http://www.w3.org/2000/svg">
+                                                            <path transform="translate(917,1)" d="m0 0h26l35 2 39 4 37 6 27 6 29 8 25 9 21 9 21 10 22 13 16 11 13 10 14 12 19 19 9 11 11 15 11 18 11 21 9 24 7 25 4 21 2 19v45l-3 23 12-1 22-2h19l37 3 39 4 43 3 16-2 2 2 1 106-3-1-11-20-10-14-11-12-9-8-14-9-12-6-18-6-13-2h-23l-16 3-15 6-7 5-6 10-3 11v17l3 12 6 12 9 11 11 10 36 26 19 13 18 13 19 13 26 20 11 10 13 17 9 17 6 16 4 16v40l-6 22-8 19-7 12-10 13-10 10-13 10-16 9-16 7-18 6-29 6-15 2-17 1h-21l-29-2-31-5-23-6-37-12-7-4-4-7-1-101 4 2 10 16 12 20 10 14 8 10 10 10 15 10 15 7 19 5 7 1h27l10-2 16-6 11-6 8-8 7-13 2-10v-16l-3-14-5-13-9-14-11-12-14-12-14-10-20-14-19-13-20-14-15-11-13-10-14-12-2-3-3-1-2 5-12 18-14 19-14 18-12 14-9 11-15 16-9 10-15 16-6 6v29l1 23 3 20 5 16 6 11 7 9-1 3h-153l-7 4-16 11-15 10-24 15-15 9-26 15-24 13-19 10-32 16-20 9-30 13-35 14-42 15-41 13-44 12-45 10-39 7-35 5-37 4-34 2h-46l-27-1-48-5-41-7-28-7-32-10-27-11-29-14-17-10-16-11-13-10-14-12-22-22-11-14-10-14-12-20-10-21-8-22-6-23-4-24-2-18v-35l4-34 6-30 8-28 10-29 13-30 13-26 13-23 11-18 12-18 12-17 9-12 13-17 10-12 9-11 12-13 9-11 48-48h2v-2l8-7 10-9 11-9 11-10 14-11 16-13 12-9 19-14 23-16 18-12 17-11 21-13 24-14 29-16 33-17 35-17 32-14 27-11 35-13 36-12 36-11 34-9 35-8 44-8 44-6 46-4zm-19 30-45 3-42 5-46 8-41 9-38 10-36 11-44 15-33 13-24 10-27 12-33 16-28 14-23 13-18 10-20 12-19 12-30 20-20 14-36 27-13 11-10 8-15 13-10 9-8 7-16 15-34 34-7 8-13 14-9 11-11 13-9 12-14 19-12 17-16 25-12 21-14 27-11 24-10 26-8 26-8 34-4 31-1 16v18l3 30 5 25 7 23 11 26 9 16 7 11 14 19 15 16 13 13h2v2l10 8 18 13 16 10 22 12 24 11 34 12 25 7 32 7 35 5 30 3 24 1h47l38-2 31-3 42-6 47-9 34-8 43-12 38-12 46-17 34-14 36-16 35-17 19-10 29-16 22-13 26-16 36-24 9-7 6-8 4-9 4-18 1-8v-34l-4-172-1-38-1-20-5 1-3 8-14 44-16 53-17 58-16 55-20 65-7 23-4 7-9 1h-24l-9-2-5-5-7-20-15-46-14-45-10-31-10-33-10-31-10-32-14-41-8-22-4-2-1 24-1 51-1 84v112l4 16 7 13 6 8 1 2h-90l6-11 9-17 4-12 1-6 5-115 4-95 2-51 2-47v-25l-3-15-6-18-7-12-3-6h144l10 1 4 6 7 22 17 58 23 81 13 47 4 5 4-2 6-16 15-47 16-53 21-73 7-24 3-4 23-1h133l-3 5-9 14-5 12-2 8-1 12 1 64 2 54 4 135 1 3 4-1 9-10 7-8 11-12 7-8 11-13 11-14 16-21 13-19 16-24-8-16-6-16-5-25v-34l4-17 7-16 9-14 9-10 10-9 19-11 14-6 13-5 1-1 2-19v-35l-3-26-5-23-5-17-8-20-8-16-9-16-12-17-9-11-12-13-10-10-11-9-17-13-17-11-18-10-22-11-26-10-24-8-36-9-27-5-30-4-40-3z" fill="#2A2D7A" />
+                                                            <path transform="translate(724,349)" d="m0 0h115l10 1 4 5 5 14 20 68 23 81 13 47 3 4 3-1 6-16 15-47 16-53 21-73 7-24 4-5 23-1h133l1 2-10 14-6 13-3 11-1 12 1 64 2 54 4 135 1 10 2 57 3 20 5 16 6 11 7 9-1 3h-160l-2-1 2-6 6-7 5-11 4-18 1-8v-34l-4-172-1-38v-20l-5 2-15 48-17 56-17 58-16 55-20 65-7 23-5 8-9 1h-24l-9-2-5-4-6-15-11-35-10-31-10-32-10-31-10-33-10-31-10-32-14-41-8-22-3-2v24l-1 51-1 84v112l4 16 7 13 6 8v2h-90l1-4 9-16 7-16 2-10 5-115 4-95 2-51 2-47v-25l-3-15-6-18-7-12-2-3v-3z" fill="#2A2D7A" />
+                                                            <path transform="translate(473,344)" d="m0 0h20l21 1 19 3 17 4 15 6 15 8 14 11 7 7 10 14 9 17 5 15 3 16 1 14-2 22-5 21-6 16-9 16-8 10-9 10-10 9-18 12-16 8-14 5-20 5-18 2h-22l-18-2-18-5-16-8-8-5v-4l29-9 18-6 12-6 9-8 7-11 7-16 5-16 3-21v-27l-2-17-3-10-5-10-8-10-7-6-16-8-11-3-7-1h-28l-8 2-1 2v133l1 212 1 16 4 11 7 9 4 6v2h-165l1-4 8-10 5-11 4-14 2-13 1-34v-282l-3-24-5-16-5-12-6-8v-2l97-1 34-1 46-3z" fill="#2A2D7A" />
+                                                            <path transform="translate(917,1)" d="m0 0h26l35 2 39 4 37 6 27 6 29 8 25 9 21 9 21 10 22 13 16 11 13 10 14 12 19 19 9 11 11 15 11 18 11 21 9 24 7 25 4 21 2 19v45l-3 23-4 3-12 3-1-1 1-19v-35l-3-26-5-23-5-17-8-20-8-16-9-16-12-17-9-11-12-13-9-9-11-9-17-13-17-11-18-10-22-11-26-10-24-8-36-9-27-5-30-4-40-3h-60l-45 3-42 5-46 8-41 9-38 10-36 11-44 15-33 13-24 10-27 12-33 16-28 14-23 13-18 10-20 12-19 12-30 20-20 14-36 27-13 11-10 8-15 13-10 9-8 7-16 15-33 33-7 8-13 14-9 11-11 13-9 12-14 19-12 17-16 25-12 21-14 27-11 24-10 26-8 26-8 34-4 31-1 16v18l3 30 5 25 7 23 11 26 9 16 7 11 14 19 15 16 12 12 2 1v2l4 2 14 11 24 16 24 13 24 11 34 12 25 7 32 7 35 5 30 3 24 1h47l38-2 31-3 42-6 47-9 34-8 43-12 38-12 46-17 34-14 36-16 35-17 19-10 29-16 22-13 26-16 36-24 4-3h2l-1 4 6 1-5 5-24 16-22 14-23 14-26 15-24 13-19 10-32 16-20 9-30 13-35 14-42 15-41 13-44 12-45 10-39 7-35 5-37 4-34 2h-46l-27-1-48-5-41-7-28-7-32-10-27-11-29-14-17-10-16-11-13-10-14-12-22-22-11-14-10-14-12-20-10-21-8-22-6-23-4-24-2-18v-35l4-34 6-30 8-28 10-29 13-30 13-26 13-23 11-18 12-18 12-17 9-12 13-17 10-12 9-11 12-13 9-11 48-48h2v-2l8-7 10-9 11-9 11-10 14-11 16-13 12-9 19-14 23-16 18-12 17-11 21-13 24-14 29-16 33-17 35-17 32-14 27-11 35-13 36-12 36-11 34-9 35-8 44-8 44-6 46-4z" fill="#2A99D5" />
+                                                            <path transform="translate(1237,527)" d="m0 0 5 5 1 6-14 21-14 19-14 18-12 14-9 11-15 16-9 10-15 16-7 6-1-11 12-12 7-8 11-12 7-8 11-13 11-14 16-21 13-19 10-15z" fill="#2B9AD5" />
+                                                        </svg>
+                                                    </td>
+
+                                                    <!-- Company Name and Receipt Title -->
+                                                    <td style="width: 36%;padding: 5px;vertical-align: top;text-align: left;padding-bottom: 20px;">
+                                                        <font style="vertical-align: inherit;font-size: 20px;color:#000;font-weight: 400;"> @Company.CompanyName</font> <br />
+                                                        <font style="vertical-align: inherit;font-size: 20px;color:#000;font-weight: 800;">Official Payment Receipt</font>
+                                                    </td>
+
+                                                    <!-- Company Registration & VAT -->
+                                                    <td style="width:10% !important;">
+                                                        <table>
+                                                            <tr>
+                                                                <td>
+                                                                    <font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 700;">Company Reg : &nbsp;</font>
+                                                                </td>
+                                                                <td>
+                                                                    <font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;"> @Company.RegistrationNo</font>
+                                                                </td>
+                                                            </tr>
+
+                                                            <tr>
+                                                                <td>
+                                                                    <font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 700;">VAT Reg :</font>
+                                                                </td>
+                                                                <td>
+                                                                    <font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">@Company.VATNo</font>
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </table>
+
+                                            <!-- Company, Customer, and Invoice Information Sections -->
+                                            <table style="width: 100%;line-height: inherit;text-align: left;">
+                                                <tbody>
+                                                    <tr>
+                                                        <!-- Company Info Section -->
+                                                        <td style="width:33.333%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px;border-radius: 10px;background: #f3f2f7;">
+                                                            <font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text" style="font-weight:700;">Company Info</font></font><br>
+                                                            <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">Company: @Company.CompanyName</font></font><br>
+                                                            <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">Address: @Company.Address</font></font><br>
+                                                            <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">PhoneNo: @Company.PhoneNo</font></font><br>
+                                                            <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">Email: <a href="mailto:@Company.Email" style="color:#000;">@Company.Email</a></font></font><br>
+                                                        </td>
+
+                                                        <!-- Received From Section (Client Info) -->
+                                                        <td style="width:33.333%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+                                                            <font style="vertical-align: inherit;margin-bottom:25px; margin-left:10px;"><font class="blue-text" style="font-weight:700;">Received From</font></font><br>
+                                                            <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">Customer: @Customer.LedgerName</font></font><br>
+                                                            <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">Address: @Customer.Address</font></font><br>
+                                                            <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">PhoneNo: @Customer.Phone</font></font><br>
+                                                            <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 400;">Email: <a href="mailto:@Customer.Email" style="color:#000;">@Customer.Email</a></font></font><br>
+                                                        </td>
+
+                                                        <!-- Sales Invoice Info Section -->
+                                                        <td style="width:33.333%;padding:5px;vertical-align:top;text-align:left;padding-bottom:20px">
+                                                            <font style="vertical-align: inherit;margin-bottom:25px;"><font class="blue-text" style="font-weight:700;">Sales Invoice Info</font></font><br>
+                                                            <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Invoice No: @Invoice.VoucherNo</font></font><br>
+                                                            <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Date : @DateFormatter.FormatDate(Invoice.Date)</font></font><br>
+                                                            @if (ReceiptId != 0)
+                                                            {
+                                                                <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Voucher No: @Invoice.ReceiptDetails.FirstOrDefault().VoucherNo</font></font>
+                                                                <br>
+                                                                <font style="vertical-align: inherit;margin-left:10px;"><font style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Voucher Date: @DateFormatter.FormatDate(Invoice.ReceiptDetails.FirstOrDefault().AddedDate)</font></font>
+                                                                <br>
+                                                            }
+                                                            <font style="vertical-align: inherit;margin-left:10px;"><font class="badges bg-lightgreen statusbutton" style="vertical-align: inherit;font-size: 14px;color:#000;font-weight: 600;">Status: @ReceiptStatus</font></font><br>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Receipt Table Section (If No Receipt) -->
+                            @if (ReceiptId == 0)
+                            {
+                                <!-- Display table for detailed receipt view when ReceiptId is 0 -->
+                                <table class="table" style="width:100%;">
+                                    <!-- Table heading with column names -->
+                                    <tr class="heading " style="background: #F3F2F7;">
+                                        <td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+                                            Date & Time
+                                        </td>
+                                        <td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+                                            Voucher Number
+                                        </td>
+                                        <td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+                                            Payment Source
+                                        </td>
+                                        <td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+                                            Amount
+                                        </td>
+                                    </tr>
+
+                                    <!-- Table rows with dynamic data start -->
+                                    @foreach (var receiptDetail in Invoice.ReceiptDetails)
+                                    {
+                                        <tr class="details" style="border-bottom:1px solid #E9ECEF ;">
+                                            <td style="padding: 10px;vertical-align: top; display: flex;align-items: center;">
+                                                @DateFormatter.FormatDateTime(receiptDetail.AddedDate)
+                                            </td>
+                                            <td style="padding: 10px;vertical-align: top; ">
+                                                @receiptDetail.VoucherNo
+                                            </td>
+                                            <td style="padding: 10px;vertical-align: top; ">
+                                                @receiptDetail.AccountName
+                                            </td>
+                                            <td style="padding: 10px;vertical-align: top; ">
+                                                @CurrencyFormatter.FormatCurrency(receiptDetail.ReceivedAmount)
+                                            </td>
+                                        </tr>
+                                    }
+
+                                    <!-- Footer with Summary -->
+                                    <tfoot>
+                                        <tr class="total-order w-100 max-widthauto m-auto mb-4">
+                                            <td style="font-weight:700;"></td>
+                                            <td style="font-weight:700;"></td>
+                                            <td style="font-weight:700;">Total Amount</td>
+                                            <td style="font-weight:700;"> @Invoice.ReceiptDetails.Sum(x => x.ReceivedAmount) </td>
+                                        </tr>
+                                        <tr class="total-order w-100 max-widthauto m-auto mb-4">
+                                            <td style="font-weight:700;"></td>
+                                            <td style="font-weight:700;"></td>
+                                            <td style="font-weight:700;">Invoice Amount</td>
+                                            <td style="font-weight:700;"> @Invoice.GrandTotal</td>
+                                        </tr>
+                                        <tr class="total-order w-100 max-widthauto m-auto mb-4">
+                                            <td style="font-weight:700;"></td>
+                                            <td style="font-weight:700;"></td>
+                                            <td style="font-weight:700;">Due Amount</td>
+                                            <td style="font-weight:700;"> @(Invoice.GrandTotal - @Invoice.ReceiptDetails.Sum(x => x.ReceivedAmount))</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            }
+
+                            else
+                            {
+                                <!-- Display table for a summary view when ReceiptId is non-zero -->
+                                <table class="table" style="width:100%;">
+                                    <!-- Table heading with column names -->
+                                    <tr class="heading " style="background: #F3F2F7;">
+                                        <td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+                                            Payment Source
+                                        </td>
+                                        <td style="padding: 5px;vertical-align: middle;font-weight: 600;color: #5E5873;font-size: 14px;padding: 10px; ">
+                                            Amount
+                                        </td>
+                                    </tr>
+
+                                    <!-- Table rows with dynamic data start -->
+                                    @foreach (var receiptDetail in Invoice.ReceiptDetails)
+                                    {
+                                        <tr class="details" style="border-bottom:1px solid #E9ECEF ;">
+                                            <td style="padding: 10px;vertical-align: top; ">
+                                                @receiptDetail.AccountName
+                                            </td>
+                                            <td style="padding: 10px;vertical-align: top; ">
+                                                @CurrencyFormatter.FormatCurrency(receiptDetail.ReceivedAmount)
+                                            </td>
+                                        </tr>
+                                    }
+
+                                    <!-- Footer with Summary -->
+                                    <tfoot>
+                                        <tr class="total-order w-100 max-widthauto m-auto mb-4">
+                                            <td style="font-weight:700;">Total Amount</td>
+                                            <td style="font-weight:700;">@CurrencyFormatter.FormatCurrency(Invoice.ReceiptDetails.Sum(x => x.ReceivedAmount)) </td>
+                                        </tr>
+                                        <tr class="total-order w-100 max-widthauto m-auto mb-4">
+                                            <td style="font-weight:700;">Invoice Amount</td>
+                                            <td style="font-weight:700;"> @CurrencyFormatter.FormatCurrency(Invoice.GrandTotal) </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            }
+                        </div>
+
+                        <!-- Amount in Words & Narration section -->
+                        <table>
+                            <tr>
+                                <!-- Display Amount in Words label -->
+                                <td>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 700;"> Amount In Words </font><br>
+                                    <!-- Display the converted amount in words by calling the CurrencyWordsConverter method -->
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">
+                                        @CurrencyWordsConverter.ConvertNumberToWords(Invoice.ReceiptDetails.Sum(x => x.ReceivedAmount))
+                                    </font><br>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <!-- Display Narration label -->
+                                <td>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 700;"> Narration </font><br>
+                                    <!-- Display invoice reference, used as narration for the transaction -->
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">
+                                        @(Invoice.Reference ?? "N/A")
+                                    </font><br>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Delivery and Payment Terms section -->
+                        <table style="margin-top:20px;">
+                            <tr>
+                                <!-- Display Delivery Terms label -->
+                                <td style="width:160px;">
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 700;">Delivery Terms :</font><br>
+                                </td>
+                                <!-- Display specific Delivery Term -->
+                                <td>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">Sender Owns the goods in transit </font><br>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <!-- Display Payment Terms label -->
+                                <td style="width:160px;">
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 700;">Payment Terms :</font><br>
+                                </td>
+                                <!-- Display Payment Term, e.g., "30 Days Credit" -->
+                                <td>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">30 Days Credit</font><br>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Late Delivery or Penalty Terms section -->
+                        <table style="margin-top:20px; margin-bottom:40px;">
+                            <tr>
+                                <!-- Title for Late Delivery / Penalty section -->
+                                <td style="width:100%;">
+                                    <font style="vertical-align: inherit; font-style:italic; font-size: 15px; color:#000; font-weight: 700;">Late Delivery / Penalty</font><br>
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <!-- Placeholder text for penalty terms -->
+                                <td>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">
+                                        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Maecenas non magna dolor...
+                                    </font><br>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Signature Section -->
+                        <table width="100%" style="margin-bottom:40px; margin-left:20px;">
+                            <tr>
+                                <!-- Accountant signature placeholder -->
+                                <td style="text-align:center; width:33.33%;">
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">----------------------</font><br>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 700;">Accountant</font>
+                                </td>
+                                <!-- General Manager signature placeholder -->
+                                <td style="text-align:center; width:33.33%;">
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">----------------------</font><br>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 700;">General Manager</font>
+                                </td>
+                                <!-- Group Treasurer signature placeholder -->
+                                <td style="text-align:center; width:33.33%;">
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 400;">----------------------</font><br>
+                                    <font style="vertical-align: inherit; font-size: 15px; color:#000; font-weight: 700;">Group Treasurer</font>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Created By and Created Date Section -->
+                        <table width="100%" style="margin-top: 20px;">
+                            <tr>
+                                <!-- Label for Created By -->
+                                <td style="width: 83%; font-size: 15px; font-weight: 700;">
+                                    Created by:
+                                </td>
+                                <!-- Label for Created Date -->
+                                <td style="width: 17%; text-align: right; font-size: 15px; font-weight: 700;">
+                                    Created Date:
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <!-- Display the user who created the invoice -->
+                                <td style="font-size: 15px; font-weight: 400;">
+                                    @Invoice.UserId
+                                </td>
+                                <!-- Display the creation date formatted using DateFormatter -->
+                                <td style="text-align: right; font-size: 15px; font-weight: 400;">
+                                    @DateFormatter.FormatDateTime(DateTime.Now)
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (IsVisibleConfirmationDialog)
+{
+    <ConfirmDialog Title="Reverse Sales Invoice Payment"
+                   Message="Are you sure you want to reverse this invoice payments? This action cannot be undone."
+                   HasInputField="true" InputLabel="Reason for Reversal *" InputPlaceholder="Enter reason"
+                   InputValidationPattern="^(?!\s*$).+" InputValidationMessage="Required reversal reason"
+                   DialogType="ConfirmDialog.ConfirmDialogType.ConfirmCancel" IsActionInProgress="@IsReversingReceipts"
+                   OnConfirmCallback="@OnConfirmDialogResponse">
+    </ConfirmDialog>
+}
+
+@code {
+    #region Properties
+    [Parameter] public int InvoiceId { get; set; }
+    [Parameter] public int ReceiptId { get; set; }
+    private int CompanyId { get; set; }
+    private int CustomerId { get; set; }
+    private string ReversalReason { get; set; } = string.Empty;
+    private string ReceiptStatus { get; set; } = string.Empty;
+    private bool HasLoadedInvoice { get; set; } = false;
+    private bool HasLoadedCompany { get; set; } = false;
+    private bool HasLoadedCustomer { get; set; } = false;
+    private bool IsReversingReceipts { get; set; } = false;
+    private bool IsVisibleConfirmationDialog { get; set; } = false;
+    private bool IsVisibleReverseButton { get; set; } = true;
+    public (bool IsConfirmed, string InputValue) DialogResponse { get; set; }
+
+    private SalesMasterView? Invoice { get; set; }
+    private AccountLedger? Customer { get; set; }
+    private Company? Company { get; set; }
+
+    private List<ReceiptDetailsViewDup>? ReceiptsToReverse { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Initializes default values and loads initial data for invoices, company, and customer.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInvoiceAsync(InvoiceId, ReceiptId);
+        await LoadCompanyAsync(CompanyId);
+        await LoadCustomerAsync(CustomerId);
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Navigates the user back to the previous page in the browser's history.
+    /// </summary>
+    private void OnNavigateBackClick()
+    {
+        Navigation.NavigateTo("javascript:history.back()", forceLoad: false);
+    }
+
+    /// <summary>
+    /// Handles initiating the reversal process for a list of receipts by displaying a confirmation dialog to the user.
+    /// </summary>
+    /// <param name="receiptsToReverse">A list of receipt details that are intended to be reversed.</param>
+    private void OnReverseClick(List<ReceiptDetailsViewDup> receiptsToReverse)
+    {
+        // Store receipts to reverse and show confirmation dialog
+        ReceiptsToReverse = receiptsToReverse;
+        IsVisibleConfirmationDialog = true;
+    }
+
+    /// <summary>
+    /// Handles the click event to trigger the invoice printing process.
+    /// </summary>
+    private async Task OnPrintClick()
+    {
+        await JSRuntime.InvokeVoidAsync("printDiv", "printableDiv");
+    }
+
+    /// <summary>
+    /// Handles the user's response to the confirmation dialog. If the user confirms, it proceeds with reversing the receipts.
+    /// </summary>
+    /// <param name="result">A tuple containing the confirmation status and the reversal reason entered by the user.</param>
+    private async Task OnConfirmDialogResponse((bool IsConfirmed, string InputValue) response)
+    {
+        if (response.IsConfirmed)
+        {
+            ReversalReason = response.InputValue;
+
+            // Ensure the list is not null or empty before processing
+            if (ReceiptsToReverse == null && !ReceiptsToReverse.Any())
+            {
+                Snackbar.Add("No invoice receipts selected for reversal.", Severity.Warning);
+                return;
+            }
+
+            // Update the narration of each receipt with the reversal reason
+            foreach (var receiptToReverse in ReceiptsToReverse)
+            {
+                receiptToReverse.Narration = ReversalReason;
+            }
+
+            await ReverseReceiptsAsync(ReceiptsToReverse);
+        }
+
+        // Reset dialog visibility and reversal reason after processing
+        IsVisibleConfirmationDialog = false;
+        ReversalReason = string.Empty;
+    }
+
+    #endregion
+
+    #region Data Loading Methods
+    /// <summary>
+    /// Loads the list of settled invoices associated with the specified invoice ID and receipt ID.
+    /// </summary>
+    /// <param name="invoiceId">The ID of the invoice to load settled invoices for.</param>
+    /// <param name="receiptId">The ID of the receipt to load settled invoices for.</param>
+    private async Task LoadInvoiceAsync(int invoiceId, int receiptId)
+    {
+        try
+        {
+            HasLoadedInvoice = false;
+
+            // Load the settled invoice within the specified invoice ID and receipt ID.
+            Invoice = await SalesInvoiceService.GetSettledInvoiceWithReceiptsAsync(invoiceId, receiptId, receiptId == 0 ? false : true);
+
+            CompanyId = Invoice.CompanyId;
+            CustomerId = Invoice.LedgerId;
+            ReceiptStatus = ReceiptId == 0 ? Invoice.Status : Invoice.ReceiptDetails.First().TransactionStatus == "Reversed" ? Invoice.ReceiptDetails.First().TransactionStatus.ToString() : Invoice.ReceiptDetails.First().PaymentStatus;
+            IsVisibleReverseButton = Invoice.ReceiptDetails.Any(rd => rd.TransactionStatus != Enums.TransactionStatus.Reversed.ToString());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading settled invoices for Invoice ID {invoiceId}: {ex.Message}");
+            Snackbar.Add("An error occurred while loading invoices. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            HasLoadedInvoice = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the customer details for the specified customer ID.
+    /// </summary>
+    /// <param name="customerId">The ID of the customer to load the account ledger for.</param>
+    private async Task LoadCustomerAsync(int customerId)
+    {
+        try
+        {
+            HasLoadedCustomer = false;
+
+            // Load the customer account ledger details
+            Customer = await AccountLedgerService.GetAccountLedgersAsync(customerId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading settled invoices for Invoice ID {customerId}: {ex.Message}");
+            Snackbar.Add("An error occurred while loading invoices. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            HasLoadedCustomer = true;
+        }
+    }
+
+    /// <summary>
+    /// Loads the company details for the specified company ID.
+    /// </summary>
+    /// <param name="companyId">The ID of the company to load the details for.</param>
+    private async Task LoadCompanyAsync(int companyId)
+    {
+        try
+        {
+            HasLoadedCompany = false;
+
+            // Load the company details
+            Company = await CompanyService.GetbyId(companyId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading settled invoices for Invoice ID {companyId}: {ex.Message}");
+            Snackbar.Add("An error occurred while loading invoices. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            HasLoadedCompany = true;
+        }
+    }
+
+    #endregion
+
+    #region Processing Methods
+    /// <summary>
+    /// Reversal of a list of receipts by calling the reversal service and updating the UI.
+    /// </summary>
+    /// <param name="receiptsToReverse">The list of receipts that need to be reversed.</param>
+    private async Task ReverseReceiptsAsync(List<ReceiptDetailsViewDup> receiptsToReverse)
+    {
+        try
+        {
+            // Mark the start of the reversal process
+            IsReversingReceipts = true;
+
+            var result = await SalesInvoiceService.ReverseSettledInvoiceAsync(receiptsToReverse);
+
+            if (result)
+            {
+                IsVisibleReverseButton = false;
+                ReceiptStatus = Enums.TransactionStatus.Reversed.ToString();
+                Snackbar.Add("Invoice receipts have been successfully reversed.", Severity.Success);
+            }
+            else
+                Snackbar.Add("Failed to reverse invoice receipts. Please try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reversing receipts: {ex.Message}");
+            Snackbar.Add("An error occurred while processing the reversal. Please try again later.", Severity.Error);
+        }
+        finally
+        {
+            // Update the end of the reversal process
+            IsReversingReceipts = false;
+        }
+    }
+
+    #endregion
+}

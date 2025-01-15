@@ -1,0 +1,378 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject ISubMenu SubMenuService
+@inject ISnackbar Snackbar
+
+<div class="grid-container">
+    <div class="grid-toolbar">
+        <!-- Grid Refresh Button: Refreshes the grid when clicked -->
+        <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Text="Refresh"
+                      Disabled="@(!HasLoadedSubMenus)"
+                      IsBusy="@(!HasLoadedSubMenus)" BusyText="Refrehing..."
+                      Click="onGridRefresh" />
+        <!-- Grid Add Button: Allows adding a new row -->
+        <RadzenButton Icon="add" ButtonStyle="ButtonStyle.Light" Text="Add"
+                      Disabled="@(NewSubMenu != null)"
+                      Click="onGridAddRow" />
+        <!-- Grid Export Button: Exports grid data to an XLS file -->
+        <RadzenButton Icon="table_view" ButtonStyle="ButtonStyle.Light" Text="Export XLS"
+                      Disabled="true"
+                      Click="OnGridExportToXLS" />
+    </div>
+
+    <!-- Data Grid Component: Displays the Sub Menus data in a table format -->
+    <RadzenDataGrid @ref="GridSubMenus" Data="@SubMenus" TItem="SubMenu" IsLoading="@(!HasLoadedSubMenus)"
+                    AllowAlternatingRows="false" AllowSorting="true"
+                    AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[] {10, 20, 50, 100})"
+                    PagerAlwaysVisible="true" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                    AllowFiltering="true" FilterMode="FilterMode.SimpleWithMenu" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" EditMode="Radzen.DataGridEditMode.Single"
+                    class="grid-scrollable grid-centered-header">
+
+        <!-- Column Definitions -->
+        <Columns>
+            <RadzenDataGridColumn TItem="SubMenu" Property="SubMenuId" Title="Sub Menu ID" Sortable="true" Visible="false" />
+            <RadzenDataGridColumn TItem="SubMenu" Property="SubMenuName" Title="Sub Menu Name" Width="20%">
+                <EditTemplate Context="subMenu">
+                    <RadzenTextBox @bind-Value="subMenu.SubMenuName" Name="txtSubMenuName" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtSubMenuName" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="SubMenu" Property="Code" Title="Code" Width="15%" Visible="false">
+                <EditTemplate Context="subMenu">
+                    <RadzenTextBox @bind-Value="subMenu.Code" Name="txtCode" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtCode" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="SubMenu" Property="Url" Title="Url" Width="25%">
+                <EditTemplate Context="subMenu">
+                    <RadzenTextBox @bind-Value="subMenu.Url" Name="txtUrl" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtUrl" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="SubMenu" Property="IconName" Title="Icon Name" Sortable="true" Width="20%">
+                <EditTemplate Context="subMenu">
+                    <RadzenTextBox @bind-Value="subMenu.IconName" Name="txtIconName" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtIconName" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="SubMenu" Property="Description" Title="Description" Sortable="true" Width="25%">
+                <EditTemplate Context="subMenu">
+                    <RadzenTextBox @bind-Value="subMenu.Description" Name="txtDescription" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtDescription" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="SubMenu" Property="Active" Title="Active" Sortable="true" TextAlign="TextAlign.Center" Width="100px">
+                <Template Context="subMenu">
+                    <RadzenCheckBox @bind-Value="subMenu.Active" Disabled="true" />
+                </Template>
+                <EditTemplate Context="subMenu">
+                    <RadzenCheckBox @bind-Value="subMenu.Active" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="SubMenu" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Title="Action" Width="80px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                <Template Context="subMenu">
+                    <!-- Grid Edit Button: Triggers edit mode -->
+                    <RadzenButton Icon="edit" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Edit"
+                                  Click="@(args => OnGridEditRow(subMenu))" @onclick:stopPropagation="true" />
+                    <!-- Grid Status Toggle Button: Toggles active/inactive status -->
+                    <RadzenButton Icon="sync_alt" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Status Toggle"
+                                  Click="@(args => OnGridToggleStatus(subMenu))" @onclick:stopPropagation="true" />
+                </Template>
+                <EditTemplate Context="subMenu">
+                    <!-- Grid Save Button: Saves the edited row -->
+                    <RadzenButton Icon="check" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Save"
+                                  Click="@(args => OnGridSaveRow(subMenu))" />
+                    <!-- Grid Cancel Button: Cancels the editing of the row -->
+                    <RadzenButton Icon="close" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Cancel"
+                                  Click="@(args => OnGridCancelEdit(subMenu))" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+
+        <!-- Empty Template: Displays when no data is available -->
+        <EmptyTemplate>
+            <div class="grid-empty">
+                No records available!
+            </div>
+        </EmptyTemplate>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    #region Properties
+    private bool HasLoadedSubMenus { get; set; } = false;
+
+    private RadzenDataGrid<SubMenu> GridSubMenus { get; set; }
+    private SubMenu? InitialSubMenu { get; set; }
+    private SubMenu? NewSubMenu { get; set; }
+
+    private IList<SubMenu>? SubMenus { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads sub menus on component initialization.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load sub menus data
+            await LoadSubMenusAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sub menu data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Refreshes the grid by reloading the sub menus data.
+    /// </summary>
+    private async Task onGridRefresh()
+    {
+        try
+        {
+            // Load sub menus data
+            await LoadSubMenusAsync();
+
+            // Reset the NewSubMenu object
+            NewSubMenu = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading sub menus: {ex.Message}");
+            Snackbar.Add("An error occurred while loading sub menus. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Exports the grid data to an Excel file.
+    /// </summary>
+    private void OnGridExportToXLS()
+    {
+        try
+        {
+            // Pending Task: Logic to export the grid data to an Excel file.
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine($"Unauthorized Access Exception: {ex.Message}");
+            Snackbar.Add("You do not have permission to write the export file. Please check your access rights.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred during the export process. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Adds a new row to the grid for creating a SubMenu entry.
+    /// </summary>
+    private async Task onGridAddRow()
+    {
+        try
+        {
+            // Create a new SubMenu object
+            NewSubMenu = new SubMenu
+                {
+                    SubMenuId = 0,
+                    SubMenuName = string.Empty,
+                    Code = null,
+                    Url = string.Empty,
+                    IconName = null,
+                    Description = null,
+                    Active = true
+                };
+
+            // Open the new row in the RadzenDataGrid for editing
+            await GridSubMenus.InsertRow(NewSubMenu);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while adding a new row: {ex.Message}");
+            Snackbar.Add("Failed to add a new row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Edits an existing row in the grid by populating it with the selected SubMenu's details.
+    /// </summary>
+    /// <param name="subMenu">The SubMenu object containing the data to be edited.</param>
+    private async Task OnGridEditRow(SubMenu subMenu)
+    {
+        try
+        {
+            // Store the original SubMenu data to revert changes if the user cancels the edit
+            InitialSubMenu = new SubMenu
+                {
+                    SubMenuId = subMenu.SubMenuId,
+                    SubMenuName = subMenu.SubMenuName,
+                    Code = subMenu.Code,
+                    Url = subMenu.Url,
+                    IconName = subMenu.IconName,
+                    Description = subMenu.Description,
+                    CreatedBy = subMenu.CreatedBy,
+                    CreatedDate = subMenu.CreatedDate,
+                    ModifiedBy = subMenu.ModifiedBy,
+                    ModifiedDate = subMenu.ModifiedDate,
+                    Active = subMenu.Active
+                };
+
+            // Open the selected row in the RadzenDataGrid for editing
+            await GridSubMenus.EditRow(subMenu);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while editing a row: {ex.Message}");
+            Snackbar.Add("Failed to edit a row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Update or Insert the SubMenu data to the database, handles possible exceptions.
+    /// </summary>
+    /// <param name="subMenu">The SubMenu object containing the data to be saved.</param>
+    private async Task OnGridSaveRow(SubMenu subMenu)
+    {
+        try
+        {
+            // Insert or update the SubMenu data in the database(handles validations and throws exceptions)
+            await SubMenuService.UpsertAsync(subMenu);
+
+            // Exit the edit mode and update the grid with the saved data
+            await GridSubMenus.UpdateRow(subMenu);
+
+            // Reload the main menus
+            await LoadSubMenusAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Sub menu saved successfully.", Severity.Success);
+
+            // Reset the NewSubMenu object
+            NewSubMenu = null;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: Sub menu data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving SubMenu ID {subMenu?.SubMenuId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving SubMenu ID {subMenu?.SubMenuId}: {ex.Message}");
+            Snackbar.Add("Failed to save the sub menu. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Toggles the active status of the SubMenu, updates the status in the database, and reloads the sub menus.
+    /// </summary>
+    /// <param name="subMenu">The SubMenu object whose active status is to be toggled.</param>
+    private async Task OnGridToggleStatus(SubMenu subMenu)
+    {
+        try
+        {
+            // Toggle the active status data in the database(handles validations and throws exceptions)
+            await SubMenuService.ToggleActiveAsync(subMenu.SubMenuId);
+
+            // Reload the sub menus
+            await LoadSubMenusAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Active status updated successfully.", Severity.Success);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: Sub menu data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while toggling active status in SubMenu ID {subMenu?.SubMenuId}: {ex.Message}");
+            Snackbar.Add("Failed to update the active status of the sub menu. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Cancels the edit operation on the SubMenu and reverts any changes made to the object.
+    /// </summary>
+    /// <param name="subMenu">The SubMenu object that was being edited.</param>
+    private void OnGridCancelEdit(SubMenu subMenu)
+    {
+        try
+        {
+            // Check if there is an initial state to revert to
+            if (InitialSubMenu != null)
+            {
+                // Revert the edited object properties to their original state from InitialSubMenu
+                subMenu.SubMenuId = InitialSubMenu.SubMenuId;
+                subMenu.SubMenuName = InitialSubMenu.SubMenuName;
+                subMenu.Code = InitialSubMenu.Code;
+                subMenu.Url = InitialSubMenu.Url;
+                subMenu.IconName = InitialSubMenu.IconName;
+                subMenu.Description = InitialSubMenu.Description;
+                subMenu.CreatedBy = InitialSubMenu.CreatedBy;
+                subMenu.CreatedDate = InitialSubMenu.CreatedDate;
+                subMenu.ModifiedBy = InitialSubMenu.ModifiedBy;
+                subMenu.ModifiedDate = InitialSubMenu.ModifiedDate;
+                subMenu.Active = InitialSubMenu.Active;
+            }
+
+            // Cancel the edit mode for the grid row
+            GridSubMenus.CancelEditRow(subMenu);
+
+            // Clear the temporary object used for adding new sub menus
+            NewSubMenu = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred while canceling the edit: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while canceling the edit. Please try again.", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the list of sub menus.
+    /// </summary>
+    private async Task LoadSubMenusAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedSubMenus = false;
+
+            // Load the list of sub menus.
+            SubMenus = await SubMenuService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading sub menus: {ex.Message}");
+            throw new Exception("Failed to load sub menus. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedSubMenus = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+}
