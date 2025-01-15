@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using QuickAccounting.Data.ViewModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace QuickAccounting.Data.Setting
 {
@@ -19,6 +20,7 @@ namespace QuickAccounting.Data.Setting
         public string Narration { get; set; }
         public decimal NetAmounts { get; set; }
         public decimal GrandTotal { get; set; }
+        public decimal SalesReturnGrandTotal { get; set; }
         public decimal BillDiscount { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal TotalDue { get; set; }
@@ -45,6 +47,9 @@ namespace QuickAccounting.Data.Setting
         public bool IsCreditNotes { get; set; }
         public DateTime? AddedDate { get; set; }
         public DateTime? ModifyDate { get; set; }
-		public string TaxNo { get; set; }
-	}
+        public string TaxNo { get; set; }
+
+        // List of receipt details associated with the sale invoice
+        public List<ReceiptDetailsViewDup> ReceiptDetails { get; set; } = new List<ReceiptDetailsViewDup>();
+    }
 }

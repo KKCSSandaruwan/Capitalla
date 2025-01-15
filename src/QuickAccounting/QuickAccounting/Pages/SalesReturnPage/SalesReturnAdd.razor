@@ -97,12 +97,12 @@
 							<tr>
 
                                     <td style="width:300px;">@td.ProductName</td>
-								<td><input type="number" class="form-control" @bind-value="td.Qty" style="width: 100px" @onkeyup="@(e => editItem(td.ProductId))" @onclick="@(e => editItem(td.ProductId))" @bind-value:event="oninput" /></td>
+                                    <td><input type="number" class="form-control" @bind-value="td.Qty" style="width: 100px" @onkeyup="@(e => editItem(td.ProductId))" @onclick="@(e => editItem(td.ProductId))" @bind-value:event="oninput" /></td>
                                     <td>@td.UnitName</td>
 								<td><input type="number" @bind-value="td.SalesRate" style="width: 120px" class="form-control" @onkeyup="@(e => editItem(td.ProductId))" @onclick="@(e => editItem(td.ProductId))" @bind-value:event="oninput"></td>
 								<td><input type="number" @bind-value="@td.DiscountAmount" style="width: 100px" class="form-control" @onkeyup="@(e => editItem(td.ProductId))" @onclick="@(e => editItem(td.ProductId))" @bind-value:event="oninput"></td>
                                     <td class="text-end">@td.TaxAmount</td>
-                                    <td class="text-end">@PublicVariables._Symbol @td.TotalAmount </td>
+                                    <td class="text-end">@PublicVariables._Symbol @(td.Qty * td.SalesRate)  </td>
 								<td>
                                         <a @onclick="@(e => Edit(td.ProductId))"><img src="assets/img/icons/edit.svg" alt="svg"></a>
                                         <a @onclick="@(e => deleteItem(td.Id))"><img src="assets/img/icons/delete.svg" alt="svg"></a>
@@ -331,7 +331,7 @@
             master.VoucherTypeId = decSalesReturnVoucherType;
             master.SerialNo = "0";
             master.Status = "Draft";
-            master.SalesMasterId = 0;
+            master.SalesMasterId = master.SalesMasterId;
             master.WarehouseId = 1;
             master.AddedDate = DateTime.Now;
             foreach (var item in TodoList)
@@ -760,4 +760,5 @@
     {
         visible = false;
     }
+
 }

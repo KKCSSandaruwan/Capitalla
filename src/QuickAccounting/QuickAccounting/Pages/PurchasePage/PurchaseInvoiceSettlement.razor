@@ -60,17 +60,17 @@
                                     <RadzenDropDownDataGridColumn Property="VoucherNo" Title="Voucher Number" Width="25%" />
                                     <RadzenDropDownDataGridColumn Title="Total Amount" Width="20%">
                                         <Template>
-                                            @NumberFormatter.FormatCurrency((decimal)@context.GrandTotal)
+                                            @CurrencyFormatter.FormatCurrency((decimal)@context.GrandTotal)
                                         </Template>
                                     </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Title="Paid Amount" Width="20%">
                                         <Template>
-                                            @NumberFormatter.FormatCurrency((decimal)@context.PayAmount)
+                                            @CurrencyFormatter.FormatCurrency((decimal)@context.PayAmount)
                                         </Template>
                                     </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Title="Due Amount" Width="20%">
                                         <Template>
-                                            @NumberFormatter.FormatCurrency((decimal)@context.BalanceDue)
+                                            @CurrencyFormatter.FormatCurrency((decimal)@context.BalanceDue)
                                         </Template>
                                     </RadzenDropDownDataGridColumn>
                                     <RadzenDropDownDataGridColumn Property="Status" Title="Status" Width="15%" />
@@ -101,9 +101,9 @@
                                 <tr>
                                     <td> @DateFormatter.FormatDate(@td.Date)</td>
                                     <td> @td.VoucherNo</td>
-                                    <td> @NumberFormatter.FormatCurrency(@td.GrandTotal)</td>
-                                    <td> @NumberFormatter.FormatCurrency(@td.PayAmount)</td>
-                                    <td> @NumberFormatter.FormatCurrency(@td.BalanceDue)</td>
+                                    <td> @CurrencyFormatter.FormatCurrency(@td.GrandTotal)</td>
+                                    <td> @CurrencyFormatter.FormatCurrency(@td.PayAmount)</td>
+                                    <td> @CurrencyFormatter.FormatCurrency(@td.BalanceDue)</td>
                                     <td class="text-end">
                                         <a @onclick="() => OnDeleteFromTodoList(td.VoucherNo)"><img src="assets/img/icons/delete.svg" alt="svg"></a>
                                     </td>

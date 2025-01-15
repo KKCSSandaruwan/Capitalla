@@ -1,0 +1,349 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject IUserRole UserRoleService
+@inject ISnackbar Snackbar
+
+<div class="grid-container">
+    <div class="grid-toolbar">
+        <!-- Grid Refresh Button: Refreshes the grid when clicked -->
+        <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Text="Refresh"
+                      Disabled="@(!HasLoadedUserRoles)"
+                      IsBusy="@(!HasLoadedUserRoles)" BusyText="Refrehing..."
+                      Click="onGridRefresh" />
+        <!-- Grid Add Button: Allows adding a new row -->
+        <RadzenButton Icon="add" ButtonStyle="ButtonStyle.Light" Text="Add"
+                      Disabled="@(NewUserRole != null)"
+                      Click="onGridAddRow" />
+        <!-- Grid Export Button: Exports grid data to an XLS file -->
+        <RadzenButton Icon="table_view" ButtonStyle="ButtonStyle.Light" Text="Export XLS"
+                      Disabled="true"
+                      Click="OnGridExportToXLS" />
+    </div>
+
+    <!-- Data Grid Component: Displays the user roles data in a table format -->
+    <RadzenDataGrid @ref="GridUserRoles" Data="@UserRoles" TItem="UserRole" IsLoading="@(!HasLoadedUserRoles)"
+                    AllowAlternatingRows="false" AllowSorting="true"
+                    AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[] {10, 20, 50, 100})"
+                    PagerAlwaysVisible="true" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                    AllowFiltering="true" FilterMode="FilterMode.SimpleWithMenu" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" EditMode="Radzen.DataGridEditMode.Single"
+                    class="grid-scrollable grid-centered-header">
+
+        <!-- Column Definitions -->
+        <Columns>
+            <RadzenDataGridColumn TItem="UserRole" Property="UserRoleId" Title="Role ID" Sortable="false" Visible="false" />
+            <RadzenDataGridColumn TItem="UserRole" Property="UserRoleName" Title="Role Name" Width="40%">
+                <EditTemplate Context="userRole">
+                    <RadzenTextBox @bind-Value="userRole.UserRoleName" Name="txtRoleName" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtRoleName" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="UserRole" Property="Description" Title="Description" Sortable="true" Width="60%">
+                <EditTemplate Context="userRole">
+                    <RadzenTextBox @bind-Value="userRole.Description" Name="txtDescription" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtDescription" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="UserRole" Property="Active" Title="Active" Sortable="true" TextAlign="TextAlign.Center" Width="100px">
+                <Template Context="userRole">
+                    <RadzenCheckBox @bind-Value="userRole.Active" Disabled="true" />
+                </Template>
+                <EditTemplate Context="userRole">
+                    <RadzenCheckBox @bind-Value="userRole.Active" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="UserRole" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Title="Action" Width="80px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                <Template Context="userRole">
+                    <!-- Grid Edit Button: Triggers edit mode -->
+                    <RadzenButton Icon="edit" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Edit"
+                                  Click="@(args => OnGridEditRow(userRole))" @onclick:stopPropagation="true" />
+                    <!-- Grid Status Toggle Button: Toggles active/inactive status -->
+                    <RadzenButton Icon="sync_alt" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Status Toggle"
+                                  Click="@(args => OnGridToggleStatus(userRole))" @onclick:stopPropagation="true" />
+                </Template>
+                <EditTemplate Context="userRole">
+                    <!-- Grid Save Button: Saves the edited row -->
+                    <RadzenButton Icon="check" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Save"
+                                  Click="@(args => OnGridSaveRow(userRole))" />
+                    <!-- Grid Cancel Button: Cancels the editing of the row -->
+                    <RadzenButton Icon="close" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Cancel"
+                                  Click="@(args => OnGridCancelEdit(userRole))" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+
+        <EmptyTemplate>
+            <div class="grid-empty">
+                No records available!
+            </div>
+        </EmptyTemplate>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    #region Properties
+    private bool HasLoadedUserRoles { get; set; } = false;
+
+    private RadzenDataGrid<UserRole>? GridUserRoles { get; set; }
+    private UserRole? InitialUserRole { get; set; }
+    private UserRole? NewUserRole { get; set; }
+
+    private IList<UserRole>? UserRoles { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads user roles on component initialization.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load user roles data
+            await LoadUserRolesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user role data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Refreshes the grid by reloading the user roles data.
+    /// </summary>
+    private async Task onGridRefresh()
+    {
+        try
+        {
+            // Load user roles data
+            await LoadUserRolesAsync();
+
+            // Reset the NewUserRole object
+            NewUserRole = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user roles: {ex.Message}");
+            Snackbar.Add("An error occurred while loading user roles. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Exports the grid data to an Excel file.
+    /// </summary>
+    private void OnGridExportToXLS()
+    {
+        try
+        {
+            // Pending Task: Logic to export the grid data to an Excel file.
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine($"Unauthorized Access Exception: {ex.Message}");
+            Snackbar.Add("You do not have permission to write the export file. Please check your access rights.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred during the export process. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Adds a new row to the grid for creating a UserRole entry.
+    /// </summary>
+    private async Task onGridAddRow()
+    {
+        try
+        {
+            // Create a new UserRole object
+            NewUserRole = new UserRole
+                {
+                    UserRoleName = null,
+                    Description = null,
+                    Active = true
+                };
+
+            // Open the new row in the RadzenDataGrid for editing
+            await GridUserRoles.InsertRow(NewUserRole);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while adding a new row: {ex.Message}");
+            Snackbar.Add("Failed to add a new row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Edits an existing row in the grid by populating it with the selected UserRole's details.
+    /// </summary>
+    /// <param name="userRole">The UserRole object containing the data to be edited.</param>
+    private async Task OnGridEditRow(UserRole userRole)
+    {
+        try
+        {
+            // Store the original UserRole data to revert changes if the user cancels the edit
+            InitialUserRole = new UserRole
+                {
+                    UserRoleId = userRole.UserRoleId,
+                    UserRoleName = userRole.UserRoleName,
+                    Description = userRole.Description,
+                    CreatedBy = userRole.CreatedBy,
+                    CreatedDate = userRole.CreatedDate,
+                    ModifiedBy = userRole.ModifiedBy,
+                    ModifiedDate = userRole.ModifiedDate,
+                    Active = userRole.Active
+                };
+
+            // Open the selected row in the RadzenDataGrid for editing
+            await GridUserRoles.EditRow(userRole);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while editing a row: {ex.Message}");
+            Snackbar.Add("Failed to edit a row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Update or Insert the UserRole data to the database, handles possible exceptions.
+    /// </summary>
+    /// <param name="userRole">The UserRole object containing the data to be saved.</param>
+    private async Task OnGridSaveRow(UserRole userRole)
+    {
+        try
+        {
+            // Insert or update the UserRole data in the database(handles validations and throws exceptions)
+            await UserRoleService.UpsertAsync(userRole);
+
+            // Exit the edit mode and update the grid with the saved data
+            await GridUserRoles.UpdateRow(userRole);
+
+            // Reload the user roles
+            await LoadUserRolesAsync();
+
+            // Notify the user of success
+            Snackbar.Add("User role saved successfully.", Severity.Success);
+
+            // Reset the NewUserRole object
+            NewUserRole = null;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: User role data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving UserRole ID {userRole?.UserRoleId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving UserRole ID {userRole?.UserRoleId}: {ex.Message}");
+            Snackbar.Add("Failed to save the user role. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Toggles the active status of the UserRole, updates the status in the database, and reloads the user roles.
+    /// </summary>
+    /// <param name="userRole">The UserRole object whose active status is to be toggled.</param>
+    private async Task OnGridToggleStatus(UserRole userRole)
+    {
+        try
+        {
+            // Toggle the active status data in the database(handles validations and throws exceptions)
+            await UserRoleService.ToggleActiveAsync(userRole.UserRoleId);
+
+            // Reload the user roles
+            await LoadUserRolesAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Active status updated successfully.", Severity.Success);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: User role data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while toggling active status in UserRole ID {userRole?.UserRoleId}: {ex.Message}");
+            Snackbar.Add("Failed to update the active status of the user role. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Cancels the edit operation on the UserRole and reverts any changes made to the object.
+    /// </summary>
+    /// <param name="userRole">The UserRole object that was being edited.</param>
+    private void OnGridCancelEdit(UserRole userRole)
+    {
+        try
+        {
+            // Check if there is an initial state to revert to
+            if (InitialUserRole != null)
+            {
+                // Revert the edited object properties to their original state from InitialUserRole
+                userRole.UserRoleId = InitialUserRole.UserRoleId;
+                userRole.UserRoleName = InitialUserRole.UserRoleName;
+                userRole.Description = InitialUserRole.Description;
+                userRole.CreatedBy = InitialUserRole.CreatedBy;
+                userRole.CreatedDate = InitialUserRole.CreatedDate;
+                userRole.ModifiedBy = InitialUserRole.ModifiedBy;
+                userRole.ModifiedDate = InitialUserRole.ModifiedDate;
+                userRole.Active = InitialUserRole.Active;
+            }
+
+            // Cancel the edit mode for the grid row
+            GridUserRoles.CancelEditRow(userRole);
+
+            // Clear the temporary object used for adding new user role
+            NewUserRole = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred while canceling the edit: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while canceling the edit. Please try again.", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the list of user roles.
+    /// </summary>
+    private async Task LoadUserRolesAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedUserRoles = false;
+
+            // Load the list of user roles.
+            UserRoles = await UserRoleService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading user roles: {ex.Message}");
+            throw new Exception("Failed to load user roles. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedUserRoles = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+}

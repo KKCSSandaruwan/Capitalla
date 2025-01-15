@@ -1,0 +1,281 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject IUserRole UserRoleService
+@inject IUserProfile UserProfileService
+@inject ISnackbar Snackbar
+
+<div class="grid-container">
+    <div class="grid-toolbar">
+        <!-- Grid Refresh Button: Refreshes the grid when clicked -->
+        <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="refresh" Text="Refresh"
+                      Disabled="@(!HasLoadedUserProfiles)"
+                      IsBusy="@(!HasLoadedUserProfiles)" BusyText="Refrehing..."
+                      Click="onGridRefreshAsync" />
+        <!-- Grid Export Button: Exports grid data to an XLS file -->
+        <RadzenButton ButtonStyle="ButtonStyle.Light" Icon="table_view" Text="Export XLS"
+                      Disabled="true"
+                      Click="OnGridExportToXLS" />
+    </div>
+
+    <!-- Data Grid Component: Displays the user roles data in a table format -->
+    <RadzenDataGrid @ref="GridUserProfile" Data="@UserProfiles" TItem="UserProfileView" IsLoading="@(!HasLoadedUserProfiles)"
+                    AllowAlternatingRows="false" AllowGrouping="true" HideGroupedColumn="true" AllowSorting="true"
+                    AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[] {10, 20, 50, 100})"
+                    PagerAlwaysVisible="true" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                    AllowFiltering="true" FilterMode="FilterMode.SimpleWithMenu" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" EditMode="Radzen.DataGridEditMode.Single"
+                    class="grid-scrollable grid-centered-header">
+
+        <!-- Column Definitions -->
+        <Columns>
+            <RadzenDataGridColumn TItem="UserProfileView" Property="UserId" Sortable="false" Groupable="false" Visible="false"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.UserId))" />
+            <RadzenDataGridColumn TItem="UserProfileView" Property="CompanyName" Sortable="true" Groupable="true" Width="250px"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.CompanyName))" />
+            <RadzenDataGridColumn TItem="UserProfileView" Property="UserRoleName" Sortable="true" Groupable="true" Width="175px"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.UserRoleName))" />
+            <RadzenDataGridColumn TItem="UserProfileView" Property="FullName" Sortable="true" Groupable="false" Width="250px"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.FullName))" />
+            <RadzenDataGridColumn TItem="UserProfileView" Property="Email" Sortable="true" Groupable="false" Width="200px"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.Email))" />
+            <RadzenDataGridColumn TItem="UserProfileView" Property="PhoneNumber" Sortable="true" Groupable="false" Width="200px"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.PhoneNumber))" />
+            <RadzenDataGridColumn TItem="UserProfileView" Property="Verified" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.Verified))">
+                <Template Context="userProfileView">
+                    <RadzenCheckBox @bind-Value="userProfileView.Verified" ReadOnly=true />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="UserProfileView" Property="Blocked" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.Blocked))">
+                <Template Context="userProfileView">
+                    <RadzenCheckBox @bind-Value="userProfileView.Blocked" ReadOnly="true" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="UserProfileView" Property="Active" Sortable="true" Groupable="false" TextAlign="TextAlign.Center" Width="100px"
+                                  Frozen="false" FrozenPosition="FrozenColumnPosition.Right"
+                                  Title="@EntityAttributeHelper.GetDisplayName(typeof(UserProfileView), nameof(UserProfileView.Active))">
+                <Template Context="userProfileView">
+                    <RadzenCheckBox @bind-Value="userProfileView.Active" ReadOnly="true" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="UserProfileView" Sortable="false" Groupable="false" Filterable="false" Frozen="true" FrozenPosition="FrozenColumnPosition.Right" TextAlign="TextAlign.Center" Title="Action" Width="140px">
+                <Template Context="userProfileView">
+                    <!-- Grid View Button: Navigate to detail form -->
+                    <RadzenButton Icon="visibility" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="View"
+                                  Click="@(args => OnGridCrudRow(userProfileView.UserId, CrudDialogType.View))" @onclick:stopPropagation="true" />
+                    <!-- Grid Edit Button: Navigate to edit detail form -->
+                    <RadzenButton Icon="edit" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Edit"
+                                  Click="@(args => OnGridCrudRow(userProfileView.UserId, CrudDialogType.Edit))" @onclick:stopPropagation="true" />
+                    <!-- Grid Status Toggle Button: Toggles active/inactive status -->
+                    <RadzenButton Icon="sync_alt" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Status Toggle"
+                                  Click="@(args => OnGridToggleStatusAsync(userProfileView))" @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+
+        <EmptyTemplate>
+            <div class="grid-empty">
+                No records available!
+            </div>
+        </EmptyTemplate>
+    </RadzenDataGrid>
+
+    <!-- User Profile CRUD Dialog: Displays the CRUD dialog for adding/editing/deleting user profiles -->
+    @if (IsVisibleDialogCrud)
+    {
+        <UserProfileDialogCrud DialogTitle="User Profile"
+                               DialogType="@DialogType"
+                               EntityId="@SelectedUserProfileId"
+                               OnResponseReceived="@OnDialogCrudResponseAsync">
+        </UserProfileDialogCrud>
+    }
+</div>
+
+@code {
+    #region Properties
+    private bool HasLoadedUserProfiles { get; set; } = false;
+    private bool IsVisibleDialogCrud { get; set; } = false;
+    private int SelectedUserProfileId { get; set; }
+    private CrudDialogType DialogType { get; set; }
+
+    private RadzenDataGrid<UserProfileView>? GridUserProfile { get; set; }
+    private IList<UserProfileView>? UserProfiles { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads user profiles on component initialization.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load user profiles data
+            await LoadUserProfilesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user profiles data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Refreshes the grid by reloading the user profiles data.
+    /// </summary>
+    private async Task onGridRefreshAsync()
+    {
+        try
+        {
+            // Load user profiles data
+            await LoadUserProfilesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading user profiles data: {ex.Message}");
+            Snackbar.Add("An error occurred while loading user profiles. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Exports the grid data to an Excel file.
+    /// </summary>
+    private void OnGridExportToXLS()
+    {
+        try
+        {
+            // Pending Task: Logic to export the grid data to an Excel file.
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine($"Unauthorized Access Exception: {ex.Message}");
+            Snackbar.Add("You do not have permission to write the export file. Please check your access rights.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred during the export process. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the CRUD operation for a user profile by opening a dialog and populating it with the selected user's details.
+    /// </summary>
+    /// <param name="userProfileId">The ID of the user profile for which the CRUD operation will be performed.</param>
+    /// <param name="dialogType">The type of CRUD dialog to be displayed (e.g., Add, Edit, View, Delete).</param>
+    private void OnGridCrudRow(int userProfileId, CrudDialogType dialogType)
+    {
+        try
+        {
+            // Set the selected user profile ID for the CRUD operation
+            SelectedUserProfileId = userProfileId;
+
+            // Set the dialog type (Add, Edit, View, Delete)
+            DialogType = dialogType;
+
+            // Make the CRUD dialog visible
+            IsVisibleDialogCrud = true;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while performing the CRUD operation: {ex.Message}");
+            Snackbar.Add("Failed to perform the operation. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Toggles the active status of the user profile, updates the status in the database, and reloads the user profiles.
+    /// </summary>
+    /// <param name="userProfileView">The UserProfileView object whose active status is to be toggled.</param>
+    private async Task OnGridToggleStatusAsync(UserProfileView userProfileView)
+    {
+        try
+        {
+            // Toggle the active status data in the database(handles validations and throws exceptions)
+            await UserProfileService.ToggleActiveAsync(userProfileView.UserId);
+
+            // Reload the user profiles
+            await LoadUserProfilesAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Active status updated successfully.", Severity.Success);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: User profile data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while toggling active status in UserProfile ID {userProfileView?.UserId}: {ex.Message}");
+            Snackbar.Add("Failed to update the active status of the user profile. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Handles the result of a CRUD operation performed within a dialog.
+    /// If the operation is successful, reloads user profiles to reflect changes.
+    /// Ensures the visibility of the dialog is reset regardless of success or failure.
+    /// </summary>
+    /// <param name="isOperationSuccessful">A flag indicating whether the CRUD operation was successful.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task OnDialogCrudResponseAsync(bool isOperationSuccessful)
+    {
+        try
+        {
+            // Reload user profiles only if the CRUD operation was successful
+            if (isOperationSuccessful)
+            {
+                await LoadUserProfilesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error occurred while CRUD response handling: {ex.Message}");
+            Snackbar.Add("An error occurred while CRUD response handling.", Severity.Error);
+        }
+        finally
+        {
+            // Ensure the CRUD dialog visibility is reset regardless of operation success or failure
+            IsVisibleDialogCrud = false;
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the list of user profiles.
+    /// </summary>
+    private async Task LoadUserProfilesAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedUserProfiles = false;
+
+            // Load the list of user profiles.
+            UserProfiles = await UserProfileService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading user profiles: {ex.Message}");
+            throw new Exception("Failed to load user profiles. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedUserProfiles = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+}

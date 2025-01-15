@@ -1,0 +1,96 @@
+﻿:root {
+    --dialog-backdrop-color: rgba(0, 0, 0, 0.8); /* Backdrop color */
+    --dialog-content-bg: #fff; /* Content background color */
+    --dialog-border-radius: 0.5rem; /* Border radius */
+    --dialog-box-shadow: 0 3px 9px rgba(0, 0, 0, 0.5); /* Box shadow */
+    --dialog-transition-speed: 0.15s; /* Transition speed */
+    --dialog-border-color: rgba(0, 0, 0, 0.2); /* Content border color */
+    --dialog-header-border-color: #dee2e6; /* Header border color */
+    --dialog-footer-border-color: #dee2e6; /* Footer border color */
+    --dialog-max-width: 500px; /* Default dialog width */
+}
+
+/* Base Dialog Styles */
+.dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1055;
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    outline: 0;
+    background-color: var(--dialog-backdrop-color);
+}
+
+    /* State Modifiers */
+    .dialog.fade {
+        transition: opacity var(--dialog-transition-speed) linear;
+    }
+
+    .dialog.show {
+        display: block;
+        opacity: 1;
+    }
+
+/* Dialog Content */
+.dialog-content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    pointer-events: auto;
+    background-color: var(--dialog-content-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--dialog-border-color);
+    border-radius: var(--dialog-border-radius);
+    box-shadow: var(--dialog-box-shadow);
+    outline: 0;
+}
+
+.dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    border-bottom: 1px solid var(--dialog-header-border-color);
+}
+
+.dialog-main {
+    position: relative;
+    flex: 1 1 auto;
+    /*    padding: 1rem;*/
+}
+
+    .dialog-main.description {
+        padding: 1rem 0rem 0rem 1rem;
+    }
+
+.dialog-body {
+    height: 450px;
+    overflow: auto;
+    margin: 1rem;
+}
+
+.dialog-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 1rem;
+    border-top: 1px solid var(--dialog-footer-border-color);
+}
+
+/* Dialog Positioning Helpers */
+.popup-dialog {
+    position: relative;
+    margin: auto;
+    pointer-events: none;
+    max-width: var(--dialog-max-width);
+}
+
+.popup-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+}

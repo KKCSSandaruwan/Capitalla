@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using QuickAccounting.Data;
 using QuickAccounting.Data.Inventory;
 using QuickAccounting.Data.Setting;
-using QuickAccounting.Data.ViewModel;
 using QuickAccounting.Repository.Interface;
 using System.Data;
 

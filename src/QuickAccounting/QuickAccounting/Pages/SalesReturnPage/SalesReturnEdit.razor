@@ -298,7 +298,7 @@
             master.FinancialYearId = 1;
             master.VoucherTypeId = decSalesReturnVoucherType;
             master.SerialNo = "0";
-            master.SalesMasterId = 0;
+            master.SalesMasterId = master.SalesMasterId;
             master.WarehouseId = 1;
             master.ModifyDate = DateTime.Now;
             foreach (var item in TodoList)

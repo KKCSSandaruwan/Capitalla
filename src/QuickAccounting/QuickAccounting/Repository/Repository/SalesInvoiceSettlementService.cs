@@ -157,7 +157,7 @@ namespace QuickAccounting.Repository.Repository
                         ReceiptMasterId = generatedRreceiptMasterId,
                         SalesMasterId = invoiceToSettle.SalesMasterId,
                         TransactionStatus = TransactionStatus.Approved.ToString(),
-                        TotalAmount = invoiceToSettle.GrandTotal,
+                        ReceiveableAmount = invoiceToSettle.GrandTotal,
                         ReceivedAmount = invoiceToSettle.PayAmount,
                         DueAmount = invoiceToSettle.BalanceDue,
                         PaymentStatus = invoiceToSettle.Status,
