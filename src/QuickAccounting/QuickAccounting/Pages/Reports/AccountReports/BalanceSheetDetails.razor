@@ -10,72 +10,72 @@
 @attribute [Authorize]
 <PageTitle>BalanceSheet</PageTitle>
 <div class="content">
-						<div class="page-header">
-							<div class="page-title">
-								<h3>BalanceSheet</h3>
-							</div>
-						</div>
+    <div class="page-header">
+        <div class="page-title">
+            <h3>BalanceSheet</h3>
+        </div>
+    </div>
 
-						<!-- /product list -->
-						<div class="card">
-							<div class="card-body">
-			<!-- /Filter -->
-				<div class="">
-					<div class="card-body padding1">
-					<div class="row">
-						<div class="col-lg-3 col-sm-6 col-12">
-							<div class="form-group">
-								From Date
-								<RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
-							</div>
-						</div>
-						<div class="col-lg-3 col-sm-6 col-12">
-							<div class="form-group">
-								To Date
-								<RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
-							</div>
-						</div>
+    <!-- /product list -->
+    <div class="card">
+        <div class="card-body">
+            <!-- /Filter -->
+            <div class="">
+                <div class="card-body padding1">
+                    <div class="row">
                         <div class="col-lg-3 col-sm-6 col-12">
                             <div class="form-group">
-                              <span style="margin-left:-58px;"> Show Details</span>
+                                From Date
+                                <RadzenDatePicker @bind-Value=@dtFromDate DateFormat="d" Class="w-100" />
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-sm-6 col-12">
+                            <div class="form-group">
+                                To Date
+                                <RadzenDatePicker @bind-Value=@dtToDate DateFormat="d" Class="w-100" />
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-sm-6 col-12">
+                            <div class="form-group">
+                                <span style="margin-left:-58px;"> Show Details</span>
                                 <RadzenSwitch Style="margin-top:24px; float:left;" @bind-Value=@value Change=@(args => OnChange(args, "Switch")) />
                             </div>
                         </div>
-						<div class="col-lg-3 col-sm-6 col-12">
-							<div class="form-group" style="margin-top:20px;">
+                        <div class="col-lg-3 col-sm-6 col-12">
+                            <div class="form-group" style="margin-top:20px;">
                                 <a style="float:left; margin-right:4px;" class="btn btn-filters ms-auto" @onclick="()=>LoadData()"><img src="assets/img/icons/search-whites.svg" alt="img"></a>
                                 <a style="float:left;" class="btn btn-filters ms-auto" onclick="printDiv('PrintDiv')"><img src="assets/img/icons/printer-white.svg" alt="img" style="width:1.25em;"></a>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-			<!-- /Filter -->
-			
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- /Filter -->
+
             <div id="PrintDiv">
-								<div class="table-responsive">
+                <div class="table-responsive">
 									@*<br/>
 									<hr/>*@
-				<table style="width: 100%;line-height: inherit;text-align: left;">
-					<tbody>
-						<tr>
-							<td style="padding:5px;vertical-align:top;text-align:center;padding-bottom:20px">
-								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 21px;color:#000;font-weight: 600;"> @company.CompanyName </font></font><br>
-								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.Address &ensp;|</font></font><br>
-								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">&ensp; @company.PhoneNo</font></font><br>
-								<font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 18px;color:#000;font-weight: 600;"> BalanceSheet</font></font><br>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-<br/>
-				@((MarkupString)myMarkup)
-								</div>
-                                </div>
-							</div>
-						</div>
-						<!-- /product list -->
-					</div>
+                    <table style="width: 100%;line-height: inherit;text-align: left;">
+                        <tbody>
+                            <tr>
+                                <td style="padding:5px;vertical-align:top;text-align:center;padding-bottom:20px">
+                                    <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 21px;color:#000;font-weight: 600;"> @company.CompanyName </font></font><br>
+                                    <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">@company.Address &ensp;|</font></font><br>
+                                    <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 15px;color:#000;font-weight: 400;">&ensp; @company.PhoneNo</font></font><br>
+                                    <font style="vertical-align: inherit;"><font style="vertical-align: inherit;font-size: 18px;color:#000;font-weight: 600;"> BalanceSheet</font></font><br>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <br />
+                    @((MarkupString)myMarkup)
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /product list -->
+</div>
 
 @code {
     [CascadingParameter]
@@ -130,7 +130,7 @@
                   <th></th>
                   </tr>";
         values += @"<tr style='background: #F3F2F7;'>
-<th>" +"Assets"+ @"</td>
+<th>" + "Assets" + @"</td>
 <th>" + "Amount" + @"</td>
 <th>" + "Liabilities" + @"</td>
 <th>" + "Amount" + @"</td>
@@ -177,7 +177,7 @@
 <td style='width: 260px;font-style:bold; color:black;text-align: left;'>" + "" + @"</td>
 <td style='width: 140px;font-style:bold; color:black;'>" + "" + @"</td>
 <td style='font-size:14px;'>" + rw["Name"].ToString() + @"</td>
-<td style='font-size:14px;'>" + PublicVariables._Symbol+ rw["Balance"].ToString() + @"</td>
+<td style='font-size:14px;'>" + PublicVariables._Symbol + rw["Balance"].ToString() + @"</td>
             </tr>";
                 if (value == true)
                 {

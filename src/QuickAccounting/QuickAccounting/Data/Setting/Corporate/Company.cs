@@ -1,14 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace QuickAccounting.Data.Setting
+namespace QuickAccounting.Data.Setting.Corporate
 {
     public class Company
     {
-        // Primary Key
         [Key]
         public int CompanyId { get; set; }
 
-        // Required fields (NOT NULL in SQL)
         [Required(ErrorMessage = "Company Name is required.")]
         [StringLength(255, ErrorMessage = "Company Name cannot exceed 255 characters.")]
         public string CompanyName { get; set; }

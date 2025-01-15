@@ -1,0 +1,378 @@
+﻿@using System.ComponentModel.DataAnnotations
+
+@inject IMainMenu MainMenuService
+@inject ISnackbar Snackbar
+
+<div class="grid-container">
+    <div class="grid-toolbar">
+        <!-- Grid Refresh Button: Refreshes the grid when clicked -->
+        <RadzenButton Icon="refresh" ButtonStyle="ButtonStyle.Light" Text="Refresh"
+                      Disabled="@(!HasLoadedMainMenus)"
+                      IsBusy="@(!HasLoadedMainMenus)" BusyText="Refrehing..."
+                      Click="onGridRefresh" />
+        <!-- Grid Add Button: Allows adding a new row -->
+        <RadzenButton Icon="add" ButtonStyle="ButtonStyle.Light" Text="Add"
+                      Disabled="@(NewMainMenu != null)"
+                      Click="onGridAddRow" />
+        <!-- Grid Export Button: Exports grid data to an XLS file -->
+        <RadzenButton Icon="table_view" ButtonStyle="ButtonStyle.Light" Text="Export XLS"
+                      Disabled="true"
+                      Click="OnGridExportToXLS" />
+    </div>
+
+    <!-- Data Grid Component: Displays the Main Menus data in a table format -->
+    <RadzenDataGrid @ref="GridMainMenus" Data="@MainMenus" TItem="MainMenu" IsLoading="@(!HasLoadedMainMenus)"
+                    AllowAlternatingRows="false" AllowSorting="true"
+                    AllowPaging="true" PageSize="10" PageSizeOptions="@(new int[] {10, 20, 50, 100})"
+                    PagerAlwaysVisible="true" ShowPagingSummary="true" PagerHorizontalAlign="HorizontalAlign.Left"
+                    AllowFiltering="true" FilterMode="FilterMode.SimpleWithMenu" FilterCaseSensitivity="FilterCaseSensitivity.CaseInsensitive"
+                    LogicalFilterOperator="LogicalFilterOperator.Or" SelectionMode="DataGridSelectionMode.Single" EditMode="Radzen.DataGridEditMode.Single"
+                    class="grid-scrollable grid-centered-header">
+
+        <!-- Column Definitions -->
+        <Columns>
+            <RadzenDataGridColumn TItem="MainMenu" Property="MainMenuId" Title="Main Menu ID" Sortable="true" Visible="false" />
+            <RadzenDataGridColumn TItem="MainMenu" Property="MainMenuName" Title="Main Menu Name" Width="20%">
+                <EditTemplate Context="mainMenu">
+                    <RadzenTextBox @bind-Value="mainMenu.MainMenuName" Name="txtMainMenuName" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtMainMenuName" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MainMenu" Property="Code" Title="Code" Width="15%" Visible="false">
+                <EditTemplate Context="mainMenu">
+                    <RadzenTextBox @bind-Value="mainMenu.Code" Name="txtCode" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtCode" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MainMenu" Property="Url" Title="Url" Width="25%">
+                <EditTemplate Context="mainMenu">
+                    <RadzenTextBox @bind-Value="mainMenu.Url" Name="txtUrl" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtUrl" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MainMenu" Property="IconName" Title="Icon Name" Sortable="true" Width="20%">
+                <EditTemplate Context="mainMenu">
+                    <RadzenTextBox @bind-Value="mainMenu.IconName" Name="txtIconName" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtIconName" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MainMenu" Property="Description" Title="Description" Sortable="true" Width="25%">
+                <EditTemplate Context="mainMenu">
+                    <RadzenTextBox @bind-Value="mainMenu.Description" Name="txtDescription" class="w-100" />
+                    <RadzenDataAnnotationValidator Component="txtDescription" Popup=true />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MainMenu" Property="Active" Title="Active" Sortable="true" TextAlign="TextAlign.Center" Width="100px">
+                <Template Context="mainMenu">
+                    <RadzenCheckBox @bind-Value="mainMenu.Active" Disabled="true" />
+                </Template>
+                <EditTemplate Context="mainMenu">
+                    <RadzenCheckBox @bind-Value="mainMenu.Active" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="MainMenu" Filterable="false" Sortable="false" TextAlign="TextAlign.Center" Title="Action" Width="80px" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                <Template Context="mainMenu">
+                    <!-- Grid Edit Button: Triggers edit mode -->
+                    <RadzenButton Icon="edit" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Edit"
+                                  Click="@(args => OnGridEditRow(mainMenu))" @onclick:stopPropagation="true" />
+                    <!-- Grid Status Toggle Button: Toggles active/inactive status -->
+                    <RadzenButton Icon="sync_alt" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Status Toggle"
+                                  Click="@(args => OnGridToggleStatus(mainMenu))" @onclick:stopPropagation="true" />
+                </Template>
+                <EditTemplate Context="mainMenu">
+                    <!-- Grid Save Button: Saves the edited row -->
+                    <RadzenButton Icon="check" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Save"
+                                  Click="@(args => OnGridSaveRow(mainMenu))" />
+                    <!-- Grid Cancel Button: Cancels the editing of the row -->
+                    <RadzenButton Icon="close" Shade="Shade.Dark" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Title="Cancel"
+                                  Click="@(args => OnGridCancelEdit(mainMenu))" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+
+        <!-- Empty Template: Displays when no data is available -->
+        <EmptyTemplate>
+            <div class="grid-empty">
+                No records available!
+            </div>
+        </EmptyTemplate>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    #region Properties
+    private bool HasLoadedMainMenus { get; set; } = false;
+
+    private RadzenDataGrid<MainMenu> GridMainMenus { get; set; }
+    private MainMenu? InitialMainMenu { get; set; }
+    private MainMenu? NewMainMenu { get; set; }
+
+    private IList<MainMenu>? MainMenus { get; set; }
+
+    #endregion
+
+    #region Component Lifecycle
+    /// <summary>
+    /// Loads main menus on component initialization.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Load main menus data
+            await LoadMainMenusAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading main menu data: {ex.Message}");
+            Snackbar.Add($"{ex.Message}", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Event Handlers
+    /// <summary>
+    /// Refreshes the grid by reloading the main menus data.
+    /// </summary>
+    private async Task onGridRefresh()
+    {
+        try
+        {
+            // Load main menus data
+            await LoadMainMenusAsync();
+
+            // Reset the NewMainMenu object
+            NewMainMenu = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading main menus: {ex.Message}");
+            Snackbar.Add("An error occurred while loading main menus. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Exports the grid data to an Excel file.
+    /// </summary>
+    private void OnGridExportToXLS()
+    {
+        try
+        {
+            // Pending Task: Logic to export the grid data to an Excel file.
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Console.Error.WriteLine($"Unauthorized Access Exception: {ex.Message}");
+            Snackbar.Add("You do not have permission to write the export file. Please check your access rights.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An unexpected error occurred: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred during the export process. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Adds a new row to the grid for creating a MainMenu entry.
+    /// </summary>
+    private async Task onGridAddRow()
+    {
+        try
+        {
+            // Create a new MainMenu object
+            NewMainMenu = new MainMenu
+                {
+                    MainMenuId = 0,
+                    MainMenuName = string.Empty,
+                    Code = null,
+                    Url = string.Empty,
+                    IconName = null,
+                    Description = null,
+                    Active = true
+                };
+
+            // Open the new row in the RadzenDataGrid for editing
+            await GridMainMenus.InsertRow(NewMainMenu);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while adding a new row: {ex.Message}");
+            Snackbar.Add("Failed to add a new row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Edits an existing row in the grid by populating it with the selected MainMenu's details.
+    /// </summary>
+    /// <param name="menuGroup">The MainMenu object containing the data to be edited.</param>
+    private async Task OnGridEditRow(MainMenu mainMenu)
+    {
+        try
+        {
+            // Store the original MainMenu data to revert changes if the user cancels the edit
+            InitialMainMenu = new MainMenu
+                {
+                    MainMenuId = mainMenu.MainMenuId,
+                    MainMenuName = mainMenu.MainMenuName,
+                    Code = mainMenu.Code,
+                    Url = mainMenu.Url,
+                    IconName = mainMenu.IconName,
+                    Description = mainMenu.Description,
+                    CreatedBy = mainMenu.CreatedBy,
+                    CreatedDate = mainMenu.CreatedDate,
+                    ModifiedBy = mainMenu.ModifiedBy,
+                    ModifiedDate = mainMenu.ModifiedDate,
+                    Active = mainMenu.Active
+                };
+
+            // Open the selected row in the RadzenDataGrid for editing
+            await GridMainMenus.EditRow(mainMenu);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"An error occurred while editing a row: {ex.Message}");
+            Snackbar.Add("Failed to edit a row. Please try again or contact support.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Update or Insert the MainMenu data to the database.
+    /// </summary>
+    /// <param name="mainMenu">The MainMenu object containing the data to be saved.</param>
+    private async Task OnGridSaveRow(MainMenu mainMenu)
+    {
+        try
+        {
+            // Insert or update the MainMenu data in the database(handles validations and throws exceptions)
+            await MainMenuService.UpsertAsync(mainMenu);
+
+            // Exit the edit mode and update the grid with the saved data
+            await GridMainMenus.UpdateRow(mainMenu);
+
+            // Reload the main menus
+            await LoadMainMenusAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Main menu saved successfully.", Severity.Success);
+
+            // Reset the NewMainMenu object
+            NewMainMenu = null;
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: Main menu data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (ValidationException ex)
+        {
+            Console.WriteLine($"Validation error while saving MainMenu ID {mainMenu?.MainMenuId}: {ex.Message}");
+            Snackbar.Add($"Validation errors: {ex.Message}", Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while saving MainMenu ID {mainMenu?.MainMenuId}: {ex.Message}");
+            Snackbar.Add("Failed to save the main menu. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Toggles the active status of the MainMenu, updates the status in the database, and reloads the main menus.
+    /// </summary>
+    /// <param name="mainMenu">The MainMenu object whose active status is to be toggled.</param>
+    private async Task OnGridToggleStatus(MainMenu mainMenu)
+    {
+        try
+        {
+            // Toggle the active status data in the database(handles validations and throws exceptions)
+            await MainMenuService.ToggleActiveAsync(mainMenu.MainMenuId);
+
+            // Reload the main menus
+            await LoadMainMenusAsync();
+
+            // Notify the user of success
+            Snackbar.Add("Active status updated successfully.", Severity.Success);
+        }
+        catch (ArgumentNullException ex)
+        {
+            Console.WriteLine($"ArgumentNullException: Main menu data is null. Message: {ex.Message}");
+            Snackbar.Add("Invalid input: required data is missing. Please check and try again.", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while toggling active status in MainMenu ID {mainMenu?.MainMenuId}: {ex.Message}");
+            Snackbar.Add("Failed to update the active status of the main menu. Please try again later.", Severity.Error);
+        }
+    }
+
+    /// <summary>
+    /// Cancels the edit operation on the MainMenu and reverts any changes made to the object.
+    /// </summary>
+    /// <param name="mainMenu">The MainMenu object that was being edited.</param>
+    private void OnGridCancelEdit(MainMenu mainMenu)
+    {
+        try
+        {
+            // Check if there is an initial state to revert to
+            if (InitialMainMenu != null)
+            {
+                // Revert the edited object properties to their original state from InitialMainMenu
+                mainMenu.MainMenuId = InitialMainMenu.MainMenuId;
+                mainMenu.MainMenuName = InitialMainMenu.MainMenuName;
+                mainMenu.Code = InitialMainMenu.Code;
+                mainMenu.Url = InitialMainMenu.Url;
+                mainMenu.IconName = InitialMainMenu.IconName;
+                mainMenu.Description = InitialMainMenu.Description;
+                mainMenu.CreatedBy = InitialMainMenu.CreatedBy;
+                mainMenu.CreatedDate = InitialMainMenu.CreatedDate;
+                mainMenu.ModifiedBy = InitialMainMenu.ModifiedBy;
+                mainMenu.ModifiedDate = InitialMainMenu.ModifiedDate;
+                mainMenu.Active = InitialMainMenu.Active;
+            }
+
+            // Cancel the edit mode for the grid row
+            GridMainMenus.CancelEditRow(mainMenu);
+
+            // Clear the temporary object used for adding new main menus
+            NewMainMenu = null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An unexpected error occurred while canceling the edit: {ex.Message}");
+            Snackbar.Add("An unexpected error occurred while canceling the edit. Please try again.", Severity.Error);
+        }
+    }
+
+    #endregion
+
+    #region Loading Methods
+    /// <summary>
+    /// Loads the list of main menus.
+    /// </summary>
+    private async Task LoadMainMenusAsync()
+    {
+        try
+        {
+            // Mark the start of the loading process
+            HasLoadedMainMenus = false;
+
+            // Load the list of main menus.
+            MainMenus = await MainMenuService.GetAllAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error loading main menus: {ex.Message}");
+            throw new Exception("Failed to load main menus. Please try again later.", ex);
+        }
+        finally
+        {
+            // Update the end of the loading process
+            HasLoadedMainMenus = true;
+
+            // Ensure the UI is updated
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+}
