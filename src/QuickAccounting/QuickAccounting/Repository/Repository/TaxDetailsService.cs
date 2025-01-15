@@ -28,23 +28,45 @@ namespace QuickAccounting.Repository.Repository
 
         public async Task<List<TaxRatesView>> GetTaxDetailsByTaxCode(string TaxCode, DateTime Date)
         {
-           // DateTime fromDateFilter = DateTime.ParseExact(Date, "yyyy/MM/dd", CultureInfo.InvariantCulture);
+			// DateTime fromDateFilter = DateTime.ParseExact(Date, "yyyy/MM/dd", CultureInfo.InvariantCulture);
 
-            var result =await (from td in _context.TaxDetails
-                         join tr in _context.TaxRates on td.TaxNameId equals tr.TaxNameId
-                         where tr.FromDate == _context.TaxRates.Where(r => r.FromDate <= Date)
-                                                      .Max(r => r.FromDate)
-                            && td.TaxCode == TaxCode
-                               select new TaxRatesView
-                         {
-                            
-                            TaxNameId = td.TaxNameId,
-                            IsActive = td.IsActive,
-                            Rate = tr.Rate,
-                            FromDate = tr.FromDate
-                         }).ToListAsync();
 
-            return result;
+			// ------------ 2025-01-02 
+			var result = await (from td in _context.TaxDetails
+								join tr in _context.TaxRates on td.TaxNameId equals tr.TaxNameId
+								where td.TaxCode == TaxCode
+									  && td.IsActive == true
+									  && tr.FromDate == (from r in _context.TaxRates
+														 where r.TaxNameId == td.TaxNameId
+														 select r.FromDate).Max()
+                                orderby td.TaxNameId
+                                select new TaxRatesView
+								{
+									TaxNameId = td.TaxNameId,
+									IsActive = td.IsActive,
+									Rate = tr.Rate,
+									FromDate = tr.FromDate
+								}).ToListAsync();
+            // ------------
+
+            
+
+			//var result =await (from td in _context.TaxDetails
+			//             join tr in _context.TaxRates on td.TaxNameId equals tr.TaxNameId
+			//             where tr.FromDate == _context.TaxRates.Where(r => r.FromDate <= Date)
+			//                                          .Max(r => r.FromDate)
+			//                && td.TaxCode == TaxCode
+			//                   select new TaxRatesView
+			//             {
+
+			//                TaxNameId = td.TaxNameId,
+			//                IsActive = td.IsActive,
+			//                Rate = tr.Rate,
+			//                FromDate = tr.FromDate
+			//             }).ToListAsync();
+
+
+			return result;
         }
 
         public async Task<List<TaxDetailsView>> GetTaxDetails()
