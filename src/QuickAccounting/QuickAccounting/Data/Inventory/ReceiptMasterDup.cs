@@ -40,7 +40,7 @@ namespace QuickAccounting.Data.Inventory
         [StringLength(255)]
         public string Narration { get; set; }
 
-        public DateTime? AddedDate { get; set; }
+        public DateTime AddedDate { get; set; }
 
         public DateTime? ModifyDate { get; set; }
     }

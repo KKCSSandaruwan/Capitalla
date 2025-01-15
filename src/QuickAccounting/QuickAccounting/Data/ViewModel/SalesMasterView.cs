@@ -20,6 +20,7 @@ namespace QuickAccounting.Data.Setting
         public string Narration { get; set; }
         public decimal NetAmounts { get; set; }
         public decimal GrandTotal { get; set; }
+        public decimal SalesReturnGrandTotal { get; set; }
         public decimal BillDiscount { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal TotalDue { get; set; }

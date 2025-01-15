@@ -54,6 +54,8 @@
         public int SalesReturnDetailsId { get; set; }
         public DateTime? AddedDate { get; set; }
         public DateTime? ModifyDate { get; set; }
+        public decimal SalesReturnTotalAmount { get; set; }
+        public decimal SalesReturnGrandTotal { get; set; }
 
         //StockPosting
         public int StockPostingId { get; set; }

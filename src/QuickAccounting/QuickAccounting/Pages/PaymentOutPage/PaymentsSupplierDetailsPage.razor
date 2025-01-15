@@ -381,7 +381,7 @@
 					details.PurchaseMasterId = item.PurchaseMasterId;
                     details.TotalAmount = item.Amount;
                     details.ReceiveAmount = item.ReceiveAmount;
-                    details.DueAmount = 0;
+					details.DueAmount = item.DueAmount;
 					master.listOrder.Add(details);
                 }
             }

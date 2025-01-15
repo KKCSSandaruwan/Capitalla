@@ -117,7 +117,14 @@
                                     <td>@td.Date</td>
                                     <td class="">@PublicVariables._Symbol@td.GrandTotal</td>
                                         <td class="">0</td>
-                                    <td><input type="number" class="form-control" @bind-value="td.ReceiveAmount" style="width: 100px" @onkeyup="@(e => editItem(td.PurchaseMasterId))" @onclick="@(e => editItem(td.PurchaseMasterId))" @bind-value:event="oninput" /></td>
+                                    @*<td>
+                                        <input type="number" class="form-control" @bind-value="td.ReceiveAmount" 
+                                        style="width: 100px" @onkeyup="@(e => editItem(td.PurchaseMasterId))" 
+                                        @onclick="@(e => editItem(td.PurchaseMasterId))" @bind-value:event="oninput"
+                                           max="master.Amount" />
+                                    </td>*@
+                                     <RadzenNumeric @bind-Value=@td.ReceiveAmount style="width: 100px" Max="@master.Amount" />
+
 
                                     <td>
                                         <a style="color:#ff6b6b!important;">Clear</a>
@@ -174,7 +181,7 @@
         var strShow = await _privilege.PriviliageCheck(strMenu, strName);
         if (strShow.ShowAction == true)
         {
-           await LoadData();
+            await LoadData();
         }
         else
         {
@@ -235,6 +242,7 @@
             master.PurchaseMasterId = purchase.PurchaseMasterId;
             master.Narration = string.Empty;
             master.AddedDate = DateTime.Now;
+            master.AccountId = intCashBank;
 
             foreach (var item in TodoList)
             {
@@ -242,7 +250,7 @@
                 if (item != null)
                 {
                     details.PurchaseMasterId = item.PurchaseMasterId;
-                    details.LedgerId = intCashBank;
+                    details.LedgerId = master.LedgerId;
                     details.TotalAmount = item.GrandTotal;
                     details.ReceiveAmount = item.ReceiveAmount;
                     details.DueAmount = 0;
@@ -272,6 +280,10 @@
         viewMaster.LedgerId = myTodo.LedgerId;
         editedID = id;
         AddToList();
+
+        master.Amount = myTodo.ReceiveAmount;
+        StateHasChanged();
+
     }
     private async void AddToList()
     {
